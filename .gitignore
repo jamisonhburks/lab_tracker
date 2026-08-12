@@ -7,5 +7,6 @@ __pycache__/
 # Generated memory stores — run data, kept out of PRs
 memory/
 
-# Local data dumps / KG caches
+# Local data dumps / KG caches (downloaded on demand)
 *.parquet
+data/
