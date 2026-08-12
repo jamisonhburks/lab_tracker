@@ -247,9 +247,11 @@ CONSOLIDATION_SCHEMA = {
                 "type": "object",
                 "properties": {
                     "claim": {"type": "string"},
+                    "subject": {"type": "string"},
+                    "object": {"type": "string"},
                     "sources": {"type": "array", "items": {"type": "string"}},
                 },
-                "required": ["claim", "sources"],
+                "required": ["claim", "subject", "object", "sources"],
             },
         },
     },
@@ -301,10 +303,24 @@ def run_agent(question: str) -> None:
         print("\n[stopped: hit MAX_STEPS]")
 
     findings = _consolidate(messages, seen)
+    _ground_findings(findings)   # KG-as-verifier: corroborate each claim's link
     entry = memory.record_run(question, tool_log, findings)
     n_src = sum(len(f["sources"]) for f in findings)
     print(f"\n[episodic memory: saved {entry['id']} — "
           f"{len(findings)} claim(s), {n_src} source link(s)]")
+
+    # Hybrid grounding summary. Uncorroborated != false — the KG is incomplete, so
+    # a claim with no trustworthy path may be genuinely novel and worth verifying.
+    tally = {}
+    for f in findings:
+        tally[f.get("grounding", "n/a")] = tally.get(f.get("grounding", "n/a"), 0) + 1
+    if tally.get("grounded") or tally.get("weakly_grounded"):
+        print(f"[KG grounding: "
+              f"{tally.get('grounded', 0)} grounded (trustworthy path), "
+              f"{tally.get('weakly_grounded', 0)} weak, "
+              f"{tally.get('novel_unverified', 0)} novel/unverified, "
+              f"{tally.get('off_graph', 0)} off-graph — "
+              f"novel/unverified are NOT false, they need verification]")
 
     # Consolidate: distil each finding into durable, embedded semantic memory.
     n_new = sum(bool(semantic_memory.add_fact(f["claim"], f["sources"])) for f in findings)
@@ -322,7 +338,9 @@ def _consolidate(messages: list, seen: set) -> list:
         "the exact source ids that support it, drawn ONLY from the tool results "
         "above (PubMed ids as 'PMID:xxxxx', files as 'file:<path>', knowledge-graph "
         "sources as 'KG:<database>'). If a claim has no supporting source, use an "
-        "empty list."
+        "empty list. Also give 'subject' and 'object': the two biomedical entities "
+        "the claim relates (short canonical names, e.g. 'Crohn's disease', 'CXCL8'), "
+        "or empty strings if the claim is not a relation between two named entities."
     )
     try:
         resp = ollama.chat(
@@ -339,6 +357,15 @@ def _consolidate(messages: list, seen: set) -> list:
     for f in findings:
         f["sources"] = [s for s in f.get("sources", []) if s in seen]
     return [f for f in findings if f.get("claim")]
+
+
+def _ground_findings(findings: list) -> None:
+    """KG-as-verifier (hybrid). Tag each relational claim by how well a trustworthy
+    KG subgraph corroborates it. 'novel_unverified'/'off_graph' mean the KG can't
+    confirm it — NOT that it's false (the graph is incomplete)."""
+    for f in findings:
+        subj, obj = f.get("subject", "").strip(), f.get("object", "").strip()
+        f["grounding"] = kg.check_connection(subj, obj) if subj and obj else "n/a"
 
 
 if __name__ == "__main__":
