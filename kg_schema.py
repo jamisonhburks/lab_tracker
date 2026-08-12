@@ -43,6 +43,23 @@ class AgentType(str, Enum):         # Biolink agent_type
     NOT_PROVIDED = "not_provided"
 
 
+class Direction(str, Enum):         # does a study support or refute the claim?
+    SUPPORTS = "supports"
+    REFUTES = "refutes"
+
+
+class RiskOfBias(str, Enum):        # methodology quality of a study
+    LOW = "low"
+    SOME = "some"
+    HIGH = "high"
+
+
+# How much a study's result should move belief, by risk-of-bias (used when a
+# study reports no explicit statistical power). A high-bias study is barely
+# informative — its null could be a methodology artifact, not a true negative.
+_ROB_INFORMATIVENESS = {RiskOfBias.LOW: 0.8, RiskOfBias.SOME: 0.5, RiskOfBias.HIGH: 0.2}
+
+
 # BFO / IAO upper-ontology parent per node category (spec §3, §5).
 BFO_PARENT = {
     "Gene": "material entity", "Variant": "material entity",
@@ -102,7 +119,13 @@ class Qualifiers:
 
 @dataclass
 class Evidence:
-    """One supporting study for an association (spec §7)."""
+    """One study bearing on an association — supporting OR refuting (spec §7).
+
+    Negative results are first-class here: `direction=REFUTES`. But a refuting
+    study is only as informative as it is well-powered — an underpowered null
+    ('absence of evidence') should barely move belief, whereas a well-powered
+    null ('evidence of absence') should. `informativeness()` encodes that.
+    """
     publication: str | None = None       # PMID / DOI
     source: str | None = None            # knowledge source / database
     research_group: str | None = None    # normalized lab/author — independence signal
@@ -111,6 +134,35 @@ class Evidence:
     effect_size: float | None = None
     p_value: float | None = None
     correction: str | None = None        # Bonferroni | BH | ...
+    direction: Direction = Direction.SUPPORTS
+    sample_size: int | None = None
+    power: float | None = None           # 1 - beta, if reported/estimable
+    ci_low: float | None = None          # effect confidence interval
+    ci_high: float | None = None
+    risk_of_bias: RiskOfBias | None = None
+
+    def informativeness(self) -> float:
+        """How much this study's result should move belief, in [0, 1].
+
+        Bayesian intuition: an underpowered study's null is uninformative
+        (likelihood ratio ~1). Prefer reported power; fall back to risk-of-bias;
+        otherwise assume moderately informative.
+        """
+        if self.power is not None:
+            return max(0.0, min(1.0, self.power))
+        if self.risk_of_bias is not None:
+            return _ROB_INFORMATIVENESS[self.risk_of_bias]
+        return 0.5
+
+    def covers_effect(self, threshold: float) -> bool:
+        """Does the CI still admit an effect of at least `threshold`?
+
+        A null result whose interval covers a meaningful effect is INCONCLUSIVE
+        ('absence of evidence'), not a true negative. Needs a domain threshold.
+        """
+        if self.ci_low is None or self.ci_high is None:
+            return False
+        return self.ci_high >= threshold or self.ci_low <= -threshold
 
 
 @dataclass
@@ -123,18 +175,25 @@ class Association:
     knowledge_level: KnowledgeLevel = KnowledgeLevel.NOT_PROVIDED
     agent_type: AgentType = AgentType.NOT_PROVIDED
     qualifiers: Qualifiers = field(default_factory=Qualifiers)
-    evidence: list[Evidence] = field(default_factory=list)
-    contradicted_by: list[str] = field(default_factory=list)
+    evidence: list[Evidence] = field(default_factory=list)  # supporting AND refuting
     confidence: float | None = None      # computed later (phase 4)
 
     @property
     def is_definitional(self) -> bool:
         return self.epistemic_type is EpistemicType.DEFINITIONAL
 
-    def independent_sources(self) -> set[str]:
-        """Distinct sources across evidence (compound 'A, B' strings atomized)."""
+    def supporting(self) -> list[Evidence]:
+        return [e for e in self.evidence if e.direction is Direction.SUPPORTS]
+
+    def refuting(self) -> list[Evidence]:
+        return [e for e in self.evidence if e.direction is Direction.REFUTES]
+
+    def independent_sources(self, direction: Direction | None = None) -> set[str]:
+        """Distinct sources (compound 'A, B' strings atomized), optionally by direction."""
         out: set[str] = set()
         for ev in self.evidence:
+            if direction is not None and ev.direction is not direction:
+                continue
             if ev.source:
                 out.update(t.strip() for t in ev.source.split(",") if t.strip())
         return out
@@ -144,9 +203,14 @@ class Association:
             f"{self.subject} —{self.predicate}→ {self.object}",
             f"  epistemic: {self.epistemic_type.value} ({self.knowledge_level.value})",
         ]
-        srcs = self.independent_sources()
+        srcs = self.independent_sources(Direction.SUPPORTS)
         if srcs:
-            lines.append(f"  independent sources ({len(srcs)}): {', '.join(sorted(srcs))}")
+            lines.append(f"  supporting sources ({len(srcs)}): {', '.join(sorted(srcs))}")
+        if self.refuting():
+            ref = self.refuting()
+            powered = sum(1 for e in ref if e.informativeness() >= 0.5)
+            lines.append(f"  refuting studies: {len(ref)} "
+                         f"({powered} adequately-powered, {len(ref) - powered} weak)")
         if self.qualifiers.active():
             lines.append(f"  qualifiers: {self.qualifiers.active()}")
         if self.confidence is not None:
