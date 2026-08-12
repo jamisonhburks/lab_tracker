@@ -205,17 +205,18 @@ def query_graph(entity: str, max_neighbors: int = 40) -> str:
     return "\n".join(lines)
 
 
-def find_paths(entity_a: str, entity_c: str, max_len: int = 3,
-               max_paths: int = 20, max_expand: int = 60000) -> str:
-    """Find connecting paths A..C — the A->B->C discovery move.
+def enumerate_paths(entity_a: str, entity_c: str, max_len: int = 3,
+                    max_paths: int = 20, max_expand: int = 60000) -> tuple:
+    """Resolve two entities and return connecting paths (bounded BFS).
 
-    Bounded breadth-first (shortest paths first), with caps so a dense real graph
-    can't blow up: stop after `max_paths` found or `max_expand` nodes expanded.
+    Returns (a_id, c_id, paths, truncated). Each path is a list of
+    (from_id, predicate, arrow, source, to_id). a_id/c_id are None if unresolved.
+    Shared by find_paths (display) and hypothesis.py (scoring) so both see the
+    same paths. Bounded so a dense real graph can't blow up.
     """
     a, c = _resolve(entity_a), _resolve(entity_c)
     if a is None or c is None:
-        missing = entity_a if a is None else entity_c
-        return f"'{missing}' not found in the knowledge graph."
+        return a, c, [], False
 
     adj = _index()
     paths, expanded, truncated = [], 0, False
@@ -239,11 +240,20 @@ def find_paths(entity_a: str, entity_c: str, max_len: int = 3,
             elif len(step) < max_len:   # don't enqueue dead-ends at max depth
                 queue.append((nbr, step, seen | {nbr}))
 
+    paths.sort(key=len)
+    return a, c, paths, truncated
+
+
+def find_paths(entity_a: str, entity_c: str, max_len: int = 3) -> str:
+    """Find connecting paths A..C — the A->B->C discovery move."""
+    a, c, paths, truncated = enumerate_paths(entity_a, entity_c, max_len=max_len)
+    if a is None or c is None:
+        missing = entity_a if a is None else entity_c
+        return f"'{missing}' not found in the knowledge graph."
     if not paths:
         note = " (search truncated)" if truncated else ""
         return f"No path between {_label(a)} and {_label(c)} within {max_len} hops{note}."
 
-    paths.sort(key=len)
     out = [f"Paths from {_label(a)} to {_label(c)} (<= {max_len} hops):"]
     for p in paths[:8]:
         chain = _label(p[0][0])
