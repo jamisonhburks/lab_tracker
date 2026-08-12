@@ -1,38 +1,56 @@
 """Ontological memory: a typed knowledge graph the agent can traverse.
 
 Unlike episodic/semantic memory (which the agent WRITES from its own runs), this
-is a read-only, curated grounding KB — OptimusKG (Zitnik Lab). We query it for:
-  - query_graph(entity)     -> typed neighbors  (disease -associated_with-> gene)
+is a read-only, curated grounding KB. We query it for:
+  - query_graph(entity)     -> typed neighbors  (disease -associates-> gene)
   - find_paths(a, c)        -> A->B->C chains    (the Swanson/Rephetio move)
 
-The graph is two Polars DataFrames (nodes, edges) in Biolink shape. Column roles
-are named once below, so the same traversal code runs on our demo graph and on
-the real OptimusKG tables — swapping backends is one function (`load_optimuskg`).
+The graph is two Polars DataFrames (nodes, edges); column roles are named once
+below, so the same traversal code runs on every backend:
+  - load_demo()       tiny hand-built graph (offline, instant)
+  - load_hetionet()   Hetionet v1.0 (47k nodes / 2.25M edges, CC0) — real data
+  - load_optimuskg()  OptimusKG (Zitnik Lab) — pending Dataverse recovery
 
-Traversal is UNDIRECTED on purpose: for hypothesis generation we care that two
-entities are connected through some mechanism, not which way the edge points.
+Pick a backend with the KG_BACKEND env var (demo | hetionet | optimuskg);
+default is demo. Traversal is UNDIRECTED on purpose: for hypothesis generation we
+care that two entities are connected through some mechanism, not edge direction.
+
+Adjacency and node metadata are indexed once per loaded graph so traversal stays
+fast on millions of edges.
 """
+
+import bz2
+import json
+import os
+import shutil
+import urllib.request
+from collections import deque
+from pathlib import Path
 
 import polars as pl
 
-# Logical role -> column name. Retune to the real OptimusKG schema once the
-# background poller confirms it (see optimus_poll output).
 NODE_ID, NODE_NAME, NODE_CAT = "id", "name", "category"
 EDGE_SUBJ, EDGE_PRED, EDGE_OBJ, EDGE_SRC = "subject", "predicate", "object", "source"
 
+DATA_DIR = Path(__file__).parent / "data"
+HETIONET_URL = (
+    "https://media.githubusercontent.com/media/hetio/hetionet/main/"
+    "hetnet/json/hetionet-v1.0.json.bz2"
+)
+
 _G = {"nodes": None, "edges": None}
+_ADJ = None    # id -> [(neighbor_id, predicate, arrow, source)]  (built once)
+_META = None   # id -> (name, category)                          (built once)
+
+
+def _reset() -> None:
+    global _ADJ, _META
+    _ADJ = _META = None
 
 
 # --------------------------------------------------------------------------- #
 # Backends — same interface, different data.                                   #
 # --------------------------------------------------------------------------- #
-
-def load_optimuskg(lcc: bool = True) -> None:
-    """Swap in the real Zitnik-lab graph. One call; traversal code unchanged."""
-    import optimuskg
-    nodes, edges = optimuskg.load_graph(lcc=lcc)
-    _G["nodes"], _G["edges"] = nodes, edges
-
 
 def load_demo() -> None:
     """A tiny biomedical graph in the same shape, for building/testing offline."""
@@ -60,87 +78,170 @@ def load_demo() -> None:
                         "GWAS Catalog", "cohort study", "DrugCentral", "DrugBank"],
         }
     )
+    _reset()
+
+
+def load_hetionet() -> None:
+    """Load Hetionet v1.0 from its JSON (downloaded + cached on first use)."""
+    DATA_DIR.mkdir(exist_ok=True)
+    local = DATA_DIR / "hetionet-v1.0.json.bz2"
+    if not local.exists():
+        req = urllib.request.Request(HETIONET_URL, headers={"User-Agent": "curl"})
+        with urllib.request.urlopen(req, timeout=180) as r, open(local, "wb") as out:
+            shutil.copyfileobj(r, out)
+
+    with bz2.open(local, "rt", encoding="utf-8") as f:
+        graph = json.load(f)
+
+    # nodes: id = "<Kind>:<identifier>", name, category = kind
+    n = graph["nodes"]
+    _G["nodes"] = pl.DataFrame(
+        {
+            NODE_ID:   [f"{x['kind']}:{x['identifier']}" for x in n],
+            NODE_NAME: [x.get("name") or str(x["identifier"]) for x in n],
+            NODE_CAT:  [x["kind"] for x in n],
+        }
+    )
+
+    # edges: keep the reporting source(s) as provenance
+    def _src(d: dict) -> str:
+        s = d.get("source")
+        if s:
+            return s
+        ss = d.get("sources")
+        return ", ".join(ss) if isinstance(ss, list) else (ss or "Hetionet")
+
+    e = graph["edges"]
+    _G["edges"] = pl.DataFrame(
+        {
+            EDGE_SUBJ: [f"{x['source_id'][0]}:{x['source_id'][1]}" for x in e],
+            EDGE_PRED: [x["kind"] for x in e],
+            EDGE_OBJ:  [f"{x['target_id'][0]}:{x['target_id'][1]}" for x in e],
+            EDGE_SRC:  [_src(x.get("data", {})) for x in e],
+        }
+    )
+    _reset()
+
+
+def load_optimuskg(lcc: bool = True) -> None:
+    """Swap in the OptimusKG graph. One call; traversal code unchanged."""
+    import optimuskg
+    _G["nodes"], _G["edges"] = optimuskg.load_graph(lcc=lcc)
+    _reset()
+
+
+_BACKENDS = {"demo": load_demo, "hetionet": load_hetionet, "optimuskg": load_optimuskg}
 
 
 def _graph() -> tuple:
     if _G["edges"] is None:
-        load_demo()
+        _BACKENDS.get(os.environ.get("KG_BACKEND", "demo").lower(), load_demo)()
     return _G["nodes"], _G["edges"]
 
 
 # --------------------------------------------------------------------------- #
-# Helpers                                                                      #
+# Indexes — built once per loaded graph so traversal is O(1) per hop.          #
 # --------------------------------------------------------------------------- #
 
+def _meta() -> dict:
+    global _META
+    if _META is None:
+        nodes, _ = _graph()
+        _META = dict(zip(nodes[NODE_ID].to_list(),
+                         zip(nodes[NODE_NAME].to_list(), nodes[NODE_CAT].to_list())))
+    return _META
+
+
+def _index() -> dict:
+    global _ADJ
+    if _ADJ is None:
+        _, edges = _graph()
+        adj: dict = {}
+        subj = edges[EDGE_SUBJ].to_list()
+        pred = edges[EDGE_PRED].to_list()
+        obj = edges[EDGE_OBJ].to_list()
+        src = edges[EDGE_SRC].to_list()
+        for s, p, o, sc in zip(subj, pred, obj, src):
+            adj.setdefault(s, []).append((o, p, "->", sc))
+            adj.setdefault(o, []).append((s, p, "<-", sc))
+        _ADJ = adj
+    return _ADJ
+
+
 def _resolve(name: str) -> str | None:
-    """Map a free-text entity to a node id (exact id, else case-insensitive name)."""
-    nodes, _ = _graph()
-    if name in nodes[NODE_ID].to_list():
+    """Map free-text to a node id (exact id, exact name, then substring)."""
+    meta = _meta()
+    if name in meta:
         return name
-    hits = nodes.filter(pl.col(NODE_NAME).str.to_lowercase() == name.lower())
-    if hits.height == 0:  # fall back to substring
-        hits = nodes.filter(pl.col(NODE_NAME).str.to_lowercase().str.contains(name.lower()))
-    return hits[NODE_ID][0] if hits.height else None
+    low = name.lower()
+    exact = [nid for nid, (nm, _) in meta.items() if nm.lower() == low]
+    if exact:
+        return exact[0]
+    sub = [nid for nid, (nm, _) in meta.items() if low in nm.lower()]
+    return sub[0] if sub else None
 
 
 def _label(node_id: str) -> str:
-    nodes, _ = _graph()
-    row = nodes.filter(pl.col(NODE_ID) == node_id)
-    return f"{row[NODE_NAME][0]} ({row[NODE_CAT][0]})" if row.height else node_id
-
-
-def _adjacency(node_id: str) -> list:
-    """Undirected neighbors of a node: (neighbor_id, predicate, arrow, source)."""
-    _, edges = _graph()
-    out = edges.filter(pl.col(EDGE_SUBJ) == node_id)
-    inc = edges.filter(pl.col(EDGE_OBJ) == node_id)
-    nbrs = []
-    for r in out.iter_rows(named=True):
-        nbrs.append((r[EDGE_OBJ], r[EDGE_PRED], "->", r[EDGE_SRC]))
-    for r in inc.iter_rows(named=True):
-        nbrs.append((r[EDGE_SUBJ], r[EDGE_PRED], "<-", r[EDGE_SRC]))
-    return nbrs
+    nm, cat = _meta().get(node_id, (node_id, "?"))
+    return f"{nm} ({cat})"
 
 
 # --------------------------------------------------------------------------- #
 # Tools the agent calls                                                        #
 # --------------------------------------------------------------------------- #
 
-def query_graph(entity: str) -> str:
+def query_graph(entity: str, max_neighbors: int = 40) -> str:
     """Return an entity's typed neighbors in the knowledge graph, with sources."""
     node_id = _resolve(entity)
     if node_id is None:
         return f"'{entity}' not found in the knowledge graph."
 
-    lines = [f"{_label(node_id)}  [{node_id}]"]
-    for nbr, pred, arrow, src in _adjacency(node_id):
+    nbrs = _index().get(node_id, [])
+    lines = [f"{_label(node_id)}  [{node_id}]  ({len(nbrs)} edges)"]
+    for nbr, pred, arrow, src in nbrs[:max_neighbors]:
         lines.append(f"  {arrow} {pred} {arrow} {_label(nbr)}   (source: {src})")
-    return "\n".join(lines) if len(lines) > 1 else lines[0] + "\n  (no edges)"
+    if len(nbrs) > max_neighbors:
+        lines.append(f"  ... and {len(nbrs) - max_neighbors} more")
+    return "\n".join(lines)
 
 
-def find_paths(entity_a: str, entity_c: str, max_len: int = 3) -> str:
-    """Find connecting paths A..C up to max_len edges — the A->B->C discovery move."""
+def find_paths(entity_a: str, entity_c: str, max_len: int = 3,
+               max_paths: int = 20, max_expand: int = 60000) -> str:
+    """Find connecting paths A..C — the A->B->C discovery move.
+
+    Bounded breadth-first (shortest paths first), with caps so a dense real graph
+    can't blow up: stop after `max_paths` found or `max_expand` nodes expanded.
+    """
     a, c = _resolve(entity_a), _resolve(entity_c)
     if a is None or c is None:
         missing = entity_a if a is None else entity_c
         return f"'{missing}' not found in the knowledge graph."
 
-    paths = []  # each: list of (from_id, pred, arrow, source, to_id)
-    stack = [(a, [], {a})]
-    while stack:
-        node, trail, seen = stack.pop()
-        if len(trail) > max_len:
+    adj = _index()
+    paths, expanded, truncated = [], 0, False
+    queue = deque([(a, [], frozenset([a]))])
+    while queue and len(paths) < max_paths:
+        if expanded >= max_expand:
+            truncated = True
+            break
+        node, trail, seen = queue.popleft()
+        expanded += 1
+        if len(trail) >= max_len:
             continue
-        if node == c and trail:
-            paths.append(trail)
-            continue
-        for nbr, pred, arrow, src in _adjacency(node):
+        for nbr, pred, arrow, src in adj.get(node, []):
             if nbr in seen:
                 continue
-            stack.append((nbr, trail + [(node, pred, arrow, src, nbr)], seen | {nbr}))
+            step = trail + [(node, pred, arrow, src, nbr)]
+            if nbr == c:
+                paths.append(step)
+                if len(paths) >= max_paths:
+                    break
+            elif len(step) < max_len:   # don't enqueue dead-ends at max depth
+                queue.append((nbr, step, seen | {nbr}))
 
     if not paths:
-        return f"No path found between {_label(a)} and {_label(c)} within {max_len} hops."
+        note = " (search truncated)" if truncated else ""
+        return f"No path between {_label(a)} and {_label(c)} within {max_len} hops{note}."
 
     paths.sort(key=len)
     out = [f"Paths from {_label(a)} to {_label(c)} (<= {max_len} hops):"]
@@ -151,4 +252,6 @@ def find_paths(entity_a: str, entity_c: str, max_len: int = 3) -> str:
             chain += f"  —{pred}{'→' if arrow == '->' else '←'}  {_label(to_id)}"
             srcs.append(src)
         out.append(f"  • {chain}\n      via: {', '.join(dict.fromkeys(srcs))}")
+    if truncated:
+        out.append("  (search truncated at the expansion cap — more paths may exist)")
     return "\n".join(out)
