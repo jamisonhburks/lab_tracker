@@ -185,13 +185,39 @@ Aggregation principles (algorithm lives in `kg_memory`, not here):
   shared authors/labs/datasets.
 - Saturating combiner (noisy-OR / Beta posterior) — diminishing returns.
 - Weight by source reliability (`evidence_code`, curated vs text-mined).
-- Subtract `contradicted_by`.
+- **Power-weight negative evidence** — never a flat subtraction (see §7.1).
 - **Node-level** confidence: entity-resolution certainty (CURIE mapping) and
   annotation coverage modulate any path through the node.
 - **Triple-level** priors: type-compatibility (`Drug–treats–Disease` sensible;
   `Gene–treats–Disease` schema-violating) and structural corroboration.
 - **Path-level** (hypothesis scoring): weakest-link × length penalty −
   shared-evidence correlation + **multi-independent-path boost** (Rephetio DWPC).
+
+### 7.1 Negative evidence — absence of evidence ≠ evidence of absence
+
+Refuting results are first-class `Evidence` (`direction=refutes`), weighted by
+**`informativeness()` ≈ statistical power / methodology quality**. An underpowered
+null is Bayesianly uninformative — `P(null | effect) ≈ P(null | no effect)`, so its
+likelihood ratio ≈ 1 — and must barely move belief. Aggregation (in
+`confidence.py::score_association`):
+
+- `support = prior + Σ informativeness(supporting)`
+- `refute  = Σ informativeness(refuting)`  ← underpowered nulls ≈ 0
+- `investigation = Σ informativeness(all)`  ← how thoroughly tested at all
+
+| condition | status |
+|---|---|
+| net positive, adequately investigated | `supported` |
+| net negative, **well-powered** nulls | `refuted` |
+| strong both ways | `contested` |
+| investigation below floor | `under_investigated` |
+| thin investigation **but** a positive prior/support | **`promising_but_poorly_tested`** → recommend re-test |
+
+The last row is the payoff: a link that only *looks* negative because the negatives
+were poorly powered surfaces as a re-test candidate (a cheap win hiding under bad
+prior studies), and `propose_experiment` sizes the required cohort. Data note:
+negatives are systematically under-published (file-drawer); `power`/`ci`/`sample_size`
+come from results-section / trial-registry extraction (phase 6).
 
 ---
 
