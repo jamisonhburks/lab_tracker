@@ -41,12 +41,13 @@ def _save(records: list) -> None:
 def add_association(subject: str, predicate: str, object: str, source: str = "",
                     direction: str = "supports", power: float | None = None,
                     sample_size: int | None = None, effect_size: float | None = None,
-                    p_value: float | None = None) -> dict:
+                    p_value: float | None = None, risk_of_bias: str | None = None) -> dict:
     """Record an association, or MERGE evidence into an existing one. Returns it."""
     records = _load()
     key = _key(subject, predicate, object)
     ev = {"source": source or None, "direction": direction, "power": power,
-          "sample_size": sample_size, "effect_size": effect_size, "p_value": p_value}
+          "sample_size": sample_size, "effect_size": effect_size, "p_value": p_value,
+          "risk_of_bias": risk_of_bias}
 
     for r in records:
         if _key(r["subject"], r["predicate"], r["object"]) == key:
@@ -68,15 +69,17 @@ def add_association(subject: str, predicate: str, object: str, source: str = "",
 
 def to_association(record: dict) -> "kg_schema.Association":
     """Reconstruct a typed Association from a stored record (for confidence scoring)."""
-    evidence = [
-        kg_schema.Evidence(
+    evidence = []
+    for e in record.get("evidence", []):
+        d = e.get("direction", "supports")
+        rob = e.get("risk_of_bias")
+        evidence.append(kg_schema.Evidence(
             source=e.get("source"),
-            direction=kg_schema.Direction(e.get("direction", "supports")),
+            direction=kg_schema.Direction(d if d in ("supports", "refutes") else "supports"),
             power=e.get("power"), sample_size=e.get("sample_size"),
             effect_size=e.get("effect_size"), p_value=e.get("p_value"),
-        )
-        for e in record.get("evidence", [])
-    ]
+            risk_of_bias=kg_schema.RiskOfBias(rob) if rob in ("low", "some", "high") else None,
+        ))
     assoc = kg_schema.lift_edge(record["subject"], record["predicate"], record["object"])
     assoc.evidence = evidence
     return assoc
