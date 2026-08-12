@@ -27,6 +27,7 @@ import ollama
 import memory
 import semantic_memory
 import kg_memory as kg
+import hypothesis_tools as hyp
 
 MODEL = "qwen3:14b"
 MAX_STEPS = 10      # safety cap so a misbehaving loop can't run forever
@@ -183,6 +184,46 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "assess_hypothesis",
+            "description": (
+                "Score how well the knowledge graph SUPPORTS a hypothesized link "
+                "between two entities (a realism metric from path abundance, "
+                "directness, and independent sources). Call after proposing a "
+                "hypothesis to gauge its plausibility."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "entity_a": {"type": "string"},
+                    "entity_c": {"type": "string"},
+                },
+                "required": ["entity_a", "entity_c"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "propose_experiment",
+            "description": (
+                "Infer what DATA, DATASETS, METHODS, and STATISTICAL TESTS would be "
+                "needed to actually test a hypothesized link between two entities. "
+                "Grounded in the mechanism types on the KG paths."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "entity_a": {"type": "string"},
+                    "entity_c": {"type": "string"},
+                    "hypothesis": {"type": "string", "description": "The hypothesis, optional."},
+                },
+                "required": ["entity_a", "entity_c"],
+            },
+        },
+    },
 ]
 
 DISPATCH = {
@@ -192,6 +233,8 @@ DISPATCH = {
     "search_semantic": semantic_memory.search_semantic,
     "query_graph": kg.query_graph,
     "find_paths": kg.find_paths,
+    "assess_hypothesis": hyp.assess_hypothesis,
+    "propose_experiment": hyp.propose_experiment,
 }
 
 # Schema for the consolidation step: findings as claim -> sources pairs.
