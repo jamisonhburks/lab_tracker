@@ -28,6 +28,8 @@ import memory
 import semantic_memory
 import kg_memory as kg
 import hypothesis_tools as hyp
+import kg_writer
+import confidence
 
 MODEL = "qwen3:14b"
 MAX_STEPS = 10      # safety cap so a misbehaving loop can't run forever
@@ -62,6 +64,80 @@ def read_file(path: str) -> str:
             return f.read()[:20000]
     except OSError as err:
         return f"Error reading {path}: {err}"
+
+
+# Schema for the synthesizer: extract structured associations from paper text.
+ASSOC_EXTRACT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "associations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "subject": {"type": "string"},
+                    "predicate": {"type": "string"},
+                    "object": {"type": "string"},
+                    "direction": {"type": "string"},   # supports | refutes
+                    "pmid": {"type": "string"},
+                },
+                "required": ["subject", "predicate", "object", "direction"],
+            },
+        },
+    },
+    "required": ["associations"],
+}
+
+
+def curate_literature(query: str, max_papers: int = 5) -> str:
+    """SYNTHESIZER → CURATOR: scrape PubMed, extract associations, write them to KG.
+
+    A specialist pipeline the brain deploys: fetch abstracts, run a schema-
+    constrained extraction, and persist each stated association (with provenance
+    and direction) into the agent's own knowledge graph, merging evidence.
+    """
+    abstracts = search_pubmed(query, max_papers)
+    if abstracts.startswith("No PubMed"):
+        return "No papers found to curate."
+    prompt = (
+        "Extract biomedical associations stated in the abstracts below as JSON. "
+        "For each: subject, predicate (e.g. associates / treats / upregulates / "
+        "downregulates / predisposes), object, direction ('supports' or 'refutes' "
+        "the association), and pmid if identifiable. Extract ONLY relationships the "
+        "text explicitly states.\n\n" + abstracts
+    )
+    try:
+        resp = ollama.chat(model=MODEL, format=ASSOC_EXTRACT_SCHEMA, think=False,
+                           messages=[{"role": "user", "content": prompt}])
+        assocs = json.loads(resp["message"]["content"]).get("associations", [])
+    except Exception as err:
+        return f"Extraction failed: {err}"
+
+    n = 0
+    for a in assocs:
+        subj, pred, obj = (a.get("subject", "").strip(), a.get("predicate", "").strip(),
+                           a.get("object", "").strip())
+        if not (subj and pred and obj):
+            continue
+        src = f"PMID:{a['pmid']}" if a.get("pmid") else "literature"
+        kg_writer.add_association(subj, pred, obj, source=src,
+                                  direction=a.get("direction", "supports"))
+        n += 1
+    return f"Curated {n} association(s) from {query!r} into the agent's KG."
+
+
+def query_curated_kg(subject: str = "", object: str = "") -> str:
+    """Read the agent's OWN curated KG, with a confidence score per association."""
+    recs = kg_writer.query(subject or None, object or None)
+    if not recs:
+        return "No curated associations match (the agent's KG may be empty)."
+    lines = []
+    for r in recs[:15]:
+        result = confidence.score_association(kg_writer.to_association(r))
+        lines.append(f"{r['subject']} —{r['predicate']}→ {r['object']}  "
+                     f"[{result.status}, conf {result.confidence:.2f}, "
+                     f"{len(r['evidence'])} evidence]")
+    return "\n".join(lines)
 
 
 # --------------------------------------------------------------------------- #
@@ -224,6 +300,45 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "curate_literature",
+            "description": (
+                "SYNTHESIZE + CURATE: search PubMed for a topic, extract the stated "
+                "biomedical associations, and WRITE them into the agent's own "
+                "knowledge graph with provenance. Use to grow durable structured "
+                "knowledge from the literature, not just answer once."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Topic to curate."},
+                    "max_papers": {"type": "integer", "description": "1-10, default 5."},
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_curated_kg",
+            "description": (
+                "Read the agent's OWN curated knowledge graph — associations it "
+                "extracted from past literature, each with a confidence score. Check "
+                "here for structured knowledge the agent already distilled."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "subject": {"type": "string", "description": "Filter by subject entity."},
+                    "object": {"type": "string", "description": "Filter by object entity."},
+                },
+                "required": [],
+            },
+        },
+    },
 ]
 
 DISPATCH = {
@@ -235,6 +350,8 @@ DISPATCH = {
     "find_paths": kg.find_paths,
     "assess_hypothesis": hyp.assess_hypothesis,
     "propose_experiment": hyp.propose_experiment,
+    "curate_literature": curate_literature,
+    "query_curated_kg": query_curated_kg,
 }
 
 # Schema for the consolidation step: findings as claim -> sources pairs.
