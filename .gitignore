@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
+
+# Generated memory stores — run data, kept out of PRs
+memory/
+
+# Local data dumps / KG caches
+*.parquet
