@@ -265,3 +265,35 @@ def find_paths(entity_a: str, entity_c: str, max_len: int = 3) -> str:
     if truncated:
         out.append("  (search truncated at the expansion cap — more paths may exist)")
     return "\n".join(out)
+
+
+# Sources whose edges are low-trust corroboration (mere co-occurrence / text-mined
+# / computational). A path leaning on these is only "weakly grounded".
+_LOW_TRUST = ("cooccurrence", "co-occurrence", "text", "predicted", "stargeo", "lincs")
+
+
+def _trustworthy(source: str) -> bool:
+    s = source.lower()
+    return not any(k in s for k in _LOW_TRUST)
+
+
+def check_connection(entity_a: str, entity_c: str, max_len: int = 3) -> str:
+    """Grade how well a TRUSTWORTHY KG subgraph corroborates a claimed link.
+
+    IMPORTANT: absence of KG support does NOT mean the hypothesis is false — the
+    KG is incomplete (closed-world). A claim is well-grounded only when the
+    reasoning traverses a MAJORITY-TRUSTWORTHY path; otherwise it is novel /
+    uncorroborated and should be VERIFIED, not discarded.
+
+    Returns: 'grounded' | 'weakly_grounded' | 'novel_unverified' | 'off_graph'.
+    """
+    a, c, paths, _ = enumerate_paths(entity_a, entity_c, max_len=max_len)
+    if a is None or c is None:
+        return "off_graph"            # entity absent from this KG — can't assess
+    if not paths:
+        return "novel_unverified"     # entities exist but no path — possibly novel
+    for p in paths:                   # shortest-first
+        majority_trust = sum(_trustworthy(src) for (_, _, _, src, _) in p) * 2 > len(p)
+        if len(p) <= 2 and majority_trust:      # short AND trustworthy = real grounding
+            return "grounded"
+    return "weakly_grounded"          # only long or low-trust paths — tenuous, not strong
