@@ -8,10 +8,15 @@ is a read-only, curated grounding KB. We query it for:
 The graph is two Polars DataFrames (nodes, edges); column roles are named once
 below, so the same traversal code runs on every backend:
   - load_demo()       tiny hand-built graph (offline, instant)
-  - load_hetionet()   Hetionet v1.0 (47k nodes / 2.25M edges, CC0) — real data
+  - load_hetionet()   Hetionet v1.0 (47k nodes / 2.25M edges, CC0) — GWAS-rich
+  - load_monarch()    Monarch KG human subgraph (~148k nodes / 1.9M edges) — 36k
+                      MONDO diseases + HPO phenotypes; strong for phenotype/Mendelian
+  - load_combined()   Hetionet + Monarch harmonized (genes->Entrez, diseases->MONDO,
+                      drugs->CHEBI): ~174k nodes / 4.2M edges — GWAS + phenotype +
+                      drug edges on shared nodes (a local slice of PrimeKG)
   - load_optimuskg()  OptimusKG (Zitnik Lab) — pending Dataverse recovery
 
-Pick a backend with the KG_BACKEND env var (demo | hetionet | optimuskg);
+Pick a backend with KG_BACKEND (demo | hetionet | monarch | combined | optimuskg);
 default is demo. Traversal is UNDIRECTED on purpose: for hypothesis generation we
 care that two entities are connected through some mechanism, not edge direction.
 
@@ -38,6 +43,21 @@ HETIONET_URL = (
     "https://media.githubusercontent.com/media/hetio/hetionet/main/"
     "hetnet/json/hetionet-v1.0.json.bz2"
 )
+MONARCH_URL = "https://data.monarchinitiative.org/monarch-kg/latest/monarch-kg.tar.gz"
+
+# Monarch is 1.6M nodes / 15.8M edges across many species. For disease-mechanism
+# hypothesis generation we keep the HUMAN disease/gene/phenotype/chemical core — this
+# drops cross-species orthology, GO-annotation, and anatomical-expression edges that
+# would only add hub noise, and keeps it tractable in memory (~Hetionet scale).
+_MONARCH_KEEP_CAT = {"Disease", "Gene", "PhenotypicFeature", "Protein",
+                     "ChemicalEntity", "Pathway"}
+_MONARCH_HUMAN = "NCBITaxon:9606"
+# Ontology taxonomy / equivalence predicates — NOT mechanism. Dropped so two diseases
+# connect through a shared gene/phenotype, never through a shared ontological ancestor
+# (the same reason Hetionet carries no is_a). Keeps find_paths hypotheses mechanistic.
+_MONARCH_DROP_PRED = {"subclass_of", "same_as", "homologous_to", "orthologous_to",
+                      "related_to", "close_match", "exact_match", "broad_match",
+                      "narrow_match", "has_mode_of_inheritance"}
 
 _G = {"nodes": None, "edges": None}
 _ADJ = None    # id -> [(neighbor_id, predicate, arrow, source)]  (built once)
@@ -132,7 +152,168 @@ def load_optimuskg(lcc: bool = True) -> None:
     _reset()
 
 
-_BACKENDS = {"demo": load_demo, "hetionet": load_hetionet, "optimuskg": load_optimuskg}
+def load_monarch(human_only: bool = True) -> None:
+    """Load a focused human subgraph of the Monarch KG (disease/gene/phenotype/
+    chemical). Named nodes (MONDO diseases, HPO phenotypes, HGNC-symbol genes) and
+    real per-edge provenance (`primary_knowledge_source`) map straight into the same
+    two DataFrames, so all traversal/scoring code runs unchanged. Same interface as
+    the other backends: download + cache on first use.
+    """
+    DATA_DIR.mkdir(exist_ok=True)
+    nodes_f, edges_f = DATA_DIR / "monarch-kg_nodes.tsv", DATA_DIR / "monarch-kg_edges.tsv"
+    if not (nodes_f.exists() and edges_f.exists()):
+        tar = DATA_DIR / "monarch-kg.tar.gz"
+        if not tar.exists():
+            req = urllib.request.Request(MONARCH_URL, headers={"User-Agent": "curl"})
+            with urllib.request.urlopen(req, timeout=1800) as r, open(tar, "wb") as out:
+                shutil.copyfileobj(r, out)
+        import tarfile
+        with tarfile.open(tar, "r:gz") as t:
+            t.extractall(DATA_DIR)
+
+    # Nodes: keep relevant categories; human-restrict genes/proteins (diseases and
+    # phenotypes are species-agnostic ontologies). Display name: name -> symbol -> id.
+    nodes = pl.read_csv(nodes_f, separator="\t", infer_schema_length=0,
+                        columns=["id", "category", "name", "symbol", "in_taxon"])
+    nodes = nodes.with_columns(pl.col("category").str.replace("^biolink:", "").alias("cat"))
+    keep = nodes.filter(pl.col("cat").is_in(list(_MONARCH_KEEP_CAT)))
+    if human_only:
+        keep = keep.filter((~pl.col("cat").is_in(["Gene", "Protein"]))
+                           | (pl.col("in_taxon") == _MONARCH_HUMAN))
+    # phenotypes: keep only human (HPO); drop cross-species ZP/MP/upheno terms
+    keep = keep.filter((pl.col("cat") != "PhenotypicFeature")
+                       | pl.col("id").str.starts_with("HP:"))
+    keep = keep.with_columns(
+        pl.coalesce([pl.col("name"), pl.col("symbol"), pl.col("id")]).alias("nm"))
+    _G["nodes"] = keep.select([pl.col("id").alias(NODE_ID),
+                               pl.col("nm").alias(NODE_NAME),
+                               pl.col("cat").alias(NODE_CAT)])
+    ids = keep.select(pl.col("id"))
+
+    # Edges: stream, drop negated, keep only edges between kept nodes (semi-joins).
+    # Category-filtering the nodes already discards expression/orthology/GO edges,
+    # since their other endpoint (Anatomy/BiologicalProcess) is gone.
+    edges = (
+        pl.scan_csv(edges_f, separator="\t", infer_schema_length=0)
+        .select(["subject", "predicate", "object", "primary_knowledge_source", "negated"])
+        .filter(pl.col("negated").is_null() | (pl.col("negated").str.to_lowercase() != "true"))
+        .filter(~pl.col("predicate").str.replace("^biolink:", "").is_in(list(_MONARCH_DROP_PRED)))
+        .join(ids.lazy(), left_on="subject", right_on="id", how="semi")
+        .join(ids.lazy(), left_on="object", right_on="id", how="semi")
+        .collect(streaming=True))
+    _G["edges"] = edges.select([
+        pl.col("subject").alias(EDGE_SUBJ),
+        pl.col("predicate").str.replace("^biolink:", "").alias(EDGE_PRED),
+        pl.col("object").alias(EDGE_OBJ),
+        pl.col("primary_knowledge_source").str.replace("^infores:", "")
+          .fill_null("monarch").alias(EDGE_SRC)])
+    _reset()
+
+
+def _hgnc_to_entrez() -> dict:
+    """HGNC-id -> Entrez-id, from the cached HGNC complete set (gene_norm's download).
+    Lets Monarch's HGNC gene ids align with Hetionet's Entrez gene ids."""
+    import gene_norm
+    gene_norm._load_alias_map()                      # ensure the file is cached
+    out = {}
+    with gene_norm.CACHE.open(encoding="utf-8") as f:
+        col = {n: i for i, n in enumerate(f.readline().rstrip("\n").split("\t"))}
+        ih, ie = col.get("hgnc_id"), col.get("entrez_id")
+        if ih is None or ie is None:
+            return out
+        for line in f:
+            p = line.rstrip("\n").split("\t")
+            if len(p) > max(ih, ie) and p[ih].strip() and p[ie].strip():
+                out[p[ih].strip()] = p[ie].strip()
+    return out
+
+
+def _doid_to_mondo() -> dict:
+    """DOID -> MONDO id, parsed from Monarch's node xref column (no extra download).
+    Lets Hetionet's DOID diseases align onto Monarch's MONDO diseases."""
+    f = DATA_DIR / "monarch-kg_nodes.tsv"
+    if not f.exists():
+        load_monarch()                                # triggers download/extract
+    df = (pl.read_csv(f, separator="\t", infer_schema_length=0, columns=["id", "xref"])
+          .filter(pl.col("id").str.starts_with("MONDO:") & pl.col("xref").is_not_null()))
+    out = {}
+    for mid, xref in zip(df["id"].to_list(), df["xref"].to_list()):
+        for d in re.findall(r"DOID:\d+", xref or ""):
+            out.setdefault(d, mid)                     # first MONDO wins a DOID
+    return out
+
+
+def _drugbank_to_chebi() -> dict:
+    """DrugBank-id -> CHEBI id, parsed from Monarch's CHEBI node xref column (no extra
+    download). Lets Hetionet's DrugBank compounds align onto Monarch's CHEBI chemicals,
+    carrying Hetionet's rich drug edges (treats/binds/regulates) into the merge."""
+    f = DATA_DIR / "monarch-kg_nodes.tsv"
+    if not f.exists():
+        load_monarch()
+    df = (pl.read_csv(f, separator="\t", infer_schema_length=0, columns=["id", "xref"])
+          .filter(pl.col("id").str.starts_with("CHEBI:") & pl.col("xref").is_not_null()))
+    out = {}
+    for cid, xref in zip(df["id"].to_list(), df["xref"].to_list()):
+        for db in re.findall(r"drugbank:(DB\d+)", xref or "", re.I):
+            out.setdefault(db, cid)                    # first CHEBI wins a DrugBank id
+    return out
+
+
+def _apply_id_map(df: "pl.DataFrame", cols: list, mapping: dict) -> "pl.DataFrame":
+    """Rewrite id columns through a {old_id -> new_id} map (unmapped ids unchanged)."""
+    mdf = pl.DataFrame({"_old": list(mapping.keys()), "_new": list(mapping.values())})
+    for c in cols:
+        df = (df.join(mdf, left_on=c, right_on="_old", how="left")
+                .with_columns(pl.coalesce(["_new", c]).alias(c)).drop("_new"))
+    return df
+
+
+def load_combined() -> None:
+    """Merge Hetionet + Monarch into one graph by harmonizing shared entities —
+    genes to Entrez, diseases to MONDO — so a disease inherits BOTH Hetionet's
+    GWAS-style gene associations AND Monarch's phenotype/PPI edges. A local, honest
+    slice of what PrimeKG does (multi-source integration onto common vocabularies).
+
+    Node types that don't share a vocabulary across the two (Hetionet DrugBank
+    compounds vs Monarch CHEBI chemicals; Hetionet MeSH symptoms vs Monarch HPO) are
+    kept source-prefixed and simply don't cross-link — they still contribute edges.
+    """
+    load_hetionet(); h_nodes, h_edges = _G["nodes"], _G["edges"]
+    load_monarch();  m_nodes, m_edges = _G["nodes"], _G["edges"]
+
+    hgnc, doid2mondo = _hgnc_to_entrez(), _doid_to_mondo()
+    drugbank2chebi = _drugbank_to_chebi()
+
+    # Hetionet ids -> canonical: Gene:<entrez> -> NCBIGene:<entrez>; Disease:DOID:x ->
+    # MONDO; Compound:DB<x> -> CHEBI (so Hetionet's drug edges join Monarch's chemicals).
+    h_map = {}
+    for nid in h_nodes[NODE_ID].to_list():
+        if nid.startswith("Gene:"):
+            h_map[nid] = "NCBIGene:" + nid[5:]
+        elif nid.startswith("Disease:"):
+            h_map[nid] = doid2mondo.get(nid[len("Disease:"):], nid)
+        elif nid.startswith("Compound:") and nid[len("Compound:"):] in drugbank2chebi:
+            h_map[nid] = drugbank2chebi[nid[len("Compound:"):]]
+    # Monarch ids -> canonical: HGNC:x -> NCBIGene:<entrez> (MONDO/HP/CHEBI stay)
+    m_map = {}
+    for nid in m_nodes[NODE_ID].to_list():
+        if nid.startswith("HGNC:") and nid in hgnc:
+            m_map[nid] = "NCBIGene:" + hgnc[nid]
+
+    h_nodes = _apply_id_map(h_nodes, [NODE_ID], h_map)
+    m_nodes = _apply_id_map(m_nodes, [NODE_ID], m_map)
+    h_edges = _apply_id_map(h_edges, [EDGE_SUBJ, EDGE_OBJ], h_map)
+    m_edges = _apply_id_map(m_edges, [EDGE_SUBJ, EDGE_OBJ], m_map)
+
+    # Hetionet first: genes keep Hetionet's symbol names; Monarch-only nodes (MONDO
+    # diseases, HPO phenotypes) fill in the rest.
+    _G["nodes"] = pl.concat([h_nodes, m_nodes]).unique(subset=[NODE_ID], keep="first")
+    _G["edges"] = pl.concat([h_edges, m_edges])
+    _reset()
+
+
+_BACKENDS = {"demo": load_demo, "hetionet": load_hetionet, "monarch": load_monarch,
+             "combined": load_combined, "optimuskg": load_optimuskg}
 
 
 def _graph() -> tuple:
@@ -170,17 +351,38 @@ def _index() -> dict:
     return _ADJ
 
 
+# When a name collides across categories (e.g. 'Alzheimer disease' exists as both a
+# Disease and an HPO PhenotypicFeature), prefer the entity type that matters for
+# mechanism hypotheses. Lower rank = preferred.
+_CAT_RANK = {"disease": 0, "gene": 1, "drug": 1, "compound": 1, "protein": 2,
+             "chemicalentity": 2, "pathway": 3, "anatomy": 4,
+             "phenotypicfeature": 5, "phenotype": 5, "symptom": 5}
+
+
+def _rank(cat: str) -> int:
+    return _CAT_RANK.get(cat.lower().replace("biolink:", ""), 3)
+
+
+def _best(cands: list) -> str | None:
+    """Pick the best candidate id by (category preference, then shortest name)."""
+    meta = _meta()
+    return min(cands, key=lambda nid: (_rank(meta[nid][1]), len(meta[nid][0]))) if cands else None
+
+
 def _resolve(name: str) -> str | None:
-    """Map free-text to a node id (exact id, exact name, then substring)."""
+    """Map free-text to a node id (exact id, exact name, then substring).
+
+    On collisions, prefer the more hypothesis-relevant type (Disease/Gene over
+    Phenotype) so 'Alzheimer disease' resolves to the disease, not the HPO term."""
     meta = _meta()
     if name in meta:
         return name
     low = name.lower()
     exact = [nid for nid, (nm, _) in meta.items() if nm.lower() == low]
     if exact:
-        return exact[0]
+        return _best(exact)
     sub = [nid for nid, (nm, _) in meta.items() if low in nm.lower()]
-    return sub[0] if sub else None
+    return _best(sub)
 
 
 def _label(node_id: str) -> str:
@@ -341,7 +543,8 @@ def find_paths(entity_a: str, entity_c: str, max_len: int = 3) -> str:
 
 # Sources whose edges are low-trust corroboration (mere co-occurrence / text-mined
 # / computational). A path leaning on these is only "weakly grounded".
-_LOW_TRUST = ("cooccurrence", "co-occurrence", "text", "predicted", "stargeo", "lincs")
+_LOW_TRUST = ("cooccurrence", "co-occurrence", "text", "predicted", "stargeo",
+              "lincs", "string")   # STRING PPIs include predicted/text-mined links
 
 
 def _trustworthy(source: str) -> bool:

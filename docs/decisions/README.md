@@ -28,3 +28,5 @@ New substantive changes should add an ADR alongside their PR.
 | [0014](0014-llm-adapter.md) | LLM provider adapter (Ollama ↔ Claude swappable) | 2026-08-13 | Accepted | #19 |
 | [0015](0015-novelty-and-hybrid-generation.md) | Novelty flag + hybrid (KG-constrained) generation | 2026-08-13 | Accepted | #21 |
 | [0016](0016-refinement-loop.md) | Refinement loop: novelty-filtered curate+critic triage | 2026-08-13 | Accepted | #22 |
+| [0017](0017-monarch-kg-backend.md) | Monarch KG backend (larger, named, phenotype-rich) | 2026-08-13 | Accepted | #23 |
+| [0018](0018-combined-kg.md) | Combined KG (Hetionet + Monarch) — local PrimeKG slice | 2026-08-13 | Accepted | #23 |
