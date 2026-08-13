@@ -36,6 +36,7 @@ reported hit count, so this is cheap.
 """
 
 import json
+import time
 import urllib.parse
 import urllib.request
 
@@ -49,15 +50,22 @@ ESTABLISHED_N = 50
 BRIDGE_KNOWN_N = 10
 
 
-def _pubmed_count(term: str) -> int:
-    """Number of PubMed records matching `term` (retmax=0 -> just the count)."""
+def _pubmed_count(term: str, retries: int = 2) -> int:
+    """Number of PubMed records matching `term` (retmax=0 -> just the count).
+
+    Retries with backoff: without an API key NCBI rate-limits to ~3 req/sec, so
+    rapid successive counts get throttled — a retry clears the transient error and
+    keeps a real 0 distinct from a query failure (-1)."""
     url = f"{EUTILS}/esearch.fcgi?" + urllib.parse.urlencode(
         {"db": "pubmed", "term": term, "retmax": 0, "retmode": "json"})
-    try:
-        with urllib.request.urlopen(url, timeout=30) as r:
-            return int(json.load(r)["esearchresult"]["count"])
-    except Exception:
-        return -1        # signal "could not query" rather than a false zero
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as r:
+                return int(json.load(r)["esearchresult"]["count"])
+        except Exception:
+            if attempt < retries:
+                time.sleep(0.4 * (attempt + 1))
+    return -1        # signal "could not query" rather than a false zero
 
 
 def _q(s: str) -> str:
@@ -66,32 +74,29 @@ def _q(s: str) -> str:
     return f'"{s}"' if " " in s else s
 
 
-def check_novelty(entity_a: str, entity_c: str, via: str = "") -> str:
-    """Classify how NOVEL a hypothesized A–C link (optionally through bridge `via`)
-    is against the published literature. Distinguishes rediscovery from a genuinely
-    new juxtaposition — the thing the KG cannot tell you on its own, because every
-    KG edge is already published.
+def classify(entity_a: str, entity_c: str, via: str = "") -> dict:
+    """Structured novelty classification (the machine-readable core of check_novelty).
 
-    `via` is the intermediate (e.g. a shared gene) the KG used to connect A and C.
+    Returns {status, n_pair, n_bridge, note}. n_bridge is None when no bridge given;
+    n_pair/n_bridge are -1 if PubMed could not be queried. Used by the refine loop so
+    it can route on `status` without parsing prose.
     """
-    pair_term = f"{_q(entity_a)} AND {_q(entity_c)}"
-    n_pair = _pubmed_count(pair_term)
+    n_pair = _pubmed_count(f"{_q(entity_a)} AND {_q(entity_c)}")
     if n_pair < 0:
-        return f"Could not query PubMed for novelty of {entity_a} <-> {entity_c}."
-
-    lines = [f"Novelty check: {entity_a} <-> {entity_c}"
-             + (f"  (bridge: {via})" if via else ""),
-             f"  co-mentions of the PAIR in PubMed: {n_pair}"]
+        return {"status": "unknown", "n_pair": -1, "n_bridge": None,
+                "note": "PubMed could not be queried."}
 
     n_bridge = None
     if via:
-        bridge_term = f"{pair_term} AND {_q(via)}"
-        n_bridge = _pubmed_count(bridge_term)
-        lines.append(f"  co-mentions of the A–bridge–C TRIPLE ({via}): {n_bridge}")
+        n_bridge = _pubmed_count(f"{_q(entity_a)} AND {_q(entity_c)} AND {_q(via)}")
+        if n_bridge < 0:      # query FAILED — a hiccup, not a real zero. Don't fake novelty.
+            return {"status": "unknown_bridge", "n_pair": n_pair, "n_bridge": -1,
+                    "note": (f"the PubMed triple query for the {via} bridge failed — "
+                             "cannot judge novelty from counts; verify directly.")}
 
-    # Classify. When a bridge is given, judge the SPECIFIC mechanism on the triple —
-    # a heavily-studied pair can still hide an unpublished gene-mediated link. The
-    # pair count is context (is the comorbidity itself known?), not the verdict.
+    # When a bridge is given, judge the SPECIFIC mechanism on the triple — a
+    # heavily-studied pair can still hide an unpublished gene-mediated link. The pair
+    # count is context (is the comorbidity itself known?), not the verdict.
     pair_ctx = "known comorbidity" if n_pair >= ESTABLISHED_N else \
                "lightly co-studied" if n_pair > 0 else "not co-studied"
     if via:
@@ -129,6 +134,24 @@ def check_novelty(entity_a: str, entity_c: str, via: str = "") -> str:
             status = "novel_juxtaposition"
             note = ("the pair does not appear in PubMed — a CANDIDATE new link. "
                     "Novel != correct: calibrate and verify the mechanism first.")
+    return {"status": status, "n_pair": n_pair, "n_bridge": n_bridge, "note": note}
 
-    lines.append(f"  -> {status}: {note}")
+
+def check_novelty(entity_a: str, entity_c: str, via: str = "") -> str:
+    """Classify how NOVEL a hypothesized A–C link (optionally through bridge `via`)
+    is against the published literature. Distinguishes rediscovery from a genuinely
+    new juxtaposition — the thing the KG cannot tell you on its own, because every
+    KG edge is already published.
+
+    `via` is the intermediate (e.g. a shared gene) the KG used to connect A and C.
+    """
+    r = classify(entity_a, entity_c, via)
+    if r["n_pair"] < 0:
+        return f"Could not query PubMed for novelty of {entity_a} <-> {entity_c}."
+    lines = [f"Novelty check: {entity_a} <-> {entity_c}"
+             + (f"  (bridge: {via})" if via else ""),
+             f"  co-mentions of the PAIR in PubMed: {r['n_pair']}"]
+    if via:
+        lines.append(f"  co-mentions of the A–bridge–C TRIPLE ({via}): {r['n_bridge']}")
+    lines.append(f"  -> {r['status']}: {r['note']}")
     return "\n".join(lines)

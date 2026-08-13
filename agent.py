@@ -325,6 +325,72 @@ def generate_hypothesis(entity_a: str, entity_c: str, max_len: int = 3) -> str:
     return "\n".join(out)
 
 
+def refine_hypothesis(entity_a: str, entity_c: str, max_bridges: int = 4,
+                      max_papers: int = 2) -> str:
+    """THE LOOP: for each bridge the KG surfaces between A and C, triage whether the
+    link is 'already known' — cheaply by novelty, then (for the un-known ones)
+    expensively by a targeted literature search + critic pass.
+
+    Cascade: novelty (a PubMed count) decides WHICH bridges deserve the costly
+    curate+critic verification; the critic decides whether an unpublished bridge is a
+    real new lead or a spurious graph artifact. Verified links are written to the
+    curated KG, so next round they count as known — the loop closes.
+
+    EXPENSIVE: up to max_bridges * max_papers PubMed fetches + LLM extractions, plus a
+    critic call per curated record. Keep the caps small.
+    """
+    a, c, paths, _ = kg.enumerate_paths(entity_a, entity_c)
+    if a is None or c is None:
+        missing = entity_a if a is None else entity_c
+        return f"'{missing}' not found in the knowledge graph."
+    if not paths:
+        return f"No KG path connects {kg._label(a)} and {kg._label(c)} — nothing to refine."
+    a_name = kg._meta().get(a, (entity_a, ""))[0]
+    c_name = kg._meta().get(c, (entity_c, ""))[0]
+
+    # Bridges: distinct internal nodes, shortest paths first.
+    bridges = {}
+    for p in paths:
+        for mid in ([p[0][0]] + [e[4] for e in p])[1:-1]:
+            bridges.setdefault(mid, kg._meta().get(mid, (mid, ""))[0])
+    bridges = dict(list(bridges.items())[:max_bridges])
+
+    rows = []
+    for bname in bridges.values():
+        nov = novelty.classify(a_name, c_name, via=bname)
+        if nov["status"] == "bridge_published":       # cheap filter says: already known
+            rows.append((bname, nov["status"], nov["n_bridge"], 0, 0, "known — rediscovery"))
+            continue
+        # Un-known bridge: run the expensive verification (targeted lit search + critic).
+        before = {kg_writer._rec_key(r) for r in kg_writer._load()}
+        curate_literature(f"{a_name} {bname} {c_name}", max_papers=max_papers)
+        new = [r for r in kg_writer._load() if kg_writer._rec_key(r) not in before]
+        rel = [r for r in new if bname.lower() in r["subject"].lower()
+               or bname.lower() in r["object"].lower()]
+        accepted = sum(1 for r in rel
+                       if (v := critic.criticize(r)).get("verdict") == "accept"
+                       and v.get("source_supported"))
+        label = ("supported — real link (verify)" if accepted > 0 else
+                 "unsupported — likely spurious" if rel else
+                 "no evidence found — speculative")
+        rows.append((bname, nov["status"], nov["n_bridge"], len(rel), accepted, label))
+
+    # Order: known first, then supported, then spurious/speculative.
+    order = {"known — rediscovery": 0, "supported — real link (verify)": 1,
+             "unsupported — likely spurious": 2, "no evidence found — speculative": 3}
+    rows.sort(key=lambda r: order.get(r[5], 9))
+
+    out = [f"Refinement loop: {a_name} <-> {c_name}  ({len(bridges)} bridge(s) triaged)",
+           f"{'BRIDGE':<16} {'NOVELTY':<18} {'TRIPLE':>6} {'CUR':>4} {'OK':>3}  VERDICT"]
+    for bname, status, ntriple, ncur, nok, label in rows:
+        out.append(f"{str(bname)[:16]:<16} {status:<18} {str(ntriple):>6} "
+                   f"{ncur:>4} {nok:>3}  {label}")
+    out += ["", "known=already published; supported=lit+critic confirmed real "
+            "evidence; spurious=novelty-flagged but unverifiable. Verified links were "
+            "written to the curated KG (they count as known next round)."]
+    return "\n".join(out)
+
+
 # --------------------------------------------------------------------------- #
 # Tool declarations — what the MODEL sees.                                     #
 # --------------------------------------------------------------------------- #
@@ -457,6 +523,28 @@ TOOLS = [
                 "instead of find_paths when you want a reasoned mechanism, not just "
                 "a path list. Output is annotated with KG grounding + literature "
                 "novelty."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "entity_a": {"type": "string"},
+                    "entity_c": {"type": "string"},
+                },
+                "required": ["entity_a", "entity_c"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "refine_hypothesis",
+            "description": (
+                "Run THE REFINEMENT LOOP over the bridges linking two entities: "
+                "triage each shared intermediate as already-known (novelty), then "
+                "for the un-known ones run a targeted literature search + critic "
+                "pass to decide real-new-lead vs spurious. Returns a triage table "
+                "and writes verified links to the curated KG. Expensive — use when "
+                "you want to separate rediscovery from genuine candidates."
             ),
             "parameters": {
                 "type": "object",
@@ -621,6 +709,7 @@ DISPATCH = {
     "query_graph": kg.query_graph,
     "find_paths": kg.find_paths,
     "generate_hypothesis": generate_hypothesis,
+    "refine_hypothesis": refine_hypothesis,
     "check_novelty": novelty.check_novelty,
     "assess_hypothesis": hyp.assess_hypothesis,
     "propose_experiment": hyp.propose_experiment,

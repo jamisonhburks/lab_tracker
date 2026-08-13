@@ -27,3 +27,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0013](0013-critic-agent.md) | Critic agent + test-driven evaluation | 2026-08-13 | Accepted | #17, #18 |
 | [0014](0014-llm-adapter.md) | LLM provider adapter (Ollama ↔ Claude swappable) | 2026-08-13 | Accepted | #19 |
 | [0015](0015-novelty-and-hybrid-generation.md) | Novelty flag + hybrid (KG-constrained) generation | 2026-08-13 | Accepted | #21 |
+| [0016](0016-refinement-loop.md) | Refinement loop: novelty-filtered curate+critic triage | 2026-08-13 | Accepted | #22 |
