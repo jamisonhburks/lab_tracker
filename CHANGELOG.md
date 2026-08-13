@@ -4,6 +4,15 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-13
+- **Tool ledger (intended vs actual, across the loop)** — `tool_ledger.py`: (1) every
+  orchestrator run declares the tools it EXPECTS to need (pre-flight plan) and records the
+  ones it ACTUALLY calls in order → intended→actual→diff trace; (2) the specialist records
+  its skill-call trace; (3) each experiment's `run.py` records its actual SCIENTIFIC ops
+  (data gen/fetch, per-gene tests, `multipletests`, effect sizes, plotting) →
+  `experiments/{id}/tool_ledger.json`. Verified: orchestrator run-11 (planned 4/used 3;
+  ledger caught the 14B over-planning 11→3, fixed via a selectivity nudge); H001 emitted
+  its 17-step scientific trace. Only the pipeline subagents' harness tools (Write/Bash)
+  remain out of scope (harness telemetry) (PR #27 · ADR-0021).
 - **Closed the scientific loop** — orchestrated `hypothesis-planner → code-implementer
   → experiment-runner → results-evaluator` (separation of concerns) to take a KG-
   generated hypothesis through formalize → implement → run → evaluate. Demo H001 (T2D↔AD

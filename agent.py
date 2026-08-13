@@ -35,6 +35,7 @@ import confidence
 import critic
 import novelty
 import specialist
+import tool_ledger
 
 MAX_STEPS = 10      # safety cap so a misbehaving loop can't run forever
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
@@ -764,6 +765,45 @@ CONSOLIDATION_SCHEMA = {
 }
 
 
+# Pre-flight tool plan: the agent declares which tools it EXPECTS to need, before
+# acting — captured in the tool ledger and diffed against what it actually uses.
+TOOL_PLAN_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "intended": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"tool": {"type": "string"}, "why": {"type": "string"}},
+                "required": ["tool"],
+            },
+        },
+    },
+    "required": ["intended"],
+}
+
+
+def _plan_tools(question: str) -> list:
+    """Ask the model which tools it expects to need (intended plan), in anticipated
+    order. Best-effort — a failed/empty plan never blocks the run."""
+    names = {t["function"]["name"] for t in TOOLS}
+    catalog = "\n".join(f"- {t['function']['name']}: {t['function']['description'][:90]}"
+                        for t in TOOLS)
+    prompt = (
+        f"Task: {question}\n\nYour available tools:\n{catalog}\n\n"
+        "Before acting, PLAN: list ONLY the few tools you are genuinely confident you "
+        "will call for THIS task, in the order you anticipate calling them, each with a "
+        "one-line reason. Be selective — a focused plan of 1–5 tools is expected; do NOT "
+        "list tools you merely might use."
+    )
+    try:
+        resp = llm.chat([{"role": "user", "content": prompt}], schema=TOOL_PLAN_SCHEMA)
+        return [it for it in json.loads(resp.text).get("intended", [])
+                if it.get("tool") in names]
+    except Exception:
+        return []
+
+
 # --------------------------------------------------------------------------- #
 # The agent loop.                                                             #
 # --------------------------------------------------------------------------- #
@@ -772,6 +812,11 @@ def run_agent(question: str) -> None:
     messages = [{"role": "user", "content": question}]
     tool_log = []
     seen = set()   # provenance actually observed this run (PMID:… / file:…)
+
+    ledger = tool_ledger.ToolLedger(task=question)      # intended-vs-actual tool trace
+    ledger.plan(_plan_tools(question))
+    if ledger.intended:
+        print("[planned tools: " + ", ".join(i["tool"] for i in ledger.intended) + "]")
 
     for _ in range(MAX_STEPS):
         resp = llm.chat(messages, tools=TOOLS)
@@ -791,6 +836,7 @@ def run_agent(question: str) -> None:
             output = DISPATCH[name](**args)
 
             tool_log.append({"name": name, "args": args})
+            ledger.record(name, args, layer="orchestrator")   # actual, in order
             # Any tool output can carry provenance — a fresh PubMed hit, or a PMID
             # recalled from memory — so scan them all and let grounding carry forward.
             seen.update(f"PMID:{m}" for m in re.findall(r"PMID:\s*(\d+)", output))
@@ -813,6 +859,10 @@ def run_agent(question: str) -> None:
     n_src = sum(len(f["sources"]) for f in findings)
     print(f"\n[episodic memory: saved {entry['id']} — "
           f"{len(findings)} claim(s), {n_src} source link(s)]")
+
+    ledger.run_id = entry["id"]           # tie the tool trace to this run
+    ledger.save()
+    print(ledger.summary())
 
     # Hybrid grounding summary. Uncorroborated != false — the KG is incomplete, so
     # a claim with no trustworthy path may be genuinely novel and worth verifying.
