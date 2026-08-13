@@ -354,6 +354,26 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "calibrate_link",
+            "description": (
+                "CALIBRATE a hypothesized link against a degree-preserving null: is "
+                "this pair's connection stronger than random pairs of the same "
+                "degree? Returns a percentile / p-value. Use to check whether a high "
+                "realism score is real signal or just graph-density/hub inflation."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "entity_a": {"type": "string"},
+                    "entity_c": {"type": "string"},
+                },
+                "required": ["entity_a", "entity_c"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "curate_literature",
             "description": (
                 "SYNTHESIZE + CURATE: search PubMed for a topic, extract the stated "
@@ -401,6 +421,7 @@ DISPATCH = {
     "find_paths": kg.find_paths,
     "assess_hypothesis": hyp.assess_hypothesis,
     "propose_experiment": hyp.propose_experiment,
+    "calibrate_link": hyp.calibrate_link,
     "curate_literature": curate_literature,
     "query_curated_kg": query_curated_kg,
 }
