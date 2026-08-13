@@ -212,18 +212,30 @@ def _norm_index() -> dict:
 def normalize_entity(name: str) -> dict | None:
     """Resolve a free-text entity to a canonical node {id, name, category}, or None.
 
-    Uses lexical matching by default; set ENTITY_NORM=semantic to route to the
-    biomedical embedding normalizer (entity_norm.py), which catches synonyms the
-    string matcher misses. None means "no confident match in this KG" — NOT
-    "invalid" (closed-world). Callers keep the raw string, they don't drop it.
+    TYPE-AWARE cascade: each entity class gets the tool that's actually good at it.
+      1. GENES  -> curated HGNC alias table (gene_norm): 'IL8' -> CXCL8 exactly.
+      2. REST   -> semantic embeddings (entity_norm, if ENTITY_NORM=semantic) for
+                   disease/clinical synonyms ('heart attack' -> MI), else lexical.
+    None means "no confident match in this KG" — NOT "invalid" (closed-world);
+    callers keep the raw string, they don't drop it. Each step degrades gracefully.
     """
-    if os.environ.get("ENTITY_NORM", "lexical").lower() == "semantic":
+    try:                                          # 1. gene dictionary (best for symbols)
+        import gene_norm
+        g = gene_norm.normalize_gene(name)
+        if g is not None:
+            return g
+    except Exception as err:
+        print(f"[gene_norm unavailable: {err}; skipping gene step]")
+
+    if os.environ.get("ENTITY_NORM", "lexical").lower() == "semantic":  # 2a. semantic
         try:
             import entity_norm
-            return entity_norm.normalize(name)
-        except Exception as err:          # missing model/dep -> fall back to lexical
+            hit = entity_norm.normalize(name)
+            if hit is not None:
+                return hit
+        except Exception as err:
             print(f"[entity_norm semantic unavailable: {err}; using lexical]")
-    return _normalize_lexical(name)
+    return _normalize_lexical(name)               # 2b. lexical fallback
 
 
 def _normalize_lexical(name: str) -> dict | None:
