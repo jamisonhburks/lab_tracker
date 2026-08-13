@@ -49,6 +49,7 @@ PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils.log_run_metadata import log_run_metadata
+import tool_ledger
 
 
 # ---------------------------------------------------------------------------
@@ -437,6 +438,11 @@ def main() -> None:
     all_tested_genes = gene_panel + null_gene_names
 
     n_total_genes = len(all_tested_genes)
+
+    # Experiment tool ledger: record the scientific/statistical operations this
+    # experiment actually performs, in order -> experiments/H001/tool_ledger.json.
+    led = tool_ledger.ToolLedger(task="H001 differential-expression experiment",
+                                 run_id="H001", experiment_id="H001")
     logger.info(f"Panel genes: {len(gene_panel)} | Null genes: {n_control_genes} "
                 f"| Total tested: {n_total_genes}")
     logger.info(f"Planted-effect genes: {list(planted_effects.keys())}")
@@ -463,6 +469,8 @@ def main() -> None:
         rng=rng_canonical,
     )
     canonical_df.to_csv(data_out, index=False)
+    led.record("generate_synthetic_expression",
+               {"seed": seeds[0], "canonical": True, "n_genes": n_total_genes}, "experiment")
     logger.info(f"Synthetic dataset saved to: {data_out} "
                 f"(shape: {canonical_df.shape})")
     logger.info("NOTE: SYNTHETIC_DATA column = True for all rows. "
@@ -494,12 +502,18 @@ def main() -> None:
                                   "SYNTHETIC_DATA", "KNOWN_GROUND_TRUTH")]
 
         logger.info(f"  Running Welch t-tests on {len(gene_cols)} genes ...")
+        led.record("generate_synthetic_expression", {"seed": seed, "n_genes": len(gene_cols)}, "experiment")
         results = run_differential_expression(
             expr_df=expr_df,
             gene_columns=gene_cols,
             planted_effects=planted_effects,
             alpha=alpha,
         )
+        # the scientific ops run_differential_expression performs, in order:
+        led.record("scipy.stats.ttest_ind", {"variant": "welch", "genes": len(gene_cols), "seed": seed}, "experiment")
+        led.record("cohens_d", {"genes": len(gene_cols), "seed": seed}, "experiment")
+        led.record("statsmodels.multipletests", {"method": "bonferroni", "seed": seed}, "experiment")
+        led.record("statsmodels.multipletests", {"method": "fdr_bh", "seed": seed}, "experiment")
 
         results["seed"] = seed
         n_sig_bh   = results["significant_bh"].sum()
@@ -536,7 +550,10 @@ def main() -> None:
         effect_threshold=effect_thresh,
         alpha=alpha,
     )
+    led.record("matplotlib.savefig", {"artifact": "volcano", "formats": ["png", "pdf"]}, "experiment")
+    ledger_path = led.save(PROJECT_ROOT / "experiments" / "H001" / "tool_ledger.json")
     logger.info(f"Figures saved to: {figures_dir}/volcano.{{png,pdf}}")
+    logger.info(f"Tool ledger (scientific ops) saved to: {ledger_path}")
 
     # -----------------------------------------------------------------------
     # 7. Per-gene stability summary (printed only — no interpretation)

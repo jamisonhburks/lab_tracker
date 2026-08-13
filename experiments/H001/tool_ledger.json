@@ -1,0 +1,215 @@
+{
+  "run_id": "H001",
+  "experiment_id": "H001",
+  "task": "H001 differential-expression experiment",
+  "intended": [],
+  "actual": [
+    {
+      "seq": 1,
+      "tool": "generate_synthetic_expression",
+      "layer": "experiment",
+      "args": {
+        "seed": 42,
+        "canonical": true,
+        "n_genes": 50
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 2,
+      "tool": "generate_synthetic_expression",
+      "layer": "experiment",
+      "args": {
+        "seed": 42,
+        "n_genes": 50
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 3,
+      "tool": "scipy.stats.ttest_ind",
+      "layer": "experiment",
+      "args": {
+        "variant": "welch",
+        "genes": 50,
+        "seed": 42
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 4,
+      "tool": "cohens_d",
+      "layer": "experiment",
+      "args": {
+        "genes": 50,
+        "seed": 42
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 5,
+      "tool": "statsmodels.multipletests",
+      "layer": "experiment",
+      "args": {
+        "method": "bonferroni",
+        "seed": 42
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 6,
+      "tool": "statsmodels.multipletests",
+      "layer": "experiment",
+      "args": {
+        "method": "fdr_bh",
+        "seed": 42
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 7,
+      "tool": "generate_synthetic_expression",
+      "layer": "experiment",
+      "args": {
+        "seed": 123,
+        "n_genes": 50
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 8,
+      "tool": "scipy.stats.ttest_ind",
+      "layer": "experiment",
+      "args": {
+        "variant": "welch",
+        "genes": 50,
+        "seed": 123
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 9,
+      "tool": "cohens_d",
+      "layer": "experiment",
+      "args": {
+        "genes": 50,
+        "seed": 123
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 10,
+      "tool": "statsmodels.multipletests",
+      "layer": "experiment",
+      "args": {
+        "method": "bonferroni",
+        "seed": 123
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 11,
+      "tool": "statsmodels.multipletests",
+      "layer": "experiment",
+      "args": {
+        "method": "fdr_bh",
+        "seed": 123
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 12,
+      "tool": "generate_synthetic_expression",
+      "layer": "experiment",
+      "args": {
+        "seed": 7,
+        "n_genes": 50
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 13,
+      "tool": "scipy.stats.ttest_ind",
+      "layer": "experiment",
+      "args": {
+        "variant": "welch",
+        "genes": 50,
+        "seed": 7
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 14,
+      "tool": "cohens_d",
+      "layer": "experiment",
+      "args": {
+        "genes": 50,
+        "seed": 7
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 15,
+      "tool": "statsmodels.multipletests",
+      "layer": "experiment",
+      "args": {
+        "method": "bonferroni",
+        "seed": 7
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 16,
+      "tool": "statsmodels.multipletests",
+      "layer": "experiment",
+      "args": {
+        "method": "fdr_bh",
+        "seed": 7
+      },
+      "ts": "2026-08-13T21:28:50"
+    },
+    {
+      "seq": 17,
+      "tool": "matplotlib.savefig",
+      "layer": "experiment",
+      "args": {
+        "artifact": "volcano",
+        "formats": [
+          "png",
+          "pdf"
+        ]
+      },
+      "ts": "2026-08-13T21:28:51"
+    }
+  ],
+  "diff": {
+    "planned": [],
+    "used_in_order": [
+      "generate_synthetic_expression",
+      "generate_synthetic_expression",
+      "scipy.stats.ttest_ind",
+      "cohens_d",
+      "statsmodels.multipletests",
+      "statsmodels.multipletests",
+      "generate_synthetic_expression",
+      "scipy.stats.ttest_ind",
+      "cohens_d",
+      "statsmodels.multipletests",
+      "statsmodels.multipletests",
+      "generate_synthetic_expression",
+      "scipy.stats.ttest_ind",
+      "cohens_d",
+      "statsmodels.multipletests",
+      "statsmodels.multipletests",
+      "matplotlib.savefig"
+    ],
+    "planned_not_used": [],
+    "used_not_planned": [
+      "generate_synthetic_expression",
+      "scipy.stats.ttest_ind",
+      "cohens_d",
+      "statsmodels.multipletests",
+      "matplotlib.savefig"
+    ]
+  }
+}

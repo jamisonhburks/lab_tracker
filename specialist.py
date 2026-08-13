@@ -25,9 +25,11 @@ aggregate / synthetic inputs (the clinical skills are research-only by design).
 
 import os
 import subprocess
+from datetime import datetime
 from pathlib import Path
 
 import llm
+import tool_ledger
 
 _ROOT = Path(__file__).parent
 SKILLS_DIR = Path(os.environ.get(
@@ -156,6 +158,8 @@ def run_specialist(task: str, backend: str = "anthropic") -> str:
         return list_skills()          # helpful "clone the library" message
     messages = [{"role": "user", "content": f"{_SYSTEM}\n\nTASK:\n{task}"}]
     transcript = []
+    sled = tool_ledger.ToolLedger(     # the specialist's own skill-call trace
+        task=task, run_id="specialist-" + datetime.now().strftime("%Y%m%dT%H%M%S"))
     for _ in range(MAX_STEPS):
         try:
             resp = llm.chat(messages, tools=SPECIALIST_TOOLS, backend=backend)
@@ -170,7 +174,11 @@ def run_specialist(task: str, backend: str = "anthropic") -> str:
                          "tool_calls": [{"id": tc.id, "name": tc.name, "args": tc.args}
                                         for tc in resp.tool_calls]})
         for tc in resp.tool_calls:
+            sled.record(tc.name, tc.args, layer="specialist")   # actual skill calls, in order
             out = _DISPATCH[tc.name](**tc.args) if tc.name in _DISPATCH else f"unknown tool {tc.name}"
             messages.append({"role": "tool", "tool_call_id": tc.id, "name": tc.name,
                              "content": str(out)})
-    return transcript[-1] if transcript else "(specialist returned no summary)"
+    ledger_path = sled.save()          # persisted; orchestrator ledger shows run_specialist
+    summary = transcript[-1] if transcript else "(specialist returned no summary)"
+    trace = " → ".join(a["tool"] for a in sled.actual) or "(no tool calls)"
+    return f"{summary}\n\n[specialist tool trace: {trace}  (ledger: {ledger_path.name})]"
