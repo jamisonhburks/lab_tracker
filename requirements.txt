@@ -4,3 +4,6 @@ optimuskg>=1.0.0     # OptimusKG knowledge graph (pulls polars)
 
 # Optional — only for semantic entity normalization (ENTITY_NORM=semantic)
 sentence-transformers>=3.0   # BioLORD/SapBERT embeddings for entity linking
+
+# Optional — only for the Claude backend (LLM_BACKEND=anthropic)
+# anthropic>=0.40
