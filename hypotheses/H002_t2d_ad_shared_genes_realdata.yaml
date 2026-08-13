@@ -1,0 +1,62 @@
+id: H002
+title: "Differential expression of T2D–AD shared genes in REAL human brain tissue, with cross-dataset replication"
+question: "Are the T2D–AD knowledge-graph shared genes (especially the mechanistically central IDE, IAPP, INS, APOE, AKT1) differentially expressed between Alzheimer's cases and controls in real human brain tissue, after adjusting for covariates (age, sex, brain region, and PMI/RIN if available) and multiple testing, with replication across an independent dataset?"
+null_hypothesis: "H₀: After covariate adjustment and panel-restricted multiple-testing correction, none of the central T2D–AD shared genes (IDE, IAPP, INS, APOE, AKT1) is differentially expressed between AD cases and controls at BH-FDR < 0.05 in GSE5281, or any nominal signal fails to replicate in direction (same sign, p < 0.05) in GSE48350."
+alternative_hypothesis: "H₁: At least one central T2D–AD shared gene (especially IDE or APOE) is differentially expressed between AD cases and controls at BH-FDR < 0.05 in GSE5281 (diagnosis coefficient in the covariate-adjusted linear model) AND replicates in direction (same sign, nominal p < 0.05) in GSE48350, consistent with a shared insulin-resistance / brain-metabolism mechanism."
+data:
+  source: "data/external/GSE5281 (primary); data/external/GSE48350 (replication)"
+  type: "tabular"
+  notes: >
+    REAL public GEO microarray data, both on GPL570 (Affymetrix Human Genome U133 Plus 2.0).
+    Primary: GSE5281 (n≈161, AD vs normal aged brain, laser-captured neurons across 6 brain
+    regions). Replication: GSE48350 (n≈253, AD + normal aging, with age/sex/brain-region
+    metadata). Both are public and de-identified — fetched from GEO, so the data/raw local-only
+    constraint does not apply; store fetched/processed matrices under data/external/ (and cleaned
+    forms under data/processed/) rather than data/raw/. Same platform means probes/panel align
+    directly for replication. Analysis panel = the 20 T2D–AD KG-shared genes from H001 (IDE,
+    IAPP, INS, APOE, AKT1, LEP, PPARGC1A, SOD1, PON1, OGG1, NOS3, BCL2, CALM1, IGF2, CASP8, AR,
+    CTF1, ND1, AGER, and remaining panel members); central 5 = IDE, IAPP, INS, APOE, AKT1.
+    Expression assumed log-scaled/normalized per series (RMA-style); confirm and harmonize
+    per-series before modeling. min_runs is reinterpreted for real data (see below): "runs" are
+    NOT synthetic seeds but ≥3 robustness checks — (1) cross-dataset replication in GSE48350,
+    (2) per-brain-region consistency within GSE5281, (3) bootstrap CIs on effect sizes.
+method: >
+  Confirmatory, panel-restricted differential-expression analysis over the 20 T2D–AD KG-shared
+  genes, upgraded from H001's naive synthetic-data Welch t-test:
+  (1) Probe→gene mapping for GPL570; where a gene maps to multiple probesets, collapse to a
+  single per-gene value (pre-registered rule: max-variance probeset; mean as documented
+  fallback), applied identically in both datasets.
+  (2) Per-gene LINEAR MODEL (NOT a two-sample t-test) with covariates: expression ~ diagnosis
+  (AD vs control) + age + sex + brain region (+ PMI and RIN when available). Report the
+  diagnosis coefficient, its 95% CI, and a standardized effect size (e.g., partial Cohen's d /
+  standardized beta) for every panel gene.
+  (3) Two-sided tests per gene (per-gene direction largely unknown a priori).
+  (4) Multiple testing: PANEL-RESTRICTED and pre-registered (confirmatory over the 20 genes,
+  NOT genome-wide discovery). Apply BOTH Bonferroni and Benjamini-Hochberg FDR over the 20
+  panel p-values. Explicitly flag the KG-panel-selection caveat: this is a conditional/
+  confirmatory test of a KG-derived panel, so inference is valid only within the panel and does
+  not license genome-wide or causal claims.
+  (5) Replication: any gene significant at BH-FDR < 0.05 in GSE5281 must replicate in DIRECTION
+  (same sign of diagnosis coefficient) at nominal p < 0.05 in GSE48350.
+  (6) Batch handling: include brain region as a covariate; if the two datasets are pooled at any
+  stage, add a dataset/batch covariate or apply ComBat batch correction before modeling.
+success_metric: >
+  ≥1 of the central shared genes (especially IDE or APOE) is differentially expressed at
+  BH-FDR < 0.05 in GSE5281 (covariate-adjusted diagnosis coefficient) AND replicates in
+  direction (same sign, nominal p < 0.05) in GSE48350. Report standardized effect sizes with
+  95% CI and BOTH Bonferroni- and BH-corrected p-values for ALL 20 panel genes. Deliberately
+  NO hard |Cohen's d| floor: real brain-transcriptomic effects are frequently |d| < 0.3, so
+  effect magnitude is reported with its CI rather than gated by a threshold (this relaxes
+  H001's |d| ≥ 0.5 criterion, per the H001 evaluator's warning that it is too strict for real
+  transcriptomics).
+min_runs: 3
+pre_registration:
+  multiple_testing_scope: "Panel-restricted, confirmatory over exactly the 20 T2D–AD KG-shared genes; NOT genome-wide. Both Bonferroni and Benjamini-Hochberg applied over the 20 panel p-values."
+  test_directionality: "Two-sided per-gene tests (direction not fixed a priori)."
+  covariate_set: "diagnosis (AD vs control) + age + sex + brain region, plus PMI and RIN when available in the series metadata; dataset/batch covariate or ComBat if datasets are pooled."
+  probe_collapse_method: "GPL570 probe→gene mapping; collapse multiple probesets per gene by max-variance probeset (documented fallback: mean), applied identically across both datasets."
+  effect_size_reporting: "Report diagnosis coefficient, 95% CI, and standardized effect size for all 20 panel genes; no hard |d| floor imposed."
+  replication_rule: "A gene significant at BH-FDR < 0.05 in GSE5281 counts as replicated only if the diagnosis coefficient has the same sign and nominal p < 0.05 in GSE48350."
+  robustness_checks: "min_runs:3 reinterpreted as ≥3 robustness checks — cross-dataset replication (GSE48350), per-brain-region consistency within GSE5281, and bootstrap CIs on effect sizes."
+created: 2026-08-13
+status: "draft"
