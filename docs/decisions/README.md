@@ -34,3 +34,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0020](0020-closed-scientific-loop.md) | Close the scientific loop (generate → test → evaluate) | 2026-08-13 | Accepted | #25 |
 | [0021](0021-tool-ledger.md) | Per-run tool ledger (intended vs actual tool use) | 2026-08-13 | Accepted | #27 |
 | [0022](0022-provenance-view.md) | Unified per-experiment provenance view | 2026-08-13 | Accepted | #28 |
+| [0023](0023-scaling-profile.md) | Scaling profile — content per hypothesis, `scaling.py` | 2026-08-13 | Accepted | #29 |
