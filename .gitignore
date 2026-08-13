@@ -13,3 +13,7 @@ data/
 
 # External skill library (k-dense-ai/scientific-agent-skills, MIT) — cloned on demand
 external/
+
+# Experiment artifacts that are regenerable by re-running run.py (keep metrics.csv)
+experiments/*/results/figures/
+experiments/*/logs/

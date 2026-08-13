@@ -4,6 +4,15 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-13
+- **Closed the scientific loop** — orchestrated `hypothesis-planner → code-implementer
+  → experiment-runner → results-evaluator` (separation of concerns) to take a KG-
+  generated hypothesis through formalize → implement → run → evaluate. Demo H001 (T2D↔AD
+  shared genes) ran end-to-end on synthetic data with known ground truth: recovered 7/7
+  planted genes at BH-FDR<0.05 & |d|≥0.5 across 3 seeds, 1 expected FDR false positive
+  (Bonferroni rejected it). Validates the loop + stats machinery, not biology; evaluator
+  caught + we fixed a duplicate-logging bug. Adds `hypotheses/H001*.yaml`,
+  `experiments/H001/`, `src/utils/log_run_metadata.py`, `reports/H001_evaluation.md`
+  (PR #25 · ADR-0020).
 - **Claude specialist for scientific tool use** — `run_specialist(task)` delegates
   scientific computation to a Claude agent (`specialist.py`) that runs k-dense Agent
   Skills (`list_skills`/`read_skill`/`run_bash`). Skills are an external gitignored
