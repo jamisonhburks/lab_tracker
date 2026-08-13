@@ -1,34 +1,55 @@
 # toy-research-agent
 
-A minimal, fully-local research agent: a Qwen3-14B model (via Ollama) in a manual
-tool-calling loop. Built to make the agent pattern legible and to keep data on-device.
+A fully-local biomedical research agent: a Qwen3-14B model (via Ollama) in a manual
+tool-calling loop, grounded in layered memory and a knowledge graph. Built to keep
+data on-device and to make every claim provenance-carrying and verifiable.
+
+## What it does
 
 The loop is: call the model → if it requested a tool, run it and feed the result
-back → repeat until it stops. Two grounding tools:
+back → repeat. The model orchestrates ~11 tools across:
 
-- `search_pubmed` — PubMed abstracts via NCBI E-utilities (no API key). The
-  grounding step; swap/supplement with a KB/KG retriever (UMLS/MeSH, Hetionet,
-  SPOKE) for stronger biomedical grounding.
-- `read_file` — read a local file (e.g. a hypothesis YAML or literature note).
+- **Literature** — `search_pubmed`; `curate_literature` (scrape → per-paper
+  extraction → write structured associations to the agent's own KG).
+- **Memory** — episodic (what happened) + semantic (what's true), with hybrid
+  retrieval; `recall_past_runs`, `search_semantic`, `query_curated_kg`.
+- **Knowledge graph** — `query_graph`, `find_paths` (A→B→C discovery) over
+  Hetionet; typed entity normalization (HGNC genes + BioLORD diseases).
+- **Hypothesis** — `assess_hypothesis` (degree-weighted realism), `calibrate_link`
+  (permutation-null p-value), `propose_experiment` (data/methods/tests).
+
+Every finding is bound to its sources; a guardrail filters provenance to what was
+actually retrieved; KG grounding and power-weighted evidence feed a confidence
+score. Absence of KG/evidence support is treated as *novel/unverified*, never *false*.
 
 ## Setup
 
 ```sh
-# 1. Install Ollama (https://ollama.com/download), or: brew install ollama && ollama serve
-# 2. Pull the model + install the client
 ollama pull qwen3:14b
-pip install -r requirements.txt
+pip install -r requirements.txt        # sentence-transformers is optional (semantic norm)
+export KG_BACKEND=hetionet             # demo | hetionet | optimuskg (default demo)
+# optional: export ENTITY_NORM=semantic   # BioLORD disease-synonym normalization
 ```
 
 ## Run
 
 ```sh
-python agent.py "Search PubMed for ECG deep learning foundation models and summarize the main approaches."
+python agent.py "How are Crohn's disease and ulcerative colitis connected?"   # single-shot
+python agent.py                                                               # persistent REPL (KG stays warm)
 ```
+
+## Docs & audit trail
+
+- **[`docs/decisions/`](docs/decisions/)** — Architecture Decision Records: *why*
+  each choice was made, alternatives, and evidence. Start here.
+- **[`CHANGELOG.md`](CHANGELOG.md)** — reverse-chronological change summary.
+- **[`docs/agent-architecture.md`](docs/agent-architecture.md)** — the multi-agent
+  target design and build plan.
+- **[`docs/kg-schema-spec.md`](docs/kg-schema-spec.md)** — the reified-association
+  KG schema.
 
 ## Notes
 
-- First run loads ~9GB into memory; subsequent runs are fast (Metal/MPS GPU).
-- `think=False` in `agent.py` keeps responses snappy; set `True` for harder
-  "is this novel?" planning.
+- First run loads the model (~9GB) and the KG (~20s); the REPL pays this once.
+- Local by design (privacy for clinical data); bounded by compute, not token quota.
 - Expect well-grounded, verifiable hypotheses — not frontier-level creative leaps.
