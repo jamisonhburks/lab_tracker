@@ -90,4 +90,4 @@ pre_registration:
   power_check: "Report power to detect small bulk-brain effects (|d| ~ 0.2–0.4) given per-region n in GSE48350 after age-matching, so nulls are interpreted against achievable power."
   robustness_checks: "min_runs:3 reinterpreted as ≥3 robustness checks — within-GSE48350 per-brain-region consistency, cross-dataset direction replication (GSE122063 frontal cortex), and bootstrap CIs on effect sizes."
 created: 2026-08-13
-status: "draft"
+status: "approved"
