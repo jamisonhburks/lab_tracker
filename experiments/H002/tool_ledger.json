@@ -1,0 +1,188 @@
+{
+  "run_id": "H002",
+  "experiment_id": "H002",
+  "task": "H002 real-data differential-expression experiment",
+  "intended": [],
+  "actual": [
+    {
+      "seq": 1,
+      "tool": "GEOparse.get_GEO",
+      "layer": "experiment",
+      "args": {
+        "geo_id": "GSE48350",
+        "role": "primary"
+      },
+      "ts": "2026-08-13T21:47:23"
+    },
+    {
+      "seq": 2,
+      "tool": "collapse_probes_to_genes",
+      "layer": "experiment",
+      "args": {
+        "dataset": "GSE48350",
+        "method": "max_variance"
+      },
+      "ts": "2026-08-13T21:47:42"
+    },
+    {
+      "seq": 3,
+      "tool": "statsmodels.ols",
+      "layer": "experiment",
+      "args": {
+        "dataset": "GSE48350",
+        "formula": "diagnosis + age + sex_male + C(region)",
+        "genes": 19
+      },
+      "ts": "2026-08-13T21:47:42"
+    },
+    {
+      "seq": 4,
+      "tool": "statsmodels.multipletests",
+      "layer": "experiment",
+      "args": {
+        "dataset": "GSE48350",
+        "methods": [
+          "bonferroni",
+          "fdr_bh"
+        ]
+      },
+      "ts": "2026-08-13T21:47:42"
+    },
+    {
+      "seq": 5,
+      "tool": "bootstrap_effect_size_ci",
+      "layer": "experiment",
+      "args": {
+        "dataset": "GSE48350",
+        "n_iter": 1000
+      },
+      "ts": "2026-08-13T21:51:36"
+    },
+    {
+      "seq": 6,
+      "tool": "statsmodels.TTestIndPower",
+      "layer": "experiment",
+      "args": {
+        "n_per_group": 19,
+        "effect_sizes": [
+          0.2,
+          0.3,
+          0.4
+        ]
+      },
+      "ts": "2026-08-13T21:51:36"
+    },
+    {
+      "seq": 7,
+      "tool": "run_per_region_robustness",
+      "layer": "experiment",
+      "args": {
+        "dataset": "GSE48350",
+        "regions": [
+          "hippocampus",
+          "entorhinal cortex",
+          "superior frontal gyrus",
+          "post-central gyrus"
+        ]
+      },
+      "ts": "2026-08-13T21:51:37"
+    },
+    {
+      "seq": 8,
+      "tool": "GEOparse.get_GEO",
+      "layer": "experiment",
+      "args": {
+        "geo_id": "GSE122063",
+        "role": "replication"
+      },
+      "ts": "2026-08-13T21:51:48"
+    },
+    {
+      "seq": 9,
+      "tool": "collapse_tech_rep_expression",
+      "layer": "experiment",
+      "args": {
+        "dataset": "GSE122063"
+      },
+      "ts": "2026-08-13T21:51:53"
+    },
+    {
+      "seq": 10,
+      "tool": "collapse_probes_to_genes",
+      "layer": "experiment",
+      "args": {
+        "dataset": "GSE122063",
+        "method": "max_variance"
+      },
+      "ts": "2026-08-13T21:51:53"
+    },
+    {
+      "seq": 11,
+      "tool": "statsmodels.ols",
+      "layer": "experiment",
+      "args": {
+        "dataset": "GSE122063",
+        "formula": "diagnosis + age + sex_male + pmi",
+        "genes": 20
+      },
+      "ts": "2026-08-13T21:51:53"
+    },
+    {
+      "seq": 12,
+      "tool": "check_direction_replication",
+      "layer": "experiment",
+      "args": {
+        "candidates": [
+          "PPARGC1A",
+          "SOD1",
+          "APP"
+        ]
+      },
+      "ts": "2026-08-13T21:51:53"
+    },
+    {
+      "seq": 13,
+      "tool": "matplotlib.savefig",
+      "layer": "experiment",
+      "args": {
+        "artifact": "forest_plot",
+        "formats": [
+          "png",
+          "pdf"
+        ]
+      },
+      "ts": "2026-08-13T21:51:58"
+    }
+  ],
+  "diff": {
+    "planned": [],
+    "used_in_order": [
+      "GEOparse.get_GEO",
+      "collapse_probes_to_genes",
+      "statsmodels.ols",
+      "statsmodels.multipletests",
+      "bootstrap_effect_size_ci",
+      "statsmodels.TTestIndPower",
+      "run_per_region_robustness",
+      "GEOparse.get_GEO",
+      "collapse_tech_rep_expression",
+      "collapse_probes_to_genes",
+      "statsmodels.ols",
+      "check_direction_replication",
+      "matplotlib.savefig"
+    ],
+    "planned_not_used": [],
+    "used_not_planned": [
+      "GEOparse.get_GEO",
+      "collapse_probes_to_genes",
+      "statsmodels.ols",
+      "statsmodels.multipletests",
+      "bootstrap_effect_size_ci",
+      "statsmodels.TTestIndPower",
+      "run_per_region_robustness",
+      "collapse_tech_rep_expression",
+      "check_direction_replication",
+      "matplotlib.savefig"
+    ]
+  }
+}
