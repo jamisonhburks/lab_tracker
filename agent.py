@@ -129,7 +129,7 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
     if not articles:
         return "No papers found to curate."
 
-    n_assoc, n_stats = 0, 0
+    n_assoc, n_stats, n_norm = 0, 0, 0
     for paper in articles:
         prompt = (
             "From this single paper's abstract, extract the biomedical associations "
@@ -154,14 +154,23 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
                 continue
             if a.get("sample_size") or a.get("effect_size") or a.get("risk_of_bias"):
                 n_stats += 1
+            # normalize entities to canonical KG nodes (dedups variants); keep the
+            # raw string if unresolvable — novel entities aren't dropped.
+            s_norm, o_norm = kg.normalize_entity(subj), kg.normalize_entity(obj)
+            n_norm += bool(s_norm) + bool(o_norm)
             kg_writer.add_association(
-                subj, pred, obj, source=f"PMID:{paper['pmid']}",
+                s_norm["name"] if s_norm else subj, pred,
+                o_norm["name"] if o_norm else obj,
+                source=f"PMID:{paper['pmid']}",
                 direction=a.get("direction", "supports"),
                 sample_size=a.get("sample_size"), effect_size=a.get("effect_size"),
-                p_value=a.get("p_value"), risk_of_bias=a.get("risk_of_bias"))
+                p_value=a.get("p_value"), risk_of_bias=a.get("risk_of_bias"),
+                subject_id=s_norm["id"] if s_norm else None,
+                object_id=o_norm["id"] if o_norm else None)
             n_assoc += 1
     return (f"Curated {n_assoc} association(s) from {len(articles)} paper(s) on "
-            f"{query!r} ({n_stats} with study stats) into the agent's KG.")
+            f"{query!r} ({n_stats} with study stats, {n_norm} entities normalized "
+            f"to KG nodes).")
 
 
 def query_curated_kg(subject: str = "", object: str = "") -> str:

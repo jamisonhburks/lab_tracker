@@ -22,6 +22,7 @@ fast on millions of edges.
 import bz2
 import json
 import os
+import re
 import shutil
 import urllib.request
 from collections import deque
@@ -41,11 +42,12 @@ HETIONET_URL = (
 _G = {"nodes": None, "edges": None}
 _ADJ = None    # id -> [(neighbor_id, predicate, arrow, source)]  (built once)
 _META = None   # id -> (name, category)                          (built once)
+_NORM = None   # cleaned_name -> id  (for entity normalization)   (built once)
 
 
 def _reset() -> None:
-    global _ADJ, _META
-    _ADJ = _META = None
+    global _ADJ, _META, _NORM
+    _ADJ = _META = _NORM = None
 
 
 # --------------------------------------------------------------------------- #
@@ -184,6 +186,52 @@ def _resolve(name: str) -> str | None:
 def _label(node_id: str) -> str:
     nm, cat = _meta().get(node_id, (node_id, "?"))
     return f"{nm} ({cat})"
+
+
+# --------------------------------------------------------------------------- #
+# Entity normalization — map a free-text string to a canonical KG node, so the #
+# curated KG dedups surface variants ('ulcerative colitis (UC)' -> the node)   #
+# and unresolvable junk ('CID11879209') is flagged rather than stored as fact. #
+# --------------------------------------------------------------------------- #
+
+def _clean(s: str) -> str:
+    """Lowercase, drop parentheticals, keep alphanumerics — for loose matching."""
+    s = re.sub(r"\(.*?\)", " ", s.lower())
+    return re.sub(r"[^a-z0-9]+", " ", s).strip()
+
+
+def _norm_index() -> dict:
+    global _NORM
+    if _NORM is None:
+        _NORM = {}
+        for nid, (nm, _) in _meta().items():
+            _NORM.setdefault(_clean(nm), nid)   # first node wins a cleaned name
+    return _NORM
+
+
+def normalize_entity(name: str) -> dict | None:
+    """Resolve a free-text entity to a canonical node {id, name, category}, or None.
+
+    None means "not in this KG" — NOT "invalid" (closed-world). Callers keep the
+    raw string and flag it, they don't drop it.
+    """
+    q = _clean(name)
+    if len(q) < 2:
+        return None
+    idx = _norm_index()
+    nid = idx.get(q)
+    if nid is None:                              # longest node-name phrase inside the query
+        padded_q = f" {q} "
+        best = None
+        for cname, cid in idx.items():
+            if len(cname) >= 4 and f" {cname} " in padded_q:
+                if best is None or len(cname) > len(best[0]):
+                    best = (cname, cid)
+        nid = best[1] if best else None
+    if nid is None:
+        return None
+    nm, cat = _meta()[nid]
+    return {"id": nid, "name": nm, "category": cat}
 
 
 # --------------------------------------------------------------------------- #

@@ -38,27 +38,41 @@ def _save(records: list) -> None:
             f.write(json.dumps(r) + "\n")
 
 
+def _rec_key(r: dict) -> tuple:
+    """Dedup key — prefer canonical node ids, fall back to the raw text."""
+    return (r.get("subject_id") or r["subject"].strip().lower(),
+            r["predicate"].strip().lower(),
+            r.get("object_id") or r["object"].strip().lower())
+
+
 def add_association(subject: str, predicate: str, object: str, source: str = "",
                     direction: str = "supports", power: float | None = None,
                     sample_size: int | None = None, effect_size: float | None = None,
-                    p_value: float | None = None, risk_of_bias: str | None = None) -> dict:
-    """Record an association, or MERGE evidence into an existing one. Returns it."""
+                    p_value: float | None = None, risk_of_bias: str | None = None,
+                    subject_id: str | None = None, object_id: str | None = None) -> dict:
+    """Record an association, or MERGE evidence into an existing one. Returns it.
+
+    Dedup is by CANONICAL node id when available, so surface variants that
+    normalize to the same node ('ulcerative colitis (UC)' vs 'ulcerative colitis')
+    merge into one association and their evidence accumulates.
+    """
     records = _load()
-    key = _key(subject, predicate, object)
+    key = (subject_id or subject.strip().lower(), predicate.strip().lower(),
+           object_id or object.strip().lower())
     ev = {"source": source or None, "direction": direction, "power": power,
           "sample_size": sample_size, "effect_size": effect_size, "p_value": p_value,
           "risk_of_bias": risk_of_bias}
 
     for r in records:
-        if _key(r["subject"], r["predicate"], r["object"]) == key:
+        if _rec_key(r) == key:
             r["evidence"].append(ev)          # accumulate independent evidence
             _save(records)
             return r
 
     record = {
-        "subject": subject.strip(),
+        "subject": subject.strip(), "subject_id": subject_id,
         "predicate": predicate.strip(),
-        "object": object.strip(),
+        "object": object.strip(), "object_id": object_id,
         "epistemic_type": kg_schema.classify_epistemic(predicate).value,
         "evidence": [ev],
     }
