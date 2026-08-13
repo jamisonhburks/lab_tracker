@@ -4,6 +4,12 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-13
+- **Unified provenance view** — `provenance.py`: a deterministic (no-LLM) assembler that
+  stitches an experiment's own artifacts (spec, formation method + pre-registration, the
+  ordered scientific-op tool ledger, metrics, and the evaluation verdict) into one
+  `experiments/{id}/provenance.md` — "how the hypothesis was formed and how it was tested"
+  in one place. Verified on H001 (17-op synthetic pipeline) and H002 (13-op real-data
+  pipeline; instrumented + re-run, deterministic) (PR #28 · ADR-0022).
 - **Tool ledger (intended vs actual, across the loop)** — `tool_ledger.py`: (1) every
   orchestrator run declares the tools it EXPECTS to need (pre-flight plan) and records the
   ones it ACTUALLY calls in order → intended→actual→diff trace; (2) the specialist records

@@ -70,6 +70,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils.log_run_metadata import log_run_metadata  # noqa: E402
+import tool_ledger  # noqa: E402
 
 
 # ===========================================================================
@@ -1113,6 +1114,10 @@ def main():
     logger.info(f"Panel genes ({len(panel_genes)}): {panel_genes}")
     logger.info(f"Central genes: {central_genes}")
 
+    # Experiment tool ledger: the scientific/statistical ops performed, in order.
+    led = tool_ledger.ToolLedger(task="H002 real-data differential-expression experiment",
+                                 run_id="H002", experiment_id="H002")
+
     # ===================================================================
     # PRIMARY DATASET: GSE48350
     # ===================================================================
@@ -1121,6 +1126,7 @@ def main():
     logger.info("=" * 60)
 
     gse_primary = fetch_geo_series(cfg["primary"]["geo_id"], geo_cache, logger)
+    led.record("GEOparse.get_GEO", {"geo_id": cfg["primary"]["geo_id"], "role": "primary"}, "experiment")
 
     # --- Metadata ---
     meta_primary_raw = parse_gse48350_metadata(gse_primary, cfg, logger)
@@ -1168,6 +1174,9 @@ def main():
     primary_ols = primary_ols.join(mt_results[["p_bonferroni", "p_bh",
                                                 "reject_bonferroni", "reject_bh"]])
 
+    led.record("collapse_probes_to_genes", {"dataset": "GSE48350", "method": cfg["primary"]["probe_collapse_method"]}, "experiment")
+    led.record("statsmodels.ols", {"dataset": "GSE48350", "formula": primary_formula_rhs, "genes": len(gene_expr_primary)}, "experiment")
+    led.record("statsmodels.multipletests", {"dataset": "GSE48350", "methods": ["bonferroni", "fdr_bh"]}, "experiment")
     sig_bh_genes = list(primary_ols[primary_ols["reject_bh"]].index)
     logger.info(f"BH-FDR significant genes in GSE48350: {sig_bh_genes}")
 
@@ -1197,11 +1206,14 @@ def main():
     logger.info(f"Power note: using n_per_group={min_group_n} (min per-region, half-split approx)")
 
     # --- Robustness check 1: per-region ---
+    led.record("bootstrap_effect_size_ci", {"dataset": "GSE48350", "n_iter": boot_cfg["bootstrap_n_iterations"]}, "experiment")
+    led.record("statsmodels.TTestIndPower", {"n_per_group": min_group_n, "effect_sizes": cfg["power"]["effect_sizes_to_check"]}, "experiment")
     robustness_df = run_per_region_robustness(
         gene_expr_primary, meta_primary,
         regions=cfg["primary"]["keep_regions"],
         logger=logger
     )
+    led.record("run_per_region_robustness", {"dataset": "GSE48350", "regions": cfg["primary"]["keep_regions"]}, "experiment")
 
     # ===================================================================
     # REPLICATION DATASET: GSE122063 (frontal cortex only)
@@ -1211,6 +1223,7 @@ def main():
     logger.info("=" * 60)
 
     gse_rep = fetch_geo_series(cfg["replication"]["geo_id"], geo_cache, logger)
+    led.record("GEOparse.get_GEO", {"geo_id": cfg["replication"]["geo_id"], "role": "replication"}, "experiment")
 
     # --- Metadata (with tech-rep collapse) ---
     # parse_gse122063_metadata returns subject-level metadata (post-collapse)
@@ -1283,10 +1296,13 @@ def main():
     else:
         logger.info("PMI missing in >50% of replication samples; EXCLUDING pmi from formula")
 
+    led.record("collapse_tech_rep_expression", {"dataset": "GSE122063"}, "experiment")
+    led.record("collapse_probes_to_genes", {"dataset": "GSE122063", "method": cfg["replication"]["probe_collapse_method"]}, "experiment")
     rep_ols = run_ols_panel(
         gene_expr_rep, meta_rep, rep_formula_rhs,
         label="GSE122063 frontal", logger=logger
     )
+    led.record("statsmodels.ols", {"dataset": "GSE122063", "formula": rep_formula_rhs, "genes": len(gene_expr_rep)}, "experiment")
 
     # ===================================================================
     # Direction replication check
@@ -1300,6 +1316,7 @@ def main():
         rep_alpha=cfg["modeling"]["replication_nominal_alpha"],
         logger=logger,
     )
+    led.record("check_direction_replication", {"candidates": sig_bh_genes}, "experiment")
 
     # ===================================================================
     # Flags and caveats
@@ -1327,6 +1344,9 @@ def main():
     make_forest_plot(
         primary_ols, rep_ols, mt_results, panel_genes, figures_dir, logger
     )
+    led.record("matplotlib.savefig", {"artifact": "forest_plot", "formats": ["png", "pdf"]}, "experiment")
+    ledger_path = led.save(PROJECT_ROOT / "experiments" / "H002" / "tool_ledger.json")
+    logger.info(f"Tool ledger (scientific ops) saved to: {ledger_path}")
 
     # ===================================================================
     # Save metrics.csv
