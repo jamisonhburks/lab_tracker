@@ -212,9 +212,21 @@ def _norm_index() -> dict:
 def normalize_entity(name: str) -> dict | None:
     """Resolve a free-text entity to a canonical node {id, name, category}, or None.
 
-    None means "not in this KG" — NOT "invalid" (closed-world). Callers keep the
-    raw string and flag it, they don't drop it.
+    Uses lexical matching by default; set ENTITY_NORM=semantic to route to the
+    biomedical embedding normalizer (entity_norm.py), which catches synonyms the
+    string matcher misses. None means "no confident match in this KG" — NOT
+    "invalid" (closed-world). Callers keep the raw string, they don't drop it.
     """
+    if os.environ.get("ENTITY_NORM", "lexical").lower() == "semantic":
+        try:
+            import entity_norm
+            return entity_norm.normalize(name)
+        except Exception as err:          # missing model/dep -> fall back to lexical
+            print(f"[entity_norm semantic unavailable: {err}; using lexical]")
+    return _normalize_lexical(name)
+
+
+def _normalize_lexical(name: str) -> dict | None:
     q = _clean(name)
     if len(q) < 2:
         return None
