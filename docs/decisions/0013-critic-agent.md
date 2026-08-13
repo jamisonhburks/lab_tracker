@@ -38,6 +38,15 @@ The two headline metrics are **in tension**: fabrication/junk/type **recall** an
   1.00, novelty preserved 1.00. Small set — indicative, not definitive.
 
 ## Consequences
-- Cleans curator output before it hardens into the KG. Next: expand the gold set,
-  run the downstream-ablation + consistency tests, and consider adversarial
-  multi-vote to reduce rubber-stamping.
+- Cleans curator output before it hardens into the KG.
+
+## Update (2026-08-13) — hardening
+- Gold set expanded 6 → 12. It **caught a real gap**: the 14B critic accepted a
+  dataset accession (`GSE12345`) as an entity (accuracy 0.92) — exactly what a
+  bigger gold set is for.
+- Fix: a **deterministic accession pre-filter** (rules for GSE/GDS/SRR/phs/CID… →
+  auto-reject, no LLM) in front of the LLM judgment — a stronger rule+LLM hybrid.
+  Seed set → **1.00** (accuracy / fabrication-recall / novelty-preservation).
+- Added **adversarial multi-vote** (`votes=N`, majority) and a **consistency** test
+  (1.00 agreement on repeated runs).
+- Remaining: downstream-ablation test; grow the gold set with real curator output.
