@@ -13,6 +13,16 @@ decision behind it (see `docs/decisions/`). Dates are approximate build dates.
   ledger caught the 14B over-planning 11→3, fixed via a selectivity nudge); H001 emitted
   its 17-step scientific trace. Only the pipeline subagents' harness tools (Write/Bash)
   remain out of scope (harness telemetry) (PR #27 · ADR-0021).
+- **H002 — first REAL-DATA run through the loop** — the T2D↔AD shared-gene panel tested
+  on public GEO brain expression (GSE48350 discovery + GSE122063 replication, prep-matched
+  bulk-vs-bulk, covariate-adjusted, panel-restricted Bonferroni+BH, cross-platform
+  direction replication). **Honest null**: no central gene BH-significant + replicated
+  (APOE borderline p_bh≈0.054, decreased); 3 panel BH hits all reversed sign in
+  replication; replication arm underpowered (n≈23, power 0.09–0.22) so the null is bounded,
+  not a refutation. Human-approved (draft→approved gate); runner caught the AD='AA' GEO
+  coding gotcha. Contrast with H001's synthetic success — the loop reports real nulls
+  faithfully. `hypotheses/H002*.yaml`, `experiments/H002/`, `reports/H002_evaluation.md`
+  (PR #26 · ADR-0020).
 - **Closed the scientific loop** — orchestrated `hypothesis-planner → code-implementer
   → experiment-runner → results-evaluator` (separation of concerns) to take a KG-
   generated hypothesis through formalize → implement → run → evaluate. Demo H001 (T2D↔AD
