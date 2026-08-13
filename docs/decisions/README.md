@@ -26,3 +26,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0012](0012-git-workflow.md) | Git workflow: private, no co-author, small PRs | 2026-08-12 | Accepted | all |
 | [0013](0013-critic-agent.md) | Critic agent + test-driven evaluation | 2026-08-13 | Accepted | #17, #18 |
 | [0014](0014-llm-adapter.md) | LLM provider adapter (Ollama ↔ Claude swappable) | 2026-08-13 | Accepted | #19 |
+| [0015](0015-novelty-and-hybrid-generation.md) | Novelty flag + hybrid (KG-constrained) generation | 2026-08-13 | Accepted | #21 |

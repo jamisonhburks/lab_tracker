@@ -33,6 +33,7 @@ import hypothesis_tools as hyp
 import kg_writer
 import confidence
 import critic
+import novelty
 
 MAX_STEPS = 10      # safety cap so a misbehaving loop can't run forever
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
@@ -219,6 +220,111 @@ def query_curated_kg(subject: str = "", object: str = "") -> str:
     return "\n".join(lines)
 
 
+# Schema for the HYBRID generation step: an LLM-synthesized mechanistic hypothesis,
+# constrained to the KG subgraph it was given (so the graph regularizes invention).
+HYPOTHESIS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "hypothesis": {"type": "string"},
+        "mechanisms": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "intermediate": {"type": "string"},
+                    "rationale": {"type": "string"},
+                    "centrality": {"type": "string"},   # high | moderate | low
+                },
+                "required": ["intermediate", "rationale", "centrality"],
+            },
+        },
+        "caveats": {"type": "string"},
+    },
+    "required": ["hypothesis", "mechanisms"],
+}
+
+
+def generate_hypothesis(entity_a: str, entity_c: str, max_len: int = 3) -> str:
+    """HYBRID generation: the KG retrieves the subgraph connecting A and C, then the
+    MODEL synthesizes a mechanistic hypothesis CONSTRAINED to those paths.
+
+    This is the missing third direction of the hybrid: not KG-only enumeration
+    (find_paths) and not LLM-only free generation, but LLM reasoning REGULARIZED by
+    the graph — it may only build on intermediates that actually appear in the KG
+    paths, which is what suppresses hallucinated mechanisms. The synthesis is then
+    annotated with hard numbers (grounding + novelty) so the free-text claim is
+    checked, not trusted.
+    """
+    a, c, paths, truncated = kg.enumerate_paths(entity_a, entity_c, max_len=max_len)
+    if a is None or c is None:
+        missing = entity_a if a is None else entity_c
+        return f"'{missing}' not found in the knowledge graph."
+    a_name = kg._meta().get(a, (entity_a, ""))[0]
+    c_name = kg._meta().get(c, (entity_c, ""))[0]
+
+    if not paths:
+        subgraph = f"(no connecting path in the KG within {max_len} hops)"
+        constraint = (
+            "There is NO KG-supported path between these entities. Any hypothesis is "
+            "UNGROUNDED speculation — say so explicitly and stay cautious; do not "
+            "present invented mechanisms as if the graph supported them.")
+    else:
+        lines, mids = [], {}
+        for i, p in enumerate(paths[:10], 1):
+            chain = kg._label(p[0][0])
+            for _, pred, arrow, src, to_id in p:
+                chain += f"  —{pred}{'→' if arrow == '->' else '←'}  {kg._label(to_id)}"
+            for mid in ([p[0][0]] + [e[4] for e in p])[1:-1]:   # internal nodes only
+                mids.setdefault(mid, kg._meta().get(mid, (mid, ""))[0])
+            lines.append(f"  {i}. {chain}")
+        subgraph = "\n".join(lines)
+        constraint = (
+            "Ground EVERY mechanistic claim in one of the specific paths above. Do "
+            "NOT introduce genes, drugs, or mechanisms that are not nodes in these "
+            "paths — if the graph does not contain it, do not assert it. This "
+            "constraint is the point: the KG regularizes the hypothesis against "
+            "unsupported invention.")
+
+    prompt = (
+        f"You are proposing a mechanistic hypothesis linking '{a_name}' and "
+        f"'{c_name}', grounded in a biomedical knowledge graph.\n\n"
+        f"KG paths connecting them:\n{subgraph}\n\n{constraint}\n\n"
+        "Return JSON: 'hypothesis' (2-4 sentences: the proposed mechanism linking the "
+        "two, synthesized from the paths above), 'mechanisms' (one entry per key "
+        "intermediate you actually used: intermediate, rationale grounded in its path, "
+        "centrality 'high'|'moderate'|'low'), and 'caveats' (what the KG does NOT "
+        "establish — directionality, causality, confounders)."
+    )
+    try:
+        h = json.loads(llm.chat([{"role": "user", "content": prompt}],
+                                schema=HYPOTHESIS_SCHEMA).text)
+    except Exception as err:
+        return f"Hypothesis generation failed: {err}"
+
+    out = [f"Hypothesis: {a_name} <-> {c_name}", f"  {h.get('hypothesis', '').strip()}"]
+    mechs = h.get("mechanisms", [])
+    if mechs:
+        out.append("\nMechanisms (KG-grounded):")
+        for m in mechs[:8]:
+            out.append(f"  - [{m.get('centrality', '?')}] {m.get('intermediate', '?')}: "
+                       f"{str(m.get('rationale', '')).strip()[:200]}")
+    if h.get("caveats"):
+        out.append(f"\nCaveats: {str(h['caveats']).strip()}")
+
+    # Hard-number regularization: is the link corroborated, and is it actually novel?
+    top = next((m.get("intermediate") for m in mechs
+                if str(m.get("centrality", "")).lower() == "high"),
+               mechs[0].get("intermediate") if mechs else None)
+    grounding = kg.check_connection(entity_a, entity_c, max_len=max_len)
+    out.append(f"\nKG grounding: {grounding}   |  supporting paths: "
+               f"{len(paths)}{'+' if truncated else ''}")
+    if top:
+        out.append("\n" + novelty.check_novelty(a_name, c_name, via=top))
+    out.append("\n(Hybrid: KG retrieved the subgraph; the model synthesized the "
+               "mechanism CONSTRAINED to it; grounding + novelty regularize the claim.)")
+    return "\n".join(out)
+
+
 # --------------------------------------------------------------------------- #
 # Tool declarations — what the MODEL sees.                                     #
 # --------------------------------------------------------------------------- #
@@ -334,6 +440,53 @@ TOOLS = [
                     "entity_a": {"type": "string"},
                     "entity_c": {"type": "string"},
                     "max_len": {"type": "integer", "description": "Max hops, default 3."},
+                },
+                "required": ["entity_a", "entity_c"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "generate_hypothesis",
+            "description": (
+                "HYBRID hypothesis generation: retrieve the KG subgraph connecting "
+                "two entities, then SYNTHESIZE a mechanistic hypothesis constrained "
+                "to those paths (the model may only build on intermediates that "
+                "appear in the graph — this regularizes hallucination). Use this "
+                "instead of find_paths when you want a reasoned mechanism, not just "
+                "a path list. Output is annotated with KG grounding + literature "
+                "novelty."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "entity_a": {"type": "string"},
+                    "entity_c": {"type": "string"},
+                },
+                "required": ["entity_a", "entity_c"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "check_novelty",
+            "description": (
+                "Is a hypothesized link already PUBLISHED, or a genuinely new "
+                "juxtaposition? The KG is built from the literature, so every edge "
+                "is known — this asks PubMed whether A, C (and an optional bridge "
+                "gene 'via') are already co-mentioned. Distinguishes rediscovery "
+                "('established'/'bridge_published') from a candidate new hypothesis "
+                "('novel_juxtaposition'). Novelty is NOT correctness — a reason to "
+                "verify, not to trust."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "entity_a": {"type": "string"},
+                    "entity_c": {"type": "string"},
+                    "via": {"type": "string", "description": "Optional bridge entity (e.g. a shared gene)."},
                 },
                 "required": ["entity_a", "entity_c"],
             },
@@ -467,6 +620,8 @@ DISPATCH = {
     "search_semantic": semantic_memory.search_semantic,
     "query_graph": kg.query_graph,
     "find_paths": kg.find_paths,
+    "generate_hypothesis": generate_hypothesis,
+    "check_novelty": novelty.check_novelty,
     "assess_hypothesis": hyp.assess_hypothesis,
     "propose_experiment": hyp.propose_experiment,
     "calibrate_link": hyp.calibrate_link,

@@ -4,6 +4,11 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-13
+- **Novelty flag + hybrid generation** — `novelty.check_novelty` (rediscovery vs
+  new juxtaposition, judged on the A–bridge–C triple) and `generate_hypothesis`
+  (KG retrieves the subgraph → model synthesizes a mechanism CONSTRAINED to it →
+  grounding + novelty regularize the claim). Novelty flag reproduces the lit-agent's
+  gene tiering independently (CTF1 → `novel_bridge`) (PR #21 · ADR-0015).
 - **LLM adapter** — `llm.py`: model reached via `chat()`; Ollama ↔ Claude is a
   config flag (`LLM_BACKEND`). Ollama path verified; Anthropic best-effort
   (PR #19 · ADR-0014).
