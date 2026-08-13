@@ -11,9 +11,12 @@ below, so the same traversal code runs on every backend:
   - load_hetionet()   Hetionet v1.0 (47k nodes / 2.25M edges, CC0) — GWAS-rich
   - load_monarch()    Monarch KG human subgraph (~148k nodes / 1.9M edges) — 36k
                       MONDO diseases + HPO phenotypes; strong for phenotype/Mendelian
+  - load_combined()   Hetionet + Monarch harmonized (genes->Entrez, diseases->MONDO):
+                      ~175k nodes / 4.2M edges — GWAS + phenotype on shared nodes
+                      (a local slice of PrimeKG-style multi-source integration)
   - load_optimuskg()  OptimusKG (Zitnik Lab) — pending Dataverse recovery
 
-Pick a backend with the KG_BACKEND env var (demo | hetionet | monarch | optimuskg);
+Pick a backend with KG_BACKEND (demo | hetionet | monarch | combined | optimuskg);
 default is demo. Traversal is UNDIRECTED on purpose: for hypothesis generation we
 care that two entities are connected through some mechanism, not edge direction.
 
@@ -207,8 +210,90 @@ def load_monarch(human_only: bool = True) -> None:
     _reset()
 
 
-_BACKENDS = {"demo": load_demo, "hetionet": load_hetionet,
-             "optimuskg": load_optimuskg, "monarch": load_monarch}
+def _hgnc_to_entrez() -> dict:
+    """HGNC-id -> Entrez-id, from the cached HGNC complete set (gene_norm's download).
+    Lets Monarch's HGNC gene ids align with Hetionet's Entrez gene ids."""
+    import gene_norm
+    gene_norm._load_alias_map()                      # ensure the file is cached
+    out = {}
+    with gene_norm.CACHE.open(encoding="utf-8") as f:
+        col = {n: i for i, n in enumerate(f.readline().rstrip("\n").split("\t"))}
+        ih, ie = col.get("hgnc_id"), col.get("entrez_id")
+        if ih is None or ie is None:
+            return out
+        for line in f:
+            p = line.rstrip("\n").split("\t")
+            if len(p) > max(ih, ie) and p[ih].strip() and p[ie].strip():
+                out[p[ih].strip()] = p[ie].strip()
+    return out
+
+
+def _doid_to_mondo() -> dict:
+    """DOID -> MONDO id, parsed from Monarch's node xref column (no extra download).
+    Lets Hetionet's DOID diseases align onto Monarch's MONDO diseases."""
+    f = DATA_DIR / "monarch-kg_nodes.tsv"
+    if not f.exists():
+        load_monarch()                                # triggers download/extract
+    df = (pl.read_csv(f, separator="\t", infer_schema_length=0, columns=["id", "xref"])
+          .filter(pl.col("id").str.starts_with("MONDO:") & pl.col("xref").is_not_null()))
+    out = {}
+    for mid, xref in zip(df["id"].to_list(), df["xref"].to_list()):
+        for d in re.findall(r"DOID:\d+", xref or ""):
+            out.setdefault(d, mid)                     # first MONDO wins a DOID
+    return out
+
+
+def _apply_id_map(df: "pl.DataFrame", cols: list, mapping: dict) -> "pl.DataFrame":
+    """Rewrite id columns through a {old_id -> new_id} map (unmapped ids unchanged)."""
+    mdf = pl.DataFrame({"_old": list(mapping.keys()), "_new": list(mapping.values())})
+    for c in cols:
+        df = (df.join(mdf, left_on=c, right_on="_old", how="left")
+                .with_columns(pl.coalesce(["_new", c]).alias(c)).drop("_new"))
+    return df
+
+
+def load_combined() -> None:
+    """Merge Hetionet + Monarch into one graph by harmonizing shared entities —
+    genes to Entrez, diseases to MONDO — so a disease inherits BOTH Hetionet's
+    GWAS-style gene associations AND Monarch's phenotype/PPI edges. A local, honest
+    slice of what PrimeKG does (multi-source integration onto common vocabularies).
+
+    Node types that don't share a vocabulary across the two (Hetionet DrugBank
+    compounds vs Monarch CHEBI chemicals; Hetionet MeSH symptoms vs Monarch HPO) are
+    kept source-prefixed and simply don't cross-link — they still contribute edges.
+    """
+    load_hetionet(); h_nodes, h_edges = _G["nodes"], _G["edges"]
+    load_monarch();  m_nodes, m_edges = _G["nodes"], _G["edges"]
+
+    hgnc, doid2mondo = _hgnc_to_entrez(), _doid_to_mondo()
+
+    # Hetionet ids -> canonical: Gene:<entrez> -> NCBIGene:<entrez>; Disease:DOID:x -> MONDO
+    h_map = {}
+    for nid in h_nodes[NODE_ID].to_list():
+        if nid.startswith("Gene:"):
+            h_map[nid] = "NCBIGene:" + nid[5:]
+        elif nid.startswith("Disease:"):
+            h_map[nid] = doid2mondo.get(nid[len("Disease:"):], nid)
+    # Monarch ids -> canonical: HGNC:x -> NCBIGene:<entrez> (MONDO/HP/CHEBI stay)
+    m_map = {}
+    for nid in m_nodes[NODE_ID].to_list():
+        if nid.startswith("HGNC:") and nid in hgnc:
+            m_map[nid] = "NCBIGene:" + hgnc[nid]
+
+    h_nodes = _apply_id_map(h_nodes, [NODE_ID], h_map)
+    m_nodes = _apply_id_map(m_nodes, [NODE_ID], m_map)
+    h_edges = _apply_id_map(h_edges, [EDGE_SUBJ, EDGE_OBJ], h_map)
+    m_edges = _apply_id_map(m_edges, [EDGE_SUBJ, EDGE_OBJ], m_map)
+
+    # Hetionet first: genes keep Hetionet's symbol names; Monarch-only nodes (MONDO
+    # diseases, HPO phenotypes) fill in the rest.
+    _G["nodes"] = pl.concat([h_nodes, m_nodes]).unique(subset=[NODE_ID], keep="first")
+    _G["edges"] = pl.concat([h_edges, m_edges])
+    _reset()
+
+
+_BACKENDS = {"demo": load_demo, "hetionet": load_hetionet, "monarch": load_monarch,
+             "combined": load_combined, "optimuskg": load_optimuskg}
 
 
 def _graph() -> tuple:

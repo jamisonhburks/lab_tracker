@@ -4,6 +4,11 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-13
+- **Combined KG (Hetionet + Monarch)** — `KG_BACKEND=combined`: `load_combined()`
+  harmonizes genes→Entrez (HGNC crosswalk) and diseases→MONDO (DOID xrefs) and merges
+  both graphs → 175k nodes / 4.2M edges. A disease node inherits GWAS gene edges
+  (Hetionet) AND phenotype/PPI edges (Monarch); recovers T2D↔Alzheimer shared genes
+  that Monarch-alone lacked. A local slice of PrimeKG; no new downloads (PR #23 · ADR-0018).
 - **Monarch KG backend** — `KG_BACKEND=monarch`: `load_monarch()` loads a focused
   human subgraph (~148k nodes / 1.9M edges) with 36k MONDO diseases + HPO phenotypes
   (vs Hetionet's 137 diseases, no phenotypes). Strong for phenotype/Mendelian
