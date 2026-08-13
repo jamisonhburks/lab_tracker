@@ -4,6 +4,11 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-13
+- **Refinement loop** — `refine_hypothesis`: per bridge, novelty (cheap PubMed
+  count) filters which links deserve the expensive `curate_literature` + `criticize`
+  pass; triages each as known / supported-real / spurious and persists verified links
+  to the curated KG. Verified end-to-end on AF↔stroke (`warfarin` supported, `KCNQ1`
+  speculative); added `-1` `unknown_bridge` guard + rate-limit backoff (PR #22 · ADR-0016).
 - **Novelty flag + hybrid generation** — `novelty.check_novelty` (rediscovery vs
   new juxtaposition, judged on the A–bridge–C triple) and `generate_hypothesis`
   (KG retrieves the subgraph → model synthesizes a mechanism CONSTRAINED to it →
