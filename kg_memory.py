@@ -11,9 +11,9 @@ below, so the same traversal code runs on every backend:
   - load_hetionet()   Hetionet v1.0 (47k nodes / 2.25M edges, CC0) — GWAS-rich
   - load_monarch()    Monarch KG human subgraph (~148k nodes / 1.9M edges) — 36k
                       MONDO diseases + HPO phenotypes; strong for phenotype/Mendelian
-  - load_combined()   Hetionet + Monarch harmonized (genes->Entrez, diseases->MONDO):
-                      ~175k nodes / 4.2M edges — GWAS + phenotype on shared nodes
-                      (a local slice of PrimeKG-style multi-source integration)
+  - load_combined()   Hetionet + Monarch harmonized (genes->Entrez, diseases->MONDO,
+                      drugs->CHEBI): ~174k nodes / 4.2M edges — GWAS + phenotype +
+                      drug edges on shared nodes (a local slice of PrimeKG)
   - load_optimuskg()  OptimusKG (Zitnik Lab) — pending Dataverse recovery
 
 Pick a backend with KG_BACKEND (demo | hetionet | monarch | combined | optimuskg);
@@ -243,6 +243,22 @@ def _doid_to_mondo() -> dict:
     return out
 
 
+def _drugbank_to_chebi() -> dict:
+    """DrugBank-id -> CHEBI id, parsed from Monarch's CHEBI node xref column (no extra
+    download). Lets Hetionet's DrugBank compounds align onto Monarch's CHEBI chemicals,
+    carrying Hetionet's rich drug edges (treats/binds/regulates) into the merge."""
+    f = DATA_DIR / "monarch-kg_nodes.tsv"
+    if not f.exists():
+        load_monarch()
+    df = (pl.read_csv(f, separator="\t", infer_schema_length=0, columns=["id", "xref"])
+          .filter(pl.col("id").str.starts_with("CHEBI:") & pl.col("xref").is_not_null()))
+    out = {}
+    for cid, xref in zip(df["id"].to_list(), df["xref"].to_list()):
+        for db in re.findall(r"drugbank:(DB\d+)", xref or "", re.I):
+            out.setdefault(db, cid)                    # first CHEBI wins a DrugBank id
+    return out
+
+
 def _apply_id_map(df: "pl.DataFrame", cols: list, mapping: dict) -> "pl.DataFrame":
     """Rewrite id columns through a {old_id -> new_id} map (unmapped ids unchanged)."""
     mdf = pl.DataFrame({"_old": list(mapping.keys()), "_new": list(mapping.values())})
@@ -266,14 +282,18 @@ def load_combined() -> None:
     load_monarch();  m_nodes, m_edges = _G["nodes"], _G["edges"]
 
     hgnc, doid2mondo = _hgnc_to_entrez(), _doid_to_mondo()
+    drugbank2chebi = _drugbank_to_chebi()
 
-    # Hetionet ids -> canonical: Gene:<entrez> -> NCBIGene:<entrez>; Disease:DOID:x -> MONDO
+    # Hetionet ids -> canonical: Gene:<entrez> -> NCBIGene:<entrez>; Disease:DOID:x ->
+    # MONDO; Compound:DB<x> -> CHEBI (so Hetionet's drug edges join Monarch's chemicals).
     h_map = {}
     for nid in h_nodes[NODE_ID].to_list():
         if nid.startswith("Gene:"):
             h_map[nid] = "NCBIGene:" + nid[5:]
         elif nid.startswith("Disease:"):
             h_map[nid] = doid2mondo.get(nid[len("Disease:"):], nid)
+        elif nid.startswith("Compound:") and nid[len("Compound:"):] in drugbank2chebi:
+            h_map[nid] = drugbank2chebi[nid[len("Compound:"):]]
     # Monarch ids -> canonical: HGNC:x -> NCBIGene:<entrez> (MONDO/HP/CHEBI stay)
     m_map = {}
     for nid in m_nodes[NODE_ID].to_list():
