@@ -1,0 +1,7 @@
+# Genes in the 20-gene panel not found on one or both platforms
+# (no probes mapped to this gene symbol in the GPL annotation)
+
+Missing from GSE48350 (GPL570):  ['ND1']
+Missing from GSE122063 (GPL16699): []
+
+All untestable (union): ['ND1']
