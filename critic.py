@@ -16,6 +16,7 @@ link must survive. The critic catches hallucinations and junk, not new ideas.
 """
 
 import json
+import re
 import urllib.parse
 import urllib.request
 
@@ -25,6 +26,15 @@ import kg_memory as kg
 
 MODEL = "qwen3:14b"
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+
+# Database/dataset accessions the synthesizer sometimes mis-extracts as entities —
+# unambiguously not biomedical entities, so reject deterministically (no LLM needed).
+_ACCESSION = re.compile(r"^(GSE|GDS|GSM|GPL|SRR|SRX|SRP|PRJNA|phs|CID|SID)\d+$", re.I)
+
+
+def _looks_like_junk(entity: str) -> bool:
+    e = entity.strip()
+    return len(e) < 2 or bool(_ACCESSION.match(e))
 
 VERDICT_SCHEMA = {
     "type": "object",
@@ -50,10 +60,17 @@ def _fetch_abstract(pmid: str) -> str:
         return ""
 
 
-def criticize(record: dict, abstract: str | None = None) -> dict:
+def criticize(record: dict, abstract: str | None = None, votes: int = 1) -> dict:
     """Adversarially verify one association record. `abstract` overrides the fetch
-    (used by the eval harness for deterministic, offline tests)."""
+    (used by the eval harness for deterministic, offline tests). `votes` > 1 runs the
+    critic N times and majority-votes the verdict — reduces rubber-stamping/variance."""
     s, p, o = record["subject"], record["predicate"], record["object"]
+
+    for ent in (s, o):                # deterministic pre-filter for accession junk
+        if _looks_like_junk(ent):
+            return {"verdict": "reject", "well_formed": False, "source_supported": False,
+                    "reason": f"'{ent}' is a database/dataset accession, not a "
+                              "biomedical entity.", "grounding": "off_graph"}
 
     if abstract is None:
         pmids = [e["source"].split(":", 1)[1] for e in record.get("evidence", [])
@@ -66,8 +83,11 @@ def criticize(record: dict, abstract: str | None = None) -> dict:
         "find reasons the claim below is WRONG.\n\n"
         f"CLAIM: {s} —{p}→ {o}\n\n"
         "Judge each:\n"
-        "- well_formed: are subject and object REAL biomedical entities, not junk "
-        "ids/accessions (e.g. 'CID11879209') or vague phrases (e.g. 'Overall IBD')?\n"
+        "- well_formed: are subject and object REAL biomedical entities (a gene, "
+        "drug, disease, phenotype, pathway...), NOT database accessions / dataset ids "
+        "(e.g. GEO 'GSE12345'/'GDS...', SRA 'SRR...', dbGaP 'phs...', PubChem "
+        "'CID11879209') and NOT vague phrases (e.g. 'Overall IBD')? An accession is "
+        "junk even if the abstract mentions it.\n"
         "- source_supported: does the abstract below explicitly state this "
         "relationship? If there is no abstract, set false.\n"
         "- type_valid: is the predicate compatible with the entity types (e.g. a "
@@ -80,12 +100,23 @@ def criticize(record: dict, abstract: str | None = None) -> dict:
         f"KG grounding (a hint, NOT decisive): {grounding}\n\n"
         f"ABSTRACT:\n{abstract or '(no source abstract available)'}"
     )
-    try:
-        resp = ollama.chat(model=MODEL, format=VERDICT_SCHEMA, think=False,
-                           messages=[{"role": "user", "content": prompt}])
-        verdict = json.loads(resp["message"]["content"])
-    except Exception as err:
-        return {"verdict": "uncertain", "reason": f"critic error: {err}",
-                "grounding": grounding}
-    verdict["grounding"] = grounding
-    return verdict
+    def _once() -> dict:
+        try:
+            resp = ollama.chat(model=MODEL, format=VERDICT_SCHEMA, think=False,
+                               messages=[{"role": "user", "content": prompt}])
+            return json.loads(resp["message"]["content"])
+        except Exception as err:
+            return {"verdict": "uncertain", "reason": f"critic error: {err}"}
+
+    if votes <= 1:
+        v = _once()
+        v["grounding"] = grounding
+        return v
+
+    from collections import Counter
+    ballots = [_once() for _ in range(votes)]           # adversarial multi-vote
+    tally = Counter(b.get("verdict", "uncertain") for b in ballots)
+    winner = tally.most_common(1)[0][0]
+    rep = next((b for b in ballots if b.get("verdict") == winner), ballots[0])
+    rep["verdict"], rep["votes"], rep["grounding"] = winner, dict(tally), grounding
+    return rep
