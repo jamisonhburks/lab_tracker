@@ -25,6 +25,21 @@ from kg_schema import Association
 INVEST_FLOOR = 1.0    # total study-power below this => "under-investigated"
 BELIEF_FLOOR = 0.25   # some prior/support above this => "promising", not just weak
 
+# KG grounding status -> a structural PRIOR (added to `support` in score_association).
+# A trustworthy KG subgraph corroborating a claim raises confidence; 'novel'/'off-graph'
+# add nothing (the KG is incomplete — absence isn't evidence against, per B1's humility).
+GROUNDING_PRIOR = {
+    "grounded": 0.5,
+    "weakly_grounded": 0.2,
+    "novel_unverified": 0.0,
+    "off_graph": 0.0,
+}
+
+
+def grounding_prior(status: str) -> float:
+    """Map a kg_memory.check_connection status to a confidence prior."""
+    return GROUNDING_PRIOR.get(status, 0.0)
+
 
 def _sigmoid(x: float) -> float:
     return 1.0 / (1.0 + math.exp(-1.2 * x))
