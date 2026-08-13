@@ -12,8 +12,10 @@ probability.
 """
 
 import math
+import random
+import statistics
 
-from kg_memory import _index, _label, enumerate_paths
+from kg_memory import _index, _label, _resolve, enumerate_paths
 
 W_DEG = 0.4   # hub penalty exponent for degree-weighted path count (Rephetio-style)
 
@@ -72,6 +74,68 @@ def assess_hypothesis(entity_a: str, entity_c: str, max_len: int = 3) -> str:
         f"  independent sources: {len(sources)} ({', '.join(sorted(sources))[:160]})",
         "  NOTE: heuristic (degree-weighted path count) — comparative, not a",
         "  calibrated probability; true calibration needs a permutation null.",
+    ])
+
+
+def _pair_strength(a_id: str, c_id: str, max_len: int = 3) -> float:
+    """Degree-weighted path count (DWPC) between two node ids — the calibration stat."""
+    _, _, paths, _ = enumerate_paths(a_id, c_id, max_len=max_len)
+    if not paths:
+        return 0.0
+    adj = _index()
+    total = 0.0
+    for p in paths:
+        nodes = [p[0][0]] + [e[4] for e in p]
+        w = 1.0
+        for mid in nodes[1:-1]:
+            w /= max(1, len(adj.get(mid, []))) ** W_DEG
+        total += w
+    return total
+
+
+def calibrate_link(entity_a: str, entity_c: str, n_null: int = 100,
+                   max_len: int = 3) -> str:
+    """Calibrate a link's strength against a DEGREE-PRESERVING permutation null.
+
+    The raw realism score is inflated by graph density — even distant pairs connect
+    via hubs. This asks the honest question: is this pair's connection stronger than
+    RANDOM pairs of the same degree? Reports a percentile / empirical p-value
+    (the Rephetio calibration), so a high raw score that is typical of random
+    degree-matched pairs is exposed as a density artifact, not signal.
+    """
+    a, c = _resolve(entity_a), _resolve(entity_c)
+    if a is None or c is None:
+        missing = entity_a if a is None else entity_c
+        return f"'{missing}' not found in the knowledge graph."
+
+    adj = _index()
+    nodes = list(adj.keys())
+    deg_a, deg_c = len(adj.get(a, [])), len(adj.get(c, []))
+    real = _pair_strength(a, c, max_len)
+
+    def _matched(target: int) -> str:            # a random node of similar degree
+        lo, hi = target / 2, target * 2
+        for _ in range(60):
+            n = random.choice(nodes)
+            if lo <= len(adj.get(n, [])) <= hi and n not in (a, c):
+                return n
+        return random.choice(nodes)
+
+    null = [_pair_strength(_matched(deg_a), _matched(deg_c), max_len)
+            for _ in range(n_null)]
+    pct = sum(1 for x in null if x < real) / len(null)
+    pval = sum(1 for x in null if x >= real) / len(null)
+    verdict = ("distinctive — unlikely to be a density artifact" if pct >= 0.95 else
+               "above chance" if pct >= 0.80 else
+               "typical of random degree-matched pairs — not distinctive")
+    return "\n".join([
+        f"Calibrated link: {_label(a)} <-> {_label(c)}",
+        f"  degree-weighted strength {real:.3f}  (null mean {statistics.mean(null):.3f}, "
+        f"n={n_null})",
+        f"  percentile vs degree-matched random pairs: {pct * 100:.0f}%  "
+        f"(empirical p={pval:.3f})",
+        f"  verdict: {verdict}",
+        "  (permutation null controls for hub inflation — the honest calibration.)",
     ])
 
 
