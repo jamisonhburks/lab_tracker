@@ -4,6 +4,12 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-13
+- **Monarch KG backend** — `KG_BACKEND=monarch`: `load_monarch()` loads a focused
+  human subgraph (~148k nodes / 1.9M edges) with 36k MONDO diseases + HPO phenotypes
+  (vs Hetionet's 137 diseases, no phenotypes). Strong for phenotype/Mendelian
+  hypotheses (Marfan↔Loeys-Dietz via shared phenotypes); sparse on GWAS gene-disease
+  (complementary to Hetionet, not a replacement). PrimeKG/OptimusKG stayed Dataverse-
+  202-blocked. Adds category-aware `_resolve` + STRING low-trust (PR #23 · ADR-0017).
 - **Refinement loop** — `refine_hypothesis`: per bridge, novelty (cheap PubMed
   count) filters which links deserve the expensive `curate_literature` + `criticize`
   pass; triages each as known / supported-real / spurious and persists verified links

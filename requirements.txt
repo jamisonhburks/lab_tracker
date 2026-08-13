@@ -1,6 +1,7 @@
 ollama>=0.4.0        # local model + embeddings client
 numpy>=1.26          # cosine / MMR math in semantic memory
-optimuskg>=1.0.0     # OptimusKG knowledge graph (pulls polars)
+polars>=1.0          # KG DataFrames (Hetionet / Monarch backends)
+optimuskg>=1.0.0     # OptimusKG knowledge graph (also pulls polars)
 
 # Optional — only for semantic entity normalization (ENTITY_NORM=semantic)
 sentence-transformers>=3.0   # BioLORD/SapBERT embeddings for entity linking
