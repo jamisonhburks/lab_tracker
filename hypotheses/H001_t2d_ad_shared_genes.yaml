@@ -1,0 +1,25 @@
+id: H001
+title: "Differential expression of T2D–AD shared genes in Alzheimer's brain tissue"
+question: "Do genes shared between Type 2 Diabetes Mellitus and Alzheimer's Disease (surfaced via biomedical knowledge-graph overlap) show differential expression between AD cases and controls in brain tissue, detectable above multiple-testing correction — supporting the shared-mechanism / 'type 3 diabetes' model?"
+null_hypothesis: "H₀: None of the T2D–AD shared-gene panel show differential expression between AD cases and controls beyond chance; no shared gene reaches BH-FDR < 0.05 with |Cohen's d| ≥ 0.5."
+alternative_hypothesis: "H₁: A subset of the T2D–AD shared-gene panel is differentially expressed between AD cases and controls, with ≥3 genes significant at BH-FDR < 0.05 and |Cohen's d| ≥ 0.5, consistent with a shared insulin-resistance / brain-metabolism mechanism."
+data:
+  source: "data/processed/synthetic_ad_expression.csv"
+  type: "tabular"
+  notes: >
+    SYNTHETIC, CLEARLY-LABELED dataset (genes × samples; AD vs control label per sample)
+    with KNOWN ground-truth planted differential-expression effects on a subset of the
+    shared-gene panel. Purpose: validate the analysis loop and statistical machinery
+    against known truth before applying to real data. Shared-gene panel derived from KG
+    overlap of Type 2 Diabetes Mellitus and Alzheimer's Disease (20 genes): IDE, IAPP,
+    INS, APOE, AKT1, LEP, PPARGC1A, SOD1, PON1, OGG1, NOS3, BCL2, CALM1, IGF2, CASP8, AR,
+    CTF1, ND1, AGER, and others; IDE, IAPP, INS, APOE, AKT1 are the mechanistically
+    central candidates. A real/public expression series (e.g. a GEO brain-tissue AD
+    dataset) can be swapped in later by replacing the data path — the panel and test
+    remain unchanged. Assumes log-normalized expression values and one row per sample
+    with a binary case/control column.
+method: "Per-gene case/control differential expression test across the shared-gene panel: for each gene, compare AD-case vs control expression (two-sample test, e.g. Welch's t-test), collect raw p-values across the panel, then apply BOTH Bonferroni and Benjamini-Hochberg FDR correction over the number of genes tested. Report per-gene effect size (Cohen's d) alongside corrected p-values. Repeat across ≥3 independent seeds (synthetic-data regeneration / resampling) and summarize stability of the significant-gene set."
+success_metric: "≥3 of the planted-effect shared genes are significant at BH-FDR < 0.05 with |Cohen's d| ≥ 0.5, reproducibly across ≥3 independent seeds. Report both Bonferroni- and BH-corrected p-values and Cohen's d for every gene in the panel."
+min_runs: 3
+created: 2026-08-13
+status: "approved"

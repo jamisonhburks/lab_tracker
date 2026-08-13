@@ -31,3 +31,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0017](0017-monarch-kg-backend.md) | Monarch KG backend (larger, named, phenotype-rich) | 2026-08-13 | Accepted | #23 |
 | [0018](0018-combined-kg.md) | Combined KG (Hetionet + Monarch) — local PrimeKG slice | 2026-08-13 | Accepted | #23 |
 | [0019](0019-claude-specialist-skills.md) | Claude specialist for scientific tool use (Agent Skills) | 2026-08-13 | Accepted | #24 |
+| [0020](0020-closed-scientific-loop.md) | Close the scientific loop (generate → test → evaluate) | 2026-08-13 | Accepted | #25 |
