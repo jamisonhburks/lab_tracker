@@ -558,5 +558,20 @@ def _ground_findings(findings: list) -> None:
 
 
 if __name__ == "__main__":
-    q = " ".join(sys.argv[1:]) or "Search PubMed for polygenic risk score deep learning."
-    run_agent(q)
+    args = [a for a in sys.argv[1:] if a != "--repl"]
+    if args:                                  # single-shot:  python agent.py "question"
+        run_agent(" ".join(args))
+    else:                                      # persistent REPL: KG + model stay warm
+        # The KG (and its indexes) load once and are reused across every question in
+        # this session — no ~20s reload per run. Same for the Ollama model.
+        print("Warming up the knowledge graph (loaded once, reused across questions)...")
+        kg._graph()
+        print("Ready. Ask a research question — empty line or 'quit' to exit.")
+        while True:
+            try:
+                question = input("\n> ").strip()
+            except EOFError:
+                break
+            if not question or question.lower() in ("quit", "exit"):
+                break
+            run_agent(question)
