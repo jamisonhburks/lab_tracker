@@ -113,13 +113,17 @@ def _anthropic_chat(messages, tools, schema) -> Response:
         "model": MODEL,
         "max_tokens": 16000,
         "messages": _to_anthropic_messages(messages),
-        "thinking": {"type": "adaptive"},
     }
     if tools:
+        # No thinking in the tool loop: adaptive thinking emits thinking blocks that
+        # must be replayed across turns for tool continuity, which the neutral
+        # message format doesn't carry. Single-shot calls (below) can think freely.
         kwargs["tools"] = [{"name": t["function"]["name"],
                             "description": t["function"].get("description", ""),
                             "input_schema": t["function"]["parameters"]}
                            for t in tools]
+    else:
+        kwargs["thinking"] = {"type": "adaptive"}
     if schema:
         kwargs["output_config"] = {"format": {"type": "json_schema", "schema": schema}}
 
