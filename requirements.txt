@@ -6,5 +6,8 @@ optimuskg>=1.0.0     # OptimusKG knowledge graph (also pulls polars)
 # Optional — only for semantic entity normalization (ENTITY_NORM=semantic)
 sentence-transformers>=3.0   # BioLORD/SapBERT embeddings for entity linking
 
-# Optional — only for the Claude backend (LLM_BACKEND=anthropic)
+# Optional — for the Claude backend (LLM_BACKEND=anthropic) and the Claude
+# specialist (run_specialist / specialist.py). Also clone the skills library:
+#   git clone https://github.com/k-dense-ai/scientific-agent-skills.git \
+#     external/scientific-agent-skills
 # anthropic>=0.40

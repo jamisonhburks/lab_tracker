@@ -40,18 +40,27 @@ class Response:
     tool_calls: list = field(default_factory=list)
 
 
-def chat(messages: list, tools: list | None = None, schema: dict | None = None) -> Response:
-    """Model-agnostic chat. Returns normalized text + tool calls."""
-    if BACKEND == "anthropic":
-        return _anthropic_chat(messages, tools, schema)
-    return _ollama_chat(messages, tools, schema)
+def chat(messages: list, tools: list | None = None, schema: dict | None = None,
+         backend: str | None = None, model: str | None = None) -> Response:
+    """Model-agnostic chat. Returns normalized text + tool calls.
+
+    `backend`/`model` override the global config for THIS call — so a local-Ollama
+    orchestrator can delegate a single step to Claude (the specialist) without
+    changing the process-wide backend."""
+    b = (backend or BACKEND).lower()
+    # honor LLM_MODEL only when the call uses the globally-configured backend;
+    # an explicit backend switch resolves to that backend's default model.
+    m = model or (MODEL if b == BACKEND else _DEFAULT_MODEL.get(b, MODEL))
+    if b == "anthropic":
+        return _anthropic_chat(messages, tools, schema, m)
+    return _ollama_chat(messages, tools, schema, m)
 
 
 # --------------------------------------------------------------------------- #
 # Ollama backend (default) — reproduces the system's current behavior.        #
 # --------------------------------------------------------------------------- #
 
-def _ollama_chat(messages, tools, schema) -> Response:
+def _ollama_chat(messages, tools, schema, model=MODEL) -> Response:
     import ollama
 
     native = []
@@ -68,7 +77,7 @@ def _ollama_chat(messages, tools, schema) -> Response:
         else:
             native.append({"role": m["role"], "content": m["content"]})
 
-    kwargs = {"model": MODEL, "messages": native, "think": False}
+    kwargs = {"model": model, "messages": native, "think": False}
     if tools:
         kwargs["tools"] = tools
     if schema:
@@ -105,12 +114,12 @@ def _to_anthropic_messages(messages) -> list:
     return out
 
 
-def _anthropic_chat(messages, tools, schema) -> Response:
+def _anthropic_chat(messages, tools, schema, model=MODEL) -> Response:
     import anthropic
 
     client = anthropic.Anthropic()
     kwargs = {
-        "model": MODEL,
+        "model": model,
         "max_tokens": 16000,
         "messages": _to_anthropic_messages(messages),
     }

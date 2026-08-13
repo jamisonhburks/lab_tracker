@@ -34,6 +34,7 @@ import kg_writer
 import confidence
 import critic
 import novelty
+import specialist
 
 MAX_STEPS = 10      # safety cap so a misbehaving loop can't run forever
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
@@ -699,6 +700,27 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "run_specialist",
+            "description": (
+                "Delegate a SCIENTIFIC COMPUTATION task to the Claude specialist, "
+                "which runs domain Agent Skills (cohort tables, survival-analysis "
+                "plans, biomarker/model evaluation, de-identification checks, "
+                "experimental design, stats, biopython). Use when a hypothesis needs "
+                "real analysis/artifacts beyond KG/literature reasoning. Pass only "
+                "de-identified/aggregate inputs — raw patient data stays local."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task": {"type": "string", "description": "The computation task, with any de-identified/aggregate inputs or file paths."},
+                },
+                "required": ["task"],
+            },
+        },
+    },
 ]
 
 DISPATCH = {
@@ -717,6 +739,7 @@ DISPATCH = {
     "curate_literature": curate_literature,
     "criticize_curated_kg": criticize_curated_kg,
     "query_curated_kg": query_curated_kg,
+    "run_specialist": specialist.run_specialist,
 }
 
 # Schema for the consolidation step: findings as claim -> sources pairs.

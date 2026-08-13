@@ -4,6 +4,13 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-13
+- **Claude specialist for scientific tool use** — `run_specialist(task)` delegates
+  scientific computation to a Claude agent (`specialist.py`) that runs k-dense Agent
+  Skills (`list_skills`/`read_skill`/`run_bash`). Skills are an external gitignored
+  library with a curated allow-list; `llm.chat` gains a per-call backend override so
+  the local orchestrator delegates one step to Claude. Verified: discovery/read/execute
+  work (ran a skill to produce a disclosure-controlled cohort table); Claude driver
+  401-not-400. Live round-trip needs an API key (PR #24 · ADR-0019).
 - **Combined KG (Hetionet + Monarch)** — `KG_BACKEND=combined`: `load_combined()`
   harmonizes genes→Entrez (HGNC crosswalk), diseases→MONDO (DOID xrefs), and drugs→
   CHEBI (DrugBank xrefs), merging both graphs → ~174k nodes / 4.2M edges. A disease

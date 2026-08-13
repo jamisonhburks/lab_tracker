@@ -10,3 +10,6 @@ memory/
 # Local data dumps / KG caches (downloaded on demand)
 *.parquet
 data/
+
+# External skill library (k-dense-ai/scientific-agent-skills, MIT) — cloned on demand
+external/
