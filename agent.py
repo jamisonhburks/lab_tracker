@@ -174,16 +174,20 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
 
 
 def query_curated_kg(subject: str = "", object: str = "") -> str:
-    """Read the agent's OWN curated KG, with a confidence score per association."""
+    """Read the agent's OWN curated KG, each association scored by confidence with
+    the reference-KG grounding folded in (a trustworthy subgraph corroborating the
+    claim raises its confidence; novel/off-graph adds nothing, never penalizes)."""
     recs = kg_writer.query(subject or None, object or None)
     if not recs:
         return "No curated associations match (the agent's KG may be empty)."
     lines = []
     for r in recs[:15]:
-        result = confidence.score_association(kg_writer.to_association(r))
+        grounding = kg.check_connection(r["subject"], r["object"])
+        result = confidence.score_association(
+            kg_writer.to_association(r), prior=confidence.grounding_prior(grounding))
         lines.append(f"{r['subject']} —{r['predicate']}→ {r['object']}  "
                      f"[{result.status}, conf {result.confidence:.2f}, "
-                     f"{len(r['evidence'])} evidence]")
+                     f"{len(r['evidence'])} evidence, KG:{grounding}]")
     return "\n".join(lines)
 
 
