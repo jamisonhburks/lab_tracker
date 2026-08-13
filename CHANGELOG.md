@@ -4,6 +4,12 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-13
+- **Scaling profile + `scaling.py`** — content accounting per experiment (bytes/lines/
+  tokens + scientific-op count; `python scaling.py` for a cross-experiment table).
+  Measured: real-data H002 vs synthetic H001 ≈ 1.8× on-disk (run log 24×) and ~3× Claude
+  subagent tokens (~73k→218k), dominated by runner+evaluator. Finding: **generation is
+  token-free (local Qwen); testing/interpreting is the paid, dominant half** — cheap to
+  propose, expensive to test honestly (PR #29 · ADR-0023).
 - **Unified provenance view** — `provenance.py`: a deterministic (no-LLM) assembler that
   stitches an experiment's own artifacts (spec, formation method + pre-registration, the
   ordered scientific-op tool ledger, metrics, and the evaluation verdict) into one
