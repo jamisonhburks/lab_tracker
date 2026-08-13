@@ -24,3 +24,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0010](0010-permutation-null-calibration.md) | Permutation-null calibration of the realism metric | 2026-08-13 | Accepted | #14 |
 | [0011](0011-multi-agent-architecture.md) | Orchestrator + specialists; separation of concerns | 2026-08-13 | Accepted | #8, #9 |
 | [0012](0012-git-workflow.md) | Git workflow: private, no co-author, small PRs | 2026-08-12 | Accepted | all |
+| [0013](0013-critic-agent.md) | Critic agent + test-driven evaluation | 2026-08-13 | Accepted | #17 |

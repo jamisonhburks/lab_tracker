@@ -31,6 +31,7 @@ import kg_memory as kg
 import hypothesis_tools as hyp
 import kg_writer
 import confidence
+import critic
 
 MODEL = "qwen3:14b"
 MAX_STEPS = 10      # safety cap so a misbehaving loop can't run forever
@@ -171,6 +172,33 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
     return (f"Curated {n_assoc} association(s) from {len(articles)} paper(s) on "
             f"{query!r} ({n_stats} with study stats, {n_norm} entities normalized "
             f"to KG nodes).")
+
+
+def criticize_curated_kg(subject: str = "", object: str = "", max_items: int = 10) -> str:
+    """Adversarially verify curated associations and persist a verdict on each.
+
+    Catches malformed/unsupported/type-invalid extractions; a novel-but-plausible,
+    source-supported link is NOT rejected (KG absence is a hint, not a veto)."""
+    recs = kg_writer._load()
+    matched = [r for r in recs
+               if (not subject or subject.lower() in r["subject"].lower())
+               and (not object or object.lower() in r["object"].lower())][:max_items]
+    if not matched:
+        return "No curated associations to criticize."
+    counts, rejected = {"accept": 0, "reject": 0, "uncertain": 0}, []
+    for r in matched:
+        v = critic.criticize(r)
+        r["critic"] = v
+        counts[v.get("verdict", "uncertain")] = counts.get(v.get("verdict", "uncertain"), 0) + 1
+        if v.get("verdict") == "reject":
+            rejected.append((r, v))
+    kg_writer._save(recs)   # persist verdicts for audit
+    lines = [f"Criticized {len(matched)}: {counts['accept']} accept, "
+             f"{counts['reject']} reject, {counts['uncertain']} uncertain."]
+    for r, v in rejected[:8]:
+        lines.append(f"  REJECT {r['subject']} —{r['predicate']}→ {r['object']}: "
+                     f"{str(v.get('reason'))[:80]}")
+    return "\n".join(lines)
 
 
 def query_curated_kg(subject: str = "", object: str = "") -> str:
@@ -394,6 +422,26 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "criticize_curated_kg",
+            "description": (
+                "Deploy the CRITIC: adversarially verify curated associations "
+                "(well-formed? source-supported? type-valid? plausible?) and record "
+                "a verdict on each. Rejects hallucinations/junk but keeps novel "
+                "plausible links. Use to clean the curated KG after curation."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "subject": {"type": "string", "description": "Filter by subject."},
+                    "object": {"type": "string", "description": "Filter by object."},
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "query_curated_kg",
             "description": (
                 "Read the agent's OWN curated knowledge graph — associations it "
@@ -423,6 +471,7 @@ DISPATCH = {
     "propose_experiment": hyp.propose_experiment,
     "calibrate_link": hyp.calibrate_link,
     "curate_literature": curate_literature,
+    "criticize_curated_kg": criticize_curated_kg,
     "query_curated_kg": query_curated_kg,
 }
 

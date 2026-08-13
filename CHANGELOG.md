@@ -4,6 +4,9 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-13
+- **Critic agent** — adversarial verifier (`criticize_curated_kg`) + test-driven
+  eval harness (`eval_critic.py`); catches hallucinations/junk while preserving
+  novel valid links (PR #17 · ADR-0013).
 - **B4 persistent KG (REPL)** — `python agent.py` with no arg keeps the KG + model
   warm across questions (PR #15).
 - **B3 permutation-null calibration** — `calibrate_link`: percentile/p-value vs a
