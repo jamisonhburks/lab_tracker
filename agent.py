@@ -2,7 +2,8 @@
 
 The agent loop is model-agnostic: call the model -> if it asked for a tool, run
 the tool and feed the result back -> repeat until it stops asking for tools.
-Nothing here is Ollama-specific except the `ollama.chat(...)` calls.
+The model is reached through the llm.py adapter, so Ollama <-> Claude is a config
+flag (LLM_BACKEND) — nothing else in the system knows which provider is used.
 
 Tools (the "grounding" step, per the KG-CoI pattern):
   - search_pubmed    : PubMed abstracts via NCBI E-utilities (no API key).
@@ -23,7 +24,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
-import ollama
+import llm
 
 import memory
 import semantic_memory
@@ -33,7 +34,6 @@ import kg_writer
 import confidence
 import critic
 
-MODEL = "qwen3:14b"
 MAX_STEPS = 10      # safety cap so a misbehaving loop can't run forever
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
@@ -143,9 +143,9 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
             f"abstract explicitly reports.\n\nAbstract:\n{paper['abstract']}"
         )
         try:
-            resp = ollama.chat(model=MODEL, format=STUDY_EXTRACT_SCHEMA, think=False,
-                               messages=[{"role": "user", "content": prompt}])
-            assocs = json.loads(resp["message"]["content"]).get("associations", [])
+            resp = llm.chat([{"role": "user", "content": prompt}],
+                            schema=STUDY_EXTRACT_SCHEMA)
+            assocs = json.loads(resp.text).get("associations", [])
         except Exception:
             continue
         for a in assocs:
@@ -507,20 +507,19 @@ def run_agent(question: str) -> None:
     seen = set()   # provenance actually observed this run (PMID:… / file:…)
 
     for _ in range(MAX_STEPS):
-        response = ollama.chat(model=MODEL, messages=messages, tools=TOOLS, think=False)
-        msg = response["message"]
+        resp = llm.chat(messages, tools=TOOLS)
 
-        if msg.get("content"):
-            print(msg["content"])
+        if resp.text:
+            print(resp.text)
 
-        tool_calls = msg.get("tool_calls") or []
-        if not tool_calls:
+        if not resp.tool_calls:
             break
 
-        messages.append(msg)
-        for call in tool_calls:
-            name = call["function"]["name"]
-            args = call["function"]["arguments"]
+        messages.append({"role": "assistant", "content": resp.text,
+                         "tool_calls": [{"id": tc.id, "name": tc.name, "args": tc.args}
+                                        for tc in resp.tool_calls]})
+        for tc in resp.tool_calls:
+            name, args = tc.name, tc.args
             print(f"  -> calling {name}({args})")
             output = DISPATCH[name](**args)
 
@@ -536,7 +535,8 @@ def run_agent(question: str) -> None:
                 for grp in re.findall(r"via: (.+)", output):
                     seen.update(f"KG:{s.strip()}" for s in grp.split(","))
 
-            messages.append({"role": "tool", "tool_name": name, "content": output})
+            messages.append({"role": "tool", "tool_call_id": tc.id, "name": name,
+                             "content": output})
     else:
         print("\n[stopped: hit MAX_STEPS]")
 
@@ -581,13 +581,9 @@ def _consolidate(messages: list, seen: set) -> list:
         "or empty strings if the claim is not a relation between two named entities."
     )
     try:
-        resp = ollama.chat(
-            model=MODEL,
-            messages=messages + [{"role": "user", "content": prompt}],
-            format=CONSOLIDATION_SCHEMA,
-            think=False,
-        )
-        findings = json.loads(resp["message"]["content"]).get("findings", [])
+        resp = llm.chat(messages + [{"role": "user", "content": prompt}],
+                        schema=CONSOLIDATION_SCHEMA)
+        findings = json.loads(resp.text).get("findings", [])
     except Exception as err:  # keep the toy robust if consolidation hiccups
         print(f"[consolidation failed: {err}]")
         return []

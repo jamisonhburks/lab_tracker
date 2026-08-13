@@ -20,11 +20,10 @@ import re
 import urllib.parse
 import urllib.request
 
-import ollama
+import llm
 
 import kg_memory as kg
 
-MODEL = "qwen3:14b"
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
 # Database/dataset accessions the synthesizer sometimes mis-extracts as entities —
@@ -102,9 +101,8 @@ def criticize(record: dict, abstract: str | None = None, votes: int = 1) -> dict
     )
     def _once() -> dict:
         try:
-            resp = ollama.chat(model=MODEL, format=VERDICT_SCHEMA, think=False,
-                               messages=[{"role": "user", "content": prompt}])
-            return json.loads(resp["message"]["content"])
+            resp = llm.chat([{"role": "user", "content": prompt}], schema=VERDICT_SCHEMA)
+            return json.loads(resp.text)
         except Exception as err:
             return {"verdict": "uncertain", "reason": f"critic error: {err}"}
 

@@ -29,6 +29,7 @@ ollama pull qwen3:14b
 pip install -r requirements.txt        # sentence-transformers is optional (semantic norm)
 export KG_BACKEND=hetionet             # demo | hetionet | optimuskg (default demo)
 # optional: export ENTITY_NORM=semantic   # BioLORD disease-synonym normalization
+# optional: export LLM_BACKEND=anthropic  # use Claude instead of local Qwen3 (needs `anthropic` + API key)
 ```
 
 ## Run

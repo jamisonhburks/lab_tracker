@@ -4,6 +4,11 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-13
+- **LLM adapter** — `llm.py`: model reached via `chat()`; Ollama ↔ Claude is a
+  config flag (`LLM_BACKEND`). Ollama path verified; Anthropic best-effort
+  (PR #19 · ADR-0014).
+- **Critic hardened** — accession pre-filter + multi-vote + expanded 12-case eval;
+  gold set caught an accession gap → fixed to 1.00 (PR #18 · ADR-0013).
 - **Critic agent** — adversarial verifier (`criticize_curated_kg`) + test-driven
   eval harness (`eval_critic.py`); catches hallucinations/junk while preserving
   novel valid links (PR #17 · ADR-0013).
