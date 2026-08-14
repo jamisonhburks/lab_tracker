@@ -48,6 +48,8 @@ python agent.py                                                               # 
   auto-build a standard-conforming project skeleton.
 - **[`docs/decisions/`](docs/decisions/)** — Architecture Decision Records: *why*
   each choice was made, alternatives, and evidence. Start here.
+- **[`docs/related-work.md`](docs/related-work.md)** — verified prior-art map + honest
+  novelty positioning (what's established vs. a contribution). Every citation fetched-and-checked.
 - **[`CHANGELOG.md`](CHANGELOG.md)** — reverse-chronological change summary.
 - **[`docs/agent-architecture.md`](docs/agent-architecture.md)** — the multi-agent
   target design and build plan.
