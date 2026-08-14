@@ -4,6 +4,13 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Three-tier substrate scoping + WIP group semantics** — `SUBSTRATE_SCOPE`
+  (personal|shared|all) on the MCP server: PERSONAL (episodic + personal semantic, local),
+  SHARED WIP (`list_active_work` — every tracked hypothesis/experiment/campaign with STATUS
+  + validity-gate counts, provisional/un-gated), SHARED CONSENSUS (critic-gated curated
+  findings). Run a shared deployment (hosted, over git-repo KG) + a personal one (local).
+  Distinction is CONCLUSION vs PROCESS: process is shareable mid-flight, findings are gated
+  (PR #38 · ADR-0031).
 - **KG-grounded method selection (Stage 3)** — `method_select.recommend_methods` turns
   'what method for this data?' into a GRAPH TRAVERSAL (modality→suited_to→used_for→
   trained_with→evaluated_by + caveats + authorship + trust split), backend-independent.
