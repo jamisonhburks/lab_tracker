@@ -10,11 +10,11 @@ Loaders (ml_schema.load_fused_seed / kg_memory load_ml) just read the cached JSO
 """
 
 import json
-import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import ml_schema
+import net
 
 SEED = Path(__file__).parent / "seeds" / "ml_fused.json"
 _NS = {"a": "http://www.w3.org/2005/Atom"}
@@ -171,7 +171,7 @@ def _fetch_arxiv(ids: list, batch: int = 25) -> dict:
         chunk = ids[i:i + batch]
         url = ("http://export.arxiv.org/api/query?id_list=" + ",".join(chunk)
                + f"&max_results={len(chunk)}")
-        root = ET.fromstring(urllib.request.urlopen(url, timeout=90).read())
+        root = ET.fromstring(net.fetch_bytes(url, timeout=90))
         for e in root.findall("a:entry", _NS):
             aid = e.findtext("a:id", "", _NS).split("/abs/")[-1].split("v")[0]
             authors = [a.findtext("a:name", "", _NS) for a in e.findall("a:author", _NS)]

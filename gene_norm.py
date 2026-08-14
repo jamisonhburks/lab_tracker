@@ -14,6 +14,8 @@ import shutil
 import urllib.request
 from pathlib import Path
 
+import net
+
 HGNC_URL = ("https://storage.googleapis.com/public-download-files/hgnc/tsv/tsv/"
             "hgnc_complete_set.txt")
 CACHE = Path(__file__).parent / "data" / "hgnc_complete_set.txt"
@@ -30,7 +32,7 @@ def _load_alias_map() -> dict:
     if not CACHE.exists():
         CACHE.parent.mkdir(exist_ok=True)
         req = urllib.request.Request(HGNC_URL, headers={"User-Agent": "curl"})
-        with urllib.request.urlopen(req, timeout=120) as r, open(CACHE, "wb") as out:
+        with net.urlopen_retry(req, timeout=120) as r, open(CACHE, "wb") as out:
             shutil.copyfileobj(r, out)
 
     with CACHE.open(encoding="utf-8") as f:

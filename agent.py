@@ -21,10 +21,10 @@ import json
 import re
 import sys
 import urllib.parse
-import urllib.request
 import xml.etree.ElementTree as ET
 
 import llm
+import net
 
 import memory
 import semantic_memory
@@ -52,16 +52,14 @@ def search_pubmed(query: str, max_results: int = 5) -> str:
     search_url = f"{EUTILS}/esearch.fcgi?" + urllib.parse.urlencode(
         {"db": "pubmed", "term": query, "retmax": max_results, "retmode": "json"}
     )
-    with urllib.request.urlopen(search_url, timeout=30) as resp:
-        ids = json.load(resp)["esearchresult"]["idlist"]
+    ids = json.loads(net.fetch_bytes(search_url, timeout=30))["esearchresult"]["idlist"]
     if not ids:
         return "No PubMed results."
 
     fetch_url = f"{EUTILS}/efetch.fcgi?" + urllib.parse.urlencode(
         {"db": "pubmed", "id": ",".join(ids), "rettype": "abstract", "retmode": "text"}
     )
-    with urllib.request.urlopen(fetch_url, timeout=30) as resp:
-        return resp.read().decode("utf-8", "replace")[:12000]
+    return net.fetch_text(fetch_url, timeout=30)[:12000]
 
 
 def read_file(path: str) -> str:
@@ -104,14 +102,12 @@ def _fetch_articles(query: str, n: int) -> list:
     """Return [{pmid, title, abstract}] — per-paper, so PMID attribution is exact."""
     search_url = f"{EUTILS}/esearch.fcgi?" + urllib.parse.urlencode(
         {"db": "pubmed", "term": query, "retmax": n, "retmode": "json"})
-    with urllib.request.urlopen(search_url, timeout=30) as resp:
-        ids = json.load(resp)["esearchresult"]["idlist"]
+    ids = json.loads(net.fetch_bytes(search_url, timeout=30))["esearchresult"]["idlist"]
     if not ids:
         return []
     fetch_url = f"{EUTILS}/efetch.fcgi?" + urllib.parse.urlencode(
         {"db": "pubmed", "id": ",".join(ids), "retmode": "xml"})
-    with urllib.request.urlopen(fetch_url, timeout=30) as resp:
-        root = ET.fromstring(resp.read())
+    root = ET.fromstring(net.fetch_bytes(fetch_url, timeout=30))
 
     articles = []
     for art in root.findall(".//PubmedArticle"):

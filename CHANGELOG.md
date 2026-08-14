@@ -4,6 +4,13 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Resilient live retrieval (`net.py`)** — one shared helper (`urlopen_retry` / `fetch_bytes`
+  / `fetch_text`) that every external fetch routes through (PubMed, arXiv, Monarch, Hetionet,
+  HGNC). Retries only transient failures (connection/timeout, HTTP 429/5xx; 404 fails fast)
+  with exponential backoff + jitter — tenacity if installed, else an equivalent manual loop
+  (so the dep is OPTIONAL). Replaced novelty's bespoke retry loop; deleted all raw `urlopen`
+  call sites. Verified both paths (retry-then-succeed, 404 fail-fast, 503 retry, exhaust-
+  reraise) (PR #42 · ADR-0035).
 - **`scaffold.py` onboarding helper** — automates the mechanical half of the `new-project` /
   `conform-project` flows (stdlib-only, no deps). `new` builds the standard tree + fills
   `CLAUDE.md`/`README.md` placeholders (computed substrate path, status `scaffolding`) +

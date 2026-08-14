@@ -4,6 +4,10 @@ pydantic>=2.0        # validation + retry on the structured-output boundary (sch
 polars>=1.0          # KG DataFrames (Hetionet / Monarch backends)
 optimuskg>=1.0.0     # OptimusKG knowledge graph (also pulls polars)
 
+# Optional — resilient live retrieval (net.py). If absent, net.py falls back to an
+# equivalent manual retry loop, so this is a nicety, not a hard requirement.
+tenacity>=8.0        # backoff/retry on PubMed / arXiv / Monarch / Hetionet / HGNC fetches
+
 # Optional — only for semantic entity normalization (ENTITY_NORM=semantic)
 sentence-transformers>=3.0   # BioLORD/SapBERT embeddings for entity linking
 

@@ -46,3 +46,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0032](0032-contribute-pipeline.md) | `contribute()` write-path into shared consensus (critic-gated, attributed) | 2026-08-14 | Accepted | #39 |
 | [0033](0033-lab-standard-onboarding-playbook.md) | Lab-standard onboarding playbook — self-describing repo → conforming projects | 2026-08-14 | Accepted | #40 |
 | [0034](0034-scaffold-helper.md) | `scaffold.py` — automate the mechanical half of onboarding | 2026-08-14 | Accepted | #41 |
+| [0035](0035-resilient-live-retrieval.md) | Resilient live retrieval (`net.py`, tenacity-optional) | 2026-08-14 | Accepted | #42 |

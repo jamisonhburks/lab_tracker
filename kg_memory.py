@@ -35,6 +35,8 @@ from pathlib import Path
 
 import polars as pl
 
+import net
+
 NODE_ID, NODE_NAME, NODE_CAT = "id", "name", "category"
 EDGE_SUBJ, EDGE_PRED, EDGE_OBJ, EDGE_SRC = "subject", "predicate", "object", "source"
 
@@ -109,7 +111,7 @@ def load_hetionet() -> None:
     local = DATA_DIR / "hetionet-v1.0.json.bz2"
     if not local.exists():
         req = urllib.request.Request(HETIONET_URL, headers={"User-Agent": "curl"})
-        with urllib.request.urlopen(req, timeout=180) as r, open(local, "wb") as out:
+        with net.urlopen_retry(req, timeout=180) as r, open(local, "wb") as out:
             shutil.copyfileobj(r, out)
 
     with bz2.open(local, "rt", encoding="utf-8") as f:
@@ -165,7 +167,7 @@ def load_monarch(human_only: bool = True) -> None:
         tar = DATA_DIR / "monarch-kg.tar.gz"
         if not tar.exists():
             req = urllib.request.Request(MONARCH_URL, headers={"User-Agent": "curl"})
-            with urllib.request.urlopen(req, timeout=1800) as r, open(tar, "wb") as out:
+            with net.urlopen_retry(req, timeout=1800) as r, open(tar, "wb") as out:
                 shutil.copyfileobj(r, out)
         import tarfile
         with tarfile.open(tar, "r:gz") as t:
