@@ -12,3 +12,7 @@ sentence-transformers>=3.0   # BioLORD/SapBERT embeddings for entity linking
 #   git clone https://github.com/k-dense-ai/scientific-agent-skills.git \
 #     external/scientific-agent-skills
 # anthropic>=0.40
+
+# Optional — only to run the MCP server (mcp_server.py) that exposes the substrate
+# to external Claude sessions (Claude Desktop / Claude Code).
+# fastmcp>=3.0

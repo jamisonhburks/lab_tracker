@@ -10,6 +10,13 @@ decision behind it (see `docs/decisions/`). Dates are approximate build dates.
   Wired into `propose_experiment` (appends after the study-design essentials) and exposed
   as a tool. Verified: ECG→Transformer; T2D event-based→Transformer/GRU vs tabular→XGBoost
   (PR #36 · ADR-0029).
+- **MCP substrate server** — `mcp_server.py`: exposes the substrate over MCP (local
+  stdio) so a fresh Claude session (Claude Desktop / Claude Code) can think WITH it —
+  ground_claim, calibrate_link, check_novelty, find_paths, query_curated_findings,
+  recall_prior_work, recommend_methods, propose_experiment + audit resources
+  (provenance/report/ledger/hypothesis). No LLM inside (substrate, not thinker); returns
+  evidence, not just answers. Verified: 9 tools + 5 resources register, live call returns
+  grounding. Realizes 'substrate, not thinker' (PR #37 · ADR-0030).
 - **ML layer — Stage 1 curated expansion** — grew the arXiv-seeded method set 13→61
   seminal methods (NLP/CV/graph/generative/SSL/RL/tabular) with REAL first/last-author +
   year from arXiv, hand-curated lineage, and a title-keyword GUARD that drops any mistyped
