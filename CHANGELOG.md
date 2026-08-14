@@ -4,6 +4,15 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Thinker-supplied critic verdict** — the critic on the consensus path can now be Claude (the
+  client thinker), not the local model, keeping the substrate LLM-free. `contribute(critic_verdict=)`
+  uses a client-supplied `accept`/`reject` (fail-closed) instead of running the local critic; every
+  gate logs `critic_by` ∈ {thinker, local, provenance}. New no-LLM `hypothesis_tools.refine_evidence`
+  gathers each bridge's mechanism + PubMed triple count + abstracts for the thinker to judge;
+  `refine_hypothesis(critic_fn=)` accepts a thinker critic. MCP: `contribute_finding` gains
+  `critic_verdict`, new shared tool `refine_evidence` (14 shared tools) — a Claude client does the
+  whole gather→judge→record cycle with no LLM in the server. Verified: thinker accept→pending_review
+  in 0.14s (no model), fail-closed normalize, `refine_evidence` output (PR #47 · ADR-0040).
 - **MeSH↔HPO symptom/phenotype merge (combined KG)** — the last un-harmonized class in the
   `combined` backend. Hetionet's MeSH `Symptom` nodes now merge onto Monarch's HPO
   `PhenotypicFeature` nodes, so a Hetionet disease→symptom edge and a Monarch phenotype→gene edge

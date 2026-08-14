@@ -165,15 +165,35 @@ if _SHARED:
     @mcp.tool
     def contribute_finding(subject: str, predicate: str, object: str, source: str,
                            source_kind: str = "literature", direction: str = "supports",
-                           abstract: str = "") -> str:
+                           abstract: str = "", critic_verdict: str = "",
+                           critic_reason: str = "") -> str:
         """WRITE-PATH into shared CONSENSUS knowledge (the only gated tier). Normalizes,
         critic-gates (literature → re-reads the abstract; experiment → verified by committed
         provenance), routes CONSERVATIVELY (novel/contradictory → peer review; corroborating
         an already-supported edge → auto-merge), and records with attribution. `source` is a
-        PMID or experiment-id; set SUBSTRATE_CONTRIBUTOR for attribution."""
+        PMID or experiment-id; set SUBSTRATE_CONTRIBUTOR for attribution.
+
+        THINKER CRITIC: set `critic_verdict`='accept'|'reject' to supply YOUR judgment (you,
+        the client model, are the critic) — the substrate records it WITHOUT running any local
+        model. Leave it empty to fall back to the local critic. Pair with `refine_evidence` to
+        gather the evidence you judge on."""
+        cv = None
+        if critic_verdict.strip():
+            cv = {"verdict": critic_verdict.strip(),
+                  "reason": critic_reason or "verdict supplied by client thinker",
+                  "source_supported": critic_verdict.strip().lower() == "accept"}
         return contrib.contribute(subject, predicate, object, source=source,
                                   source_kind=source_kind, direction=direction,
-                                  abstract=abstract or None)
+                                  abstract=abstract or None, critic_verdict=cv)
+
+    @mcp.tool
+    def refine_evidence(entity_a: str, entity_c: str, max_bridges: int = 4) -> str:
+        """Gather the evidence to REFINE a hypothesis with NO generation: each KG bridge's
+        mechanism, its A–bridge–C PubMed triple co-mention count, and targeted abstracts. YOU
+        (the client model) are the critic — judge each bridge (real lead vs hub/transitivity
+        artifact), then record confirmed links via contribute_finding(..., critic_verdict=...).
+        The substrate half of the refinement loop; keeps generation on the thinker's side."""
+        return hyp.refine_evidence(entity_a, entity_c, max_bridges=max_bridges)
 
     @mcp.tool
     def review_queue() -> str:
