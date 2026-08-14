@@ -16,22 +16,26 @@ if you have not. Then extract from the human's sentence:
 **[ASK]** Where should the project directory live, and what is its short slug? (default:
 a new sibling dir `../<slug>/`, kept as its own git repo so it can promote independently.)
 
-## 1. Create the skeleton
+## 1–2. Skeleton + standard-carrying files (one command)
 
-Create the directory tree from [`project-structure.md`](project-structure.md). At minimum:
-`data/{raw,processed,external}/`, `hypotheses/`, `experiments/`, `reports/`, `campaigns/`,
-`notes/`, `literature/`, `src/`. Add a `.gitignore` that excludes `data/raw/`,
-`data/processed/`, large artifacts, and `__pycache__/`.
+Steps 1 and 2 are pure boilerplate, so run the helper instead of hand-creating files:
 
-## 2. Drop in the standard-carrying files
+```sh
+python scaffold.py new "<Project Title>" --slug <slug> --modality <modality> [--git-init]
+```
 
-Copy from [`templates/`](templates/), filling the `{{placeholders}}`:
+This builds the standard tree (`data/{raw,processed,external}/`, `hypotheses/`,
+`experiments/`, `reports/`, `campaigns/`, `notes/`, `literature/`, `src/`), a `.gitignore`,
+and — filling the `{{placeholders}}` — the two **load-bearing** files:
 
-- `templates/project-CLAUDE.md`  → `<project>/CLAUDE.md`
-  This is the load-bearing step: it makes **every future session in this directory**
-  follow the lab standard without being told. Point its links back to this substrate repo.
-- `templates/project-README.md`  → `<project>/README.md`
-  Fill title, question, modality, status = `scaffolding`.
+- `<project>/CLAUDE.md` (from `templates/project-CLAUDE.md`) — makes **every future session in
+  this directory** follow the lab standard without being told; its substrate path is computed
+  for you.
+- `<project>/README.md` (from `templates/project-README.md`) — title, modality, status `scaffolding`.
+- `<project>/notes/00_charter.md` — a **stub with the Step-4 substrate checks as a checklist**.
+
+Doing it by hand is fine too (copy from [`templates/`](templates/), fill the placeholders) —
+the helper just does exactly that, deterministically, so names match what the shared tier keys off.
 
 ## 3. Register intent as the first tracked artifact
 

@@ -4,6 +4,14 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **`scaffold.py` onboarding helper** — automates the mechanical half of the `new-project` /
+  `conform-project` flows (stdlib-only, no deps). `new` builds the standard tree + fills
+  `CLAUDE.md`/`README.md` placeholders (computed substrate path, status `scaffolding`) +
+  `.gitignore` + a `notes/00_charter.md` stub listing the substrate checks for the next
+  session to run; `conform` is NON-destructive (missing dirs + files only, never overwrites).
+  Idempotent (`--force` to overwrite). Deliberately does the copy-and-fill, NOT the thinking
+  (grounding/hypotheses stay agent-driven). Verified: fill, idempotency, non-destructive
+  conform (PR #41 · ADR-0034).
 - **Lab-standard onboarding playbook** — a self-describing layer (docs only) so a fresh
   session can scaffold a new project or conform an existing one to the standard, then keep
   future sessions on-standard. Root `AGENTS.md` routes by intent → `lab-standard/`:
