@@ -4,6 +4,14 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **MeSH↔HPO symptom/phenotype merge (combined KG)** — the last un-harmonized class in the
+  `combined` backend. Hetionet's MeSH `Symptom` nodes now merge onto Monarch's HPO
+  `PhenotypicFeature` nodes, so a Hetionet disease→symptom edge and a Monarch phenotype→gene edge
+  meet at one node. Monarch's HPO nodes carry NO MeSH xref (only UMLS/SNOMED), so this is a
+  lexical, PRECISION-FIRST crosswalk (exact name + exact-synonym, + de-plural + MeSH-inversion) —
+  a miss leaves a node un-linked (prior behavior), a wrong merge would forge a false path. 183/438
+  symptoms merged (the unmatched are mostly MeSH "symptoms" that are actually diseases). Reuses the
+  proven `_apply_id_map` (PR #46 · ADR-0039).
 - **Idea intake — `assess_idea`** — one entry point for the follow-up move: a free-text idea OR
   a prior `H{NNN}` → the local model extracts the testable entity pair(s) → EVALUATE (grounding +
   calibration + PubMed novelty → verdict: grounded/published/potential/off-graph) → PROPOSE the

@@ -50,3 +50,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0036](0036-ml-bridge-stage2.md) | ML bridge breadth (Stage 2) — disease↔modality↔task↔architecture coverage | 2026-08-14 | Accepted | #43 |
 | [0037](0037-ml-bulk-ingestion.md) | Bulk method ingestion (Stage 4) — `ml_ingest.py` + `ml_full` backend | 2026-08-14 | Accepted | #44 |
 | [0038](0038-idea-intake-followup.md) | Idea intake — `assess_idea` (evaluate → propose → opt-in refine) | 2026-08-14 | Accepted | #45 |
+| [0039](0039-mesh-hpo-symptom-merge.md) | MeSH↔HPO symptom/phenotype merge in the combined KG | 2026-08-14 | Accepted | #46 |
