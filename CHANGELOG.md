@@ -3,6 +3,16 @@
 Reverse-chronological summary of substantive changes. Each entry links a PR to the
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
+## 2026-08-14
+- **Validity gates** — `validity.py`: pre-registered, hypothesis-ORTHOGONAL interim
+  checks (cohort integrity, data scale, positive/negative controls) declared in the
+  spec's `validity_gates` block. A `halt` gate stops a broken run (marked invalid, not
+  "negative"); a `flag` warns. Catches machinery bugs WITHOUT steering the analysis
+  (p-hacking safeguard). Verified: H001 all-pass (null-gene FDR check = 0.011); a
+  cohort gate halts the `{AD:0}` case (the H002 `AD='AA'` bug); on H002 the data-scale
+  gate FLAGGED GSE48350's max=59.24 — a real log-scale anomaly the original run missed.
+  Folded into the provenance card (PR #30 · ADR-0024).
+
 ## 2026-08-13
 - **Scaling profile + `scaling.py`** — content accounting per experiment (bytes/lines/
   tokens + scientific-op count; `python scaling.py` for a cross-experiment table).

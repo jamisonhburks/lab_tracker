@@ -78,6 +78,25 @@ statistics:
   effect_size_threshold: 0.5   # minimum |Cohen's d| to claim success
 
 # ---------------------------------------------------------------------------
+# Validity gates — PRE-REGISTERED, hypothesis-ORTHOGONAL interim checks.
+# These verify the machinery (is the experiment working?), never the planted-gene
+# result — so they catch pipeline bugs without steering the analysis.
+# ---------------------------------------------------------------------------
+validity_gates:
+  cohort_integrity:
+    min_per_arm: 20        # both case & control arms must be non-empty and >= 20
+    severity: halt         # a broken cohort invalidates the run
+  data_scale:
+    kind: log
+    max_expected: 30.0     # log-expression must not exceed ~30 (catches un-logged data)
+    severity: halt
+  negative_control:
+    # the NULL_GENE_* set has NO planted effect -> should stay null (validates FDR
+    # control, orthogonal to the planted/hypothesis genes)
+    max_frac_significant: 0.10
+    severity: flag
+
+# ---------------------------------------------------------------------------
 # Reproducibility
 # ---------------------------------------------------------------------------
 seeds:

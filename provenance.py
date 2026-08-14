@@ -52,6 +52,16 @@ def _formation_trace(hyp: dict) -> tuple | None:
     return None
 
 
+def _validity(exp_id: str) -> str | None:
+    """Summarize the pre-registered validity gates (from validity.json)."""
+    p = ROOT / "experiments" / exp_id / "validity.json"
+    if not p.exists():
+        return None
+    gates = json.loads(p.read_text())
+    return "; ".join(f"{g['name']}={'PASS' if g['passed'] else 'FAIL'}({g['severity']})"
+                     for g in gates) or "(none)"
+
+
 def _verdict(exp_id: str) -> str | None:
     p = ROOT / "reports" / f"{exp_id}_evaluation.md"
     if not p.exists():
@@ -147,6 +157,9 @@ def build(exp_id: str) -> Path:
                  "(experiment predates instrumentation; re-run to capture)." % exp_id)
     L.append("- **Statistical standards:** Bonferroni + BH-FDR, effect sizes, "
              f"≥{hyp.get('min_runs', '?')} runs/robustness checks, reproducibility log.")
+    val = _validity(exp_id)
+    if val:
+        L.append(f"- **Validity gates (pre-registered, hypothesis-orthogonal):** {val}")
     L.append("")
 
     L += ["## Result",

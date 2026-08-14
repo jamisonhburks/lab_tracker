@@ -34,6 +34,7 @@
   12. check_direction_replication
   13. matplotlib.savefig (forest_plot)
 - **Statistical standards:** Bonferroni + BH-FDR, effect sizes, ≥3 runs/robustness checks, reproducibility log.
+- **Validity gates (pre-registered, hypothesis-orthogonal):** cohort_integrity=PASS(halt); data_scale=FAIL(flag); cohort_integrity=PASS(halt)
 
 ## Result
 - **Metrics:** metrics.csv (39 rows), metrics_per_region.csv (57 rows), metrics_power.csv (3 rows), metrics_replication.csv (3 rows)
