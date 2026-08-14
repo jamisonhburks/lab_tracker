@@ -47,3 +47,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0033](0033-lab-standard-onboarding-playbook.md) | Lab-standard onboarding playbook — self-describing repo → conforming projects | 2026-08-14 | Accepted | #40 |
 | [0034](0034-scaffold-helper.md) | `scaffold.py` — automate the mechanical half of onboarding | 2026-08-14 | Accepted | #41 |
 | [0035](0035-resilient-live-retrieval.md) | Resilient live retrieval (`net.py`, tenacity-optional) | 2026-08-14 | Accepted | #42 |
+| [0036](0036-ml-bridge-stage2.md) | ML bridge breadth (Stage 2) — disease↔modality↔task↔architecture coverage | 2026-08-14 | Accepted | #43 |
