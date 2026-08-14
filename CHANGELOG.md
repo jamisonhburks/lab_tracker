@@ -4,6 +4,15 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Bulk method ingestion (Stage 4)** — `ml_ingest.py`: harmonize an external ML method corpus
+  into the fused schema, deduped vs the curated 61 and written to a SEPARATE lower-trust seed
+  (`seeds/ml_bulk.json`), edges tagged `paperswithcode (bulk)`. Curated = author-VERIFIED; bulk
+  = paper-LINKED, not author-verified (explicit step down). PwC is sunset (media URL redirects
+  to HTML), so the pipeline tries live, verifies gzip-JSON, and falls back to a vendored
+  snapshot (43 real methods not in the curated set) — path printed, never silent. New
+  `KG_BACKEND=ml_full` merges curated + bulk. Verified: bulk→curated lineage
+  (`DETR —derived_from→ Transformer —suited_to→ ECG`); ml_full = 404 nodes / 494 edges, 104
+  METHOD nodes (61+43) (PR #44 · ADR-0037).
 - **ML bridge breadth (Stage 2)** — broadened the curated disease↔modality↔task↔architecture
   bridge in `ml_seed.py` (one appended block, no schema change): +6 diseases (glaucoma, AD,
   heart failure, sepsis, diabetic retinopathy, epilepsy), +6 modalities (fundus, OCT, MRI/CT,

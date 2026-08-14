@@ -16,7 +16,8 @@ below, so the same traversal code runs on every backend:
                       drug edges on shared nodes (a local slice of PrimeKG)
   - load_optimuskg()  OptimusKG (Zitnik Lab) — pending Dataverse recovery
 
-Pick a backend with KG_BACKEND (demo | hetionet | monarch | combined | optimuskg);
+Pick a backend with KG_BACKEND (demo | hetionet | monarch | combined | ml | ml_demo |
+ml_full | optimuskg); ml_full = the curated fused seed + the bulk-ingested method layer.
 default is demo. Traversal is UNDIRECTED on purpose: for hypothesis generation we
 care that two entities are connected through some mechanism, not edge direction.
 
@@ -345,9 +346,40 @@ def load_ml() -> None:
     _reset()
 
 
+def load_ml_full() -> None:
+    """The curated fused seed PLUS the bulk-ingested method layer (KG_BACKEND=ml_full).
+    Curated methods are author-verified; bulk methods (seeds/ml_bulk.json, built by
+    ml_ingest.py) are paper-linked but not author-verified, their edges source-tagged
+    'paperswithcode (bulk)'. If the bulk seed is absent, this degrades to the curated seed
+    with a note (run `python ml_ingest.py` to generate it)."""
+    import ml_schema
+    nodes, edges = ml_schema.load_fused_seed()
+    nodes, edges = list(nodes), list(edges)
+    bulk = DATA_DIR.parent / "seeds" / "ml_bulk.json"
+    if bulk.exists():
+        d = json.loads(bulk.read_text(encoding="utf-8"))
+        nodes += [tuple(n) for n in d["nodes"]]
+        edges += [tuple(e) for e in d["edges"]]
+    else:
+        print("[ml_full] seeds/ml_bulk.json not found — run `python ml_ingest.py`; "
+              "loading curated seed only.")
+    seen, uniq = set(), []                       # dedup nodes by id (curated wins)
+    for n in nodes:
+        if n[0] not in seen:
+            seen.add(n[0]); uniq.append(n)
+    _G["nodes"] = pl.DataFrame({NODE_ID: [n[0] for n in uniq],
+                                NODE_NAME: [n[1] for n in uniq],
+                                NODE_CAT: [n[2] for n in uniq]})
+    _G["edges"] = pl.DataFrame({EDGE_SUBJ: [e[0] for e in edges],
+                                EDGE_PRED: [e[1] for e in edges],
+                                EDGE_OBJ: [e[2] for e in edges],
+                                EDGE_SRC: [e[3] for e in edges]})
+    _reset()
+
+
 _BACKENDS = {"demo": load_demo, "hetionet": load_hetionet, "monarch": load_monarch,
              "combined": load_combined, "ml_demo": load_ml_demo, "ml": load_ml,
-             "optimuskg": load_optimuskg}
+             "ml_full": load_ml_full, "optimuskg": load_optimuskg}
 
 
 def _graph() -> tuple:
