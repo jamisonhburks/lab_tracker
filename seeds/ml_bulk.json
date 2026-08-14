@@ -1,0 +1,888 @@
+{
+  "source": "vendored snapshot",
+  "n_methods": 43,
+  "nodes": [
+    [
+      "METHOD:Transformer-XL",
+      "Transformer-XL",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:1901.02860",
+      "arXiv:1901.02860 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:DeBERTa",
+      "DeBERTa",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:2006.03654",
+      "arXiv:2006.03654 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:Longformer",
+      "Longformer",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:2004.05150",
+      "arXiv:2004.05150 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:BigBird",
+      "BigBird",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:2007.14062",
+      "arXiv:2007.14062 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:Reformer",
+      "Reformer",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:2001.04451",
+      "arXiv:2001.04451 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:XLM-R",
+      "XLM-R",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:1911.02116",
+      "arXiv:1911.02116 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:Sentence-BERT",
+      "Sentence-BERT",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:1908.10084",
+      "arXiv:1908.10084 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:Switch-Transformer",
+      "Switch-Transformer",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:2101.03961",
+      "arXiv:2101.03961 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:FlashAttention",
+      "FlashAttention",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:2205.14135",
+      "arXiv:2205.14135 (2022)",
+      "Publication"
+    ],
+    [
+      "METHOD:LoRA",
+      "LoRA",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:2106.09685",
+      "arXiv:2106.09685 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:Inception-v3",
+      "Inception-v3",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:1512.00567",
+      "arXiv:1512.00567 (2015)",
+      "Publication"
+    ],
+    [
+      "METHOD:Xception",
+      "Xception",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:1610.02357",
+      "arXiv:1610.02357 (2016)",
+      "Publication"
+    ],
+    [
+      "METHOD:SENet",
+      "SENet",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:1709.01507",
+      "arXiv:1709.01507 (2017)",
+      "Publication"
+    ],
+    [
+      "METHOD:DETR",
+      "DETR",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:2005.12872",
+      "arXiv:2005.12872 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:DeiT",
+      "DeiT",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:2012.12877",
+      "arXiv:2012.12877 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:BEiT",
+      "BEiT",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:2106.08254",
+      "arXiv:2106.08254 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:SegFormer",
+      "SegFormer",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:2105.15203",
+      "arXiv:2105.15203 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:SAM",
+      "SAM",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:2304.02643",
+      "arXiv:2304.02643 (2023)",
+      "Publication"
+    ],
+    [
+      "METHOD:RetinaNet",
+      "RetinaNet",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:1708.02002",
+      "arXiv:1708.02002 (2017)",
+      "Publication"
+    ],
+    [
+      "METHOD:SSD",
+      "SSD",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:1512.02325",
+      "arXiv:1512.02325 (2015)",
+      "Publication"
+    ],
+    [
+      "METHOD:FPN",
+      "FPN",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:1612.03144",
+      "arXiv:1612.03144 (2016)",
+      "Publication"
+    ],
+    [
+      "METHOD:NeRF",
+      "NeRF",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:2003.08934",
+      "arXiv:2003.08934 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:GIN",
+      "GIN",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:1810.00826",
+      "arXiv:1810.00826 (2018)",
+      "Publication"
+    ],
+    [
+      "METHOD:R-GCN",
+      "R-GCN",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:1703.06103",
+      "arXiv:1703.06103 (2017)",
+      "Publication"
+    ],
+    [
+      "METHOD:ChebNet",
+      "ChebNet",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:1606.09375",
+      "arXiv:1606.09375 (2016)",
+      "Publication"
+    ],
+    [
+      "METHOD:DINO",
+      "DINO",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:2104.14294",
+      "arXiv:2104.14294 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:SwAV",
+      "SwAV",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:2006.09882",
+      "arXiv:2006.09882 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:SimSiam",
+      "SimSiam",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:2011.10566",
+      "arXiv:2011.10566 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:Barlow-Twins",
+      "Barlow-Twins",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:2103.03230",
+      "arXiv:2103.03230 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:BLIP",
+      "BLIP",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:2201.12086",
+      "arXiv:2201.12086 (2022)",
+      "Publication"
+    ],
+    [
+      "METHOD:Wav2Vec2",
+      "Wav2Vec2",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:2006.11477",
+      "arXiv:2006.11477 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:Whisper",
+      "Whisper",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:2212.04356",
+      "arXiv:2212.04356 (2022)",
+      "Publication"
+    ],
+    [
+      "METHOD:Rainbow",
+      "Rainbow",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:1710.02298",
+      "arXiv:1710.02298 (2017)",
+      "Publication"
+    ],
+    [
+      "METHOD:MuZero",
+      "MuZero",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:1911.08265",
+      "arXiv:1911.08265 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:Dreamer",
+      "Dreamer",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:1912.01603",
+      "arXiv:1912.01603 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:TD3",
+      "TD3",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:1802.09477",
+      "arXiv:1802.09477 (2018)",
+      "Publication"
+    ],
+    [
+      "METHOD:Decision-Transformer",
+      "Decision-Transformer",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:2106.01345",
+      "arXiv:2106.01345 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:Informer",
+      "Informer",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:2012.07436",
+      "arXiv:2012.07436 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:N-BEATS",
+      "N-BEATS",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:1905.10437",
+      "arXiv:1905.10437 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:TabNet",
+      "TabNet",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:1908.07442",
+      "arXiv:1908.07442 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:FT-Transformer",
+      "FT-Transformer",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:2106.11959",
+      "arXiv:2106.11959 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:Autoformer",
+      "Autoformer",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:2106.13008",
+      "arXiv:2106.13008 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:PatchTST",
+      "PatchTST",
+      "Architecture"
+    ],
+    [
+      "PUB:arXiv:2211.14730",
+      "arXiv:2211.14730 (2022)",
+      "Publication"
+    ]
+  ],
+  "edges": [
+    [
+      "METHOD:Transformer-XL",
+      "introduced_by",
+      "PUB:arXiv:1901.02860",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Transformer-XL",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:DeBERTa",
+      "introduced_by",
+      "PUB:arXiv:2006.03654",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:DeBERTa",
+      "derived_from",
+      "METHOD:BERT",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Longformer",
+      "introduced_by",
+      "PUB:arXiv:2004.05150",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Longformer",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:BigBird",
+      "introduced_by",
+      "PUB:arXiv:2007.14062",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:BigBird",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Reformer",
+      "introduced_by",
+      "PUB:arXiv:2001.04451",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Reformer",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:XLM-R",
+      "introduced_by",
+      "PUB:arXiv:1911.02116",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:XLM-R",
+      "derived_from",
+      "METHOD:RoBERTa",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Sentence-BERT",
+      "introduced_by",
+      "PUB:arXiv:1908.10084",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Sentence-BERT",
+      "derived_from",
+      "METHOD:BERT",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Switch-Transformer",
+      "introduced_by",
+      "PUB:arXiv:2101.03961",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Switch-Transformer",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:FlashAttention",
+      "introduced_by",
+      "PUB:arXiv:2205.14135",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:FlashAttention",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:LoRA",
+      "introduced_by",
+      "PUB:arXiv:2106.09685",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:LoRA",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Inception-v3",
+      "introduced_by",
+      "PUB:arXiv:1512.00567",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Xception",
+      "introduced_by",
+      "PUB:arXiv:1610.02357",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Xception",
+      "derived_from",
+      "METHOD:Inception-v3",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:SENet",
+      "introduced_by",
+      "PUB:arXiv:1709.01507",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:DETR",
+      "introduced_by",
+      "PUB:arXiv:2005.12872",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:DETR",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:DETR",
+      "derived_from",
+      "METHOD:ResNet",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:DeiT",
+      "introduced_by",
+      "PUB:arXiv:2012.12877",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:DeiT",
+      "derived_from",
+      "METHOD:ViT",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:BEiT",
+      "introduced_by",
+      "PUB:arXiv:2106.08254",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:BEiT",
+      "derived_from",
+      "METHOD:ViT",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:SegFormer",
+      "introduced_by",
+      "PUB:arXiv:2105.15203",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:SegFormer",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:SAM",
+      "introduced_by",
+      "PUB:arXiv:2304.02643",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:SAM",
+      "derived_from",
+      "METHOD:ViT",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:RetinaNet",
+      "introduced_by",
+      "PUB:arXiv:1708.02002",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:SSD",
+      "introduced_by",
+      "PUB:arXiv:1512.02325",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:FPN",
+      "introduced_by",
+      "PUB:arXiv:1612.03144",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:NeRF",
+      "introduced_by",
+      "PUB:arXiv:2003.08934",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:GIN",
+      "introduced_by",
+      "PUB:arXiv:1810.00826",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:GIN",
+      "derived_from",
+      "METHOD:GCN",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:R-GCN",
+      "introduced_by",
+      "PUB:arXiv:1703.06103",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:R-GCN",
+      "derived_from",
+      "METHOD:GCN",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:ChebNet",
+      "introduced_by",
+      "PUB:arXiv:1606.09375",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:ChebNet",
+      "derived_from",
+      "METHOD:GCN",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:DINO",
+      "introduced_by",
+      "PUB:arXiv:2104.14294",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:DINO",
+      "derived_from",
+      "METHOD:ViT",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:SwAV",
+      "introduced_by",
+      "PUB:arXiv:2006.09882",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:SimSiam",
+      "introduced_by",
+      "PUB:arXiv:2011.10566",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Barlow-Twins",
+      "introduced_by",
+      "PUB:arXiv:2103.03230",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:BLIP",
+      "introduced_by",
+      "PUB:arXiv:2201.12086",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:BLIP",
+      "derived_from",
+      "METHOD:CLIP",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Wav2Vec2",
+      "introduced_by",
+      "PUB:arXiv:2006.11477",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Wav2Vec2",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Whisper",
+      "introduced_by",
+      "PUB:arXiv:2212.04356",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Whisper",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Rainbow",
+      "introduced_by",
+      "PUB:arXiv:1710.02298",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Rainbow",
+      "derived_from",
+      "METHOD:DQN",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:MuZero",
+      "introduced_by",
+      "PUB:arXiv:1911.08265",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:MuZero",
+      "derived_from",
+      "METHOD:AlphaZero",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Dreamer",
+      "introduced_by",
+      "PUB:arXiv:1912.01603",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:TD3",
+      "introduced_by",
+      "PUB:arXiv:1802.09477",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:TD3",
+      "derived_from",
+      "METHOD:DDPG",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Decision-Transformer",
+      "introduced_by",
+      "PUB:arXiv:2106.01345",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Decision-Transformer",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Informer",
+      "introduced_by",
+      "PUB:arXiv:2012.07436",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Informer",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:N-BEATS",
+      "introduced_by",
+      "PUB:arXiv:1905.10437",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:TabNet",
+      "introduced_by",
+      "PUB:arXiv:1908.07442",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:FT-Transformer",
+      "introduced_by",
+      "PUB:arXiv:2106.11959",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:FT-Transformer",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Autoformer",
+      "introduced_by",
+      "PUB:arXiv:2106.13008",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:Autoformer",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:PatchTST",
+      "introduced_by",
+      "PUB:arXiv:2211.14730",
+      "paperswithcode (bulk)"
+    ],
+    [
+      "METHOD:PatchTST",
+      "derived_from",
+      "METHOD:Transformer",
+      "paperswithcode (bulk)"
+    ]
+  ]
+}
