@@ -4,6 +4,17 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Exploratory lane** (`misc_research.py`) — for sessions that just run analyses, not a
+  pre-registered hypothesis. `session_journal.session_mode()` detects an `adhoc_series` (≥2
+  experiments/findings, no hypothesis) and asks: attach the Research Workflow retroactively
+  (`formalize_retroactively()` drafts a hypothesis+method stub) OR log as miscellaneous. Misc
+  findings enter a rigor-gated pool (`memory/misc_findings.jsonl`) — claim+method+evidence, else
+  flagged (not dropped); rigor verdict thinker-suppliable. Each is MATCHED vs the lab KG /
+  consensus / active hypotheses (corroborates / relates_to_Hxxx / grounded_novel / orphan), and
+  orphans are GROUPED by shared entities into latent themes to formalize. MCP: shared +4
+  (`log_misc_finding`/`match_misc_finding`/`group_misc_findings`/`list_misc_findings` = 18),
+  personal +2 (`session_check`/`formalize_retroactively` = 7). Verified rigor/match/group/detect
+  (PR #50 · ADR-0043).
 - **Synthesize before clear/compact** — Claude Code hooks (`.claude/settings.json` +
   `.claude/hooks/synthesize_session.py`) so a lab member's session captures its research before
   context is lost. Manual `/compact` (`PreCompact`) BLOCKS once with a **prompt** — "synthesize

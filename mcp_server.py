@@ -41,6 +41,7 @@ import novelty
 import memory
 import kg_writer
 import confidence
+import misc_research as misc
 import contribute as contrib
 
 try:                                  # method selection lands with Stage 3
@@ -200,6 +201,38 @@ if _SHARED:
         """Contributions awaiting peer review (novel/contradictory), by contributor."""
         return contrib.review_queue()
 
+    @mcp.tool
+    def log_misc_finding(claim: str, subject: str = "", object: str = "", method: str = "",
+                         effect_size: float | None = None, p_value: float | None = None,
+                         sample_size: int | None = None, source: str = "",
+                         rigor_verdict: str = "") -> str:
+        """Log a MISCELLANEOUS (un-hypothesized) analysis result into the lab's exploratory pool.
+        Still RIGOR-gated (claim + method + evidence; underspecified ones are FLAGGED, not
+        dropped) and auto-matched against the lab KG / consensus / active hypotheses. Not
+        consensus — it lives in the exploratory pool until it matches or is grouped + formalized.
+        `rigor_verdict` ('accept'|'flag'|'reject') lets YOU (the thinker) supply the rigor call;
+        else a heuristic runs."""
+        return misc.log_misc(claim, subject=subject, object=object, method=method,
+                             effect_size=effect_size, p_value=p_value, sample_size=sample_size,
+                             source=source, rigor_verdict=rigor_verdict.strip() or None)
+
+    @mcp.tool
+    def match_misc_finding(subject: str, object: str) -> str:
+        """Match a candidate finding against the coherent lab knowledge (KG grounding + curated
+        consensus + active hypotheses): corroborates / relates-to-Hxxx / grounded-novel / orphan."""
+        return json.dumps(misc.match_misc(subject, object), indent=2)
+
+    @mcp.tool
+    def group_misc_findings() -> str:
+        """Cluster the exploratory pool by shared entities: scattered analyses that TOGETHER may
+        imply a latent hypothesis worth formalizing into shared WIP."""
+        return misc.group_misc()
+
+    @mcp.tool
+    def list_misc_findings() -> str:
+        """The lab's exploratory (un-hypothesized) findings pool, with rigor + match status."""
+        return misc.list_misc()
+
     if method_select is not None:
         @mcp.tool
         def recommend_methods(target: str) -> str:
@@ -292,6 +325,23 @@ if _PERSONAL:
         ready to propose UP to SHARED WIP (hypotheses → YAML, experiments → dirs, findings →
         contribute after testing). A recommendation only — nothing is promoted automatically."""
         return _journal().promotion_review()
+
+    @mcp.tool
+    def session_check() -> str:
+        """Detect whether THIS session is hypothesis-driven or an ad-hoc SERIES of tests with no
+        setup. If ad-hoc, it asks whether to attach the Research Workflow retroactively
+        (formalize a hypothesis + methods) OR log the work as miscellaneous (rigor-checked +
+        matched to the lab KG). Nudges unstructured analysis toward the coherent lab record."""
+        j = _journal()
+        return f"session mode: {j.session_mode()}" + (j.workflow_suggestion() or
+                                                      "\n(no workflow action needed yet)")
+
+    @mcp.tool
+    def formalize_retroactively() -> str:
+        """Attach the Research Workflow AFTER the fact: draft a hypothesis + method stub from
+        this session's ad-hoc analyses (recurring entities → the link; experiment notes → the
+        method). A DRAFT to review/complete, then save to hypotheses/H00N_*.yaml (shared WIP)."""
+        return _journal().formalize_retroactively()
 
 
 if __name__ == "__main__":
