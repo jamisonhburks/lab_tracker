@@ -43,4 +43,5 @@ New substantive changes should add an ADR alongside their PR.
 | [0029](0029-kg-grounded-method-selection.md) | KG-grounded ML method selection (Stage 3) | 2026-08-14 | Accepted | #36 |
 | [0030](0030-mcp-substrate-server.md) | MCP substrate server — expose the substrate to external sessions | 2026-08-14 | Accepted | #37 |
 | [0031](0031-substrate-scoping-wip.md) | Three-tier substrate scoping (personal / shared-WIP / consensus) | 2026-08-14 | Accepted | #38 |
+| [0032](0032-contribute-pipeline.md) | `contribute()` write-path into shared consensus (critic-gated, attributed) | 2026-08-14 | Accepted | #39 |
 | [0033](0033-lab-standard-onboarding-playbook.md) | Lab-standard onboarding playbook — self-describing repo → conforming projects | 2026-08-14 | Accepted | #40 |

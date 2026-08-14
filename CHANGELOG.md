@@ -14,6 +14,13 @@ decision behind it (see `docs/decisions/`). Dates are approximate build dates.
   `project-CLAUDE.md` dropped into each project so the rules travel with the work). No new
   code/deps — pure guidance over the existing MCP tools, 4-agent split, gates, and
   `contribute()` (PR #40 · ADR-0033).
+- **`contribute()` write-path** — `contribute.py`: findings flow into shared CONSENSUS
+  (the one gated tier) — normalized, critic-gated (literature→abstract, experiment→committed
+  provenance), routed conservatively (novel/contradictory→pending_review, corroborating-
+  supported→auto_merged, junk→rejected), appended with ATTRIBUTION; auto-merge aggregates
+  evidence + confidence. Exposed as MCP shared-tier tools (contribute_finding, review_queue).
+  Git deploy: append=PR, critic=CI, review=approval. Also fixed a latent cold-start bug in
+  `_norm_index`. Verified all 3 routes (PR #39 · ADR-0032).
 - **Three-tier substrate scoping + WIP group semantics** — `SUBSTRATE_SCOPE`
   (personal|shared|all) on the MCP server: PERSONAL (episodic + personal semantic, local),
   SHARED WIP (`list_active_work` — every tracked hypothesis/experiment/campaign with STATUS
