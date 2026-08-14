@@ -18,6 +18,7 @@ Run:      python agent.py "your question"
 """
 
 import json
+import os
 import re
 import sys
 import urllib.parse
@@ -857,7 +858,7 @@ def _plan_tools(question: str) -> list:
 # The agent loop.                                                             #
 # --------------------------------------------------------------------------- #
 
-def run_agent(question: str) -> None:
+def run_agent(question: str) -> list:
     messages = [{"role": "user", "content": question}]
     tool_log = []
     seen = set()   # provenance actually observed this run (PMID:… / file:…)
@@ -929,6 +930,7 @@ def run_agent(question: str) -> None:
     # Consolidate: distil each finding into durable, embedded semantic memory.
     n_new = sum(bool(semantic_memory.add_fact(f["claim"], f["sources"])) for f in findings)
     print(f"[semantic memory: +{n_new} new fact(s)]")
+    return findings
 
 
 def _consolidate(messages: list, seen: set) -> list:
@@ -977,12 +979,32 @@ if __name__ == "__main__":
         # this session — no ~20s reload per run. Same for the Ollama model.
         print("Warming up the knowledge graph (loaded once, reused across questions)...")
         kg._graph()
-        print("Ready. Ask a research question — empty line or 'quit' to exit.")
-        while True:
-            try:
-                question = input("\n> ").strip()
-            except EOFError:
-                break
-            if not question or question.lower() in ("quit", "exit"):
-                break
-            run_agent(question)
+        import session_journal
+        journal = session_journal.SessionJournal()
+        journal.start(interval=int(os.environ.get("JOURNAL_INTERVAL", "3600")))   # hourly
+        print(f"Ready. Ask a research question — empty line or 'quit' to exit.\n"
+              f"(session journal: {journal.notes} — checkpoints hourly)")
+        try:
+            while True:
+                try:
+                    question = input("\n> ").strip()
+                except EOFError:
+                    break
+                if not question or question.lower() in ("quit", "exit"):
+                    break
+                journal.note(f"query: {question}", kind="query")
+                findings = run_agent(question)
+                for f in (findings or []):
+                    journal.note(f"{f.get('claim', '').strip()}  "
+                                 f"[grounding: {f.get('grounding', 'n/a')}; "
+                                 f"sources: {', '.join(f.get('sources', []))[:120]}]",
+                                 kind="finding")
+                msg = journal.maybe_checkpoint()
+                if msg:
+                    print(f"[journal] {msg}")
+        finally:                                   # final checkpoint + promotion review on exit
+            journal.stop()
+            final = journal.checkpoint(force=True)
+            if final:
+                print(f"[journal] {final}")
+            print("\n" + journal.promotion_review())

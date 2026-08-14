@@ -4,6 +4,17 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Session journal** — `session_journal.py` keeps the PERSONAL tier alive DURING a live session,
+  not just at run boundaries. `note()` appends to `memory/sessions/<id>/notes.md`; `checkpoint()`
+  diffs against the last snapshot and, if anything changed, appends an append-only, hashed,
+  timestamped delta to `journal.jsonl` (no-op on no change); `start(interval=3600)` runs a daemon
+  thread that checkpoints hourly even mid-session; `promotion_review()` classifies accrued notes
+  into candidate components (hypothesis/experiment/finding) and recommends how each climbs to
+  SHARED WIP — a recommendation, never auto-promotion. Wired into the agent REPL (hourly
+  background + per-turn notes + exit review) and the MCP personal tier (`journal_note`,
+  `journal_checkpoint`, `promotion_review` — 5 personal tools; client drives the cadence).
+  Verified: delta capture, no-op on no-change, time-gating, background daemon (2 ticks), promotion
+  routing (PR #48 · ADR-0041).
 - **Thinker-supplied critic verdict** — the critic on the consensus path can now be Claude (the
   client thinker), not the local model, keeping the substrate LLM-free. `contribute(critic_verdict=)`
   uses a client-supplied `accept`/`reject` (fail-closed) instead of running the local critic; every
