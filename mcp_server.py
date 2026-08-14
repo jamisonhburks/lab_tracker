@@ -126,6 +126,16 @@ if _SHARED:
         return hyp.propose_experiment(entity_a, entity_c, hypothesis)
 
     @mcp.tool
+    def assess_link(entity_a: str, entity_c: str) -> str:
+        """Evaluate a candidate link END-TO-END with NO generation: KG grounding + permutation
+        calibration + PubMed novelty → a verdict (grounded/published/potential/off-graph), then
+        the proposed downstream workflow. The SUBSTRATE half of 'assess an idea' — the client's
+        model extracts the entity pair from the free-text idea (a thinking step), this evaluates
+        + proposes. Refinement, which uses generation, stays agent-side."""
+        import idea
+        return idea.assess(entity_a, entity_c)
+
+    @mcp.tool
     def list_active_work() -> str:
         """SHARED WIP ('group semantics'): every tracked hypothesis/experiment/campaign with
         its STATUS — so you can see what's in-flight (mid-test, evaluated, proposed) and NOT

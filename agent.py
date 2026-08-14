@@ -34,6 +34,7 @@ import kg_writer
 import confidence
 import critic
 import novelty
+import idea as idea_mod
 import specialist
 import tool_ledger
 import schemas
@@ -663,6 +664,30 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "assess_idea",
+            "description": (
+                "Turn a GENERAL IDEA (free text) or a PRIOR experiment (e.g. 'H001') into an "
+                "evaluated, workflow-ready hypothesis: extract the testable entity pair(s), "
+                "EVALUATE (grounded/published/potential/off-graph via KG grounding + "
+                "calibration + PubMed novelty), PROPOSE the downstream workflow, then RECOMMEND "
+                "the costly refinement pass (opt in with refine=true). The lab's "
+                "follow-up-from-a-general-idea / prior-work move."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "idea": {"type": "string",
+                             "description": "Free-text idea, or a prior hypothesis id like 'H001'."},
+                    "refine": {"type": "boolean",
+                               "description": "Run the expensive curate+critic pass. Default false."},
+                },
+                "required": ["idea"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "curate_literature",
             "description": (
                 "SYNTHESIZE + CURATE: search PubMed for a topic, extract the stated "
@@ -756,6 +781,7 @@ DISPATCH = {
     "recommend_methods": method_select.recommend_methods,
     "propose_experiment": hyp.propose_experiment,
     "calibrate_link": hyp.calibrate_link,
+    "assess_idea": idea_mod.assess_idea,
     "curate_literature": curate_literature,
     "criticize_curated_kg": criticize_curated_kg,
     "query_curated_kg": query_curated_kg,

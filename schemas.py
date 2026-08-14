@@ -83,3 +83,15 @@ class NextStep(BaseModel):
     question: str
     key_change: str
     rationale: str
+
+
+# --- idea intake: free-text idea -> testable entity pair(s) (idea.assess_idea) -
+class IdeaPair(BaseModel):
+    entity_a: str
+    entity_c: str
+    relation: str = ""
+    rationale: str = ""
+
+
+class IdeaExtraction(BaseModel):
+    pairs: list[IdeaPair] = Field(default_factory=list)

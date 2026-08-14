@@ -4,6 +4,14 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Idea intake — `assess_idea`** — one entry point for the follow-up move: a free-text idea OR
+  a prior `H{NNN}` → the local model extracts the testable entity pair(s) → EVALUATE (grounding +
+  calibration + PubMed novelty → verdict: grounded/published/potential/off-graph) → PROPOSE the
+  downstream workflow → RECOMMEND the costly refine pass (opt in with `refine=True`). Fast first,
+  expensive on request. LLM-free core `idea.assess(a, c)` is exposed as MCP `assess_link`
+  (substrate half — client extracts entities, no generation in the server); `assess_idea` (with
+  extraction) is an agent tool. Verified verdict matrix + prior-work seeding + full path
+  (PR #45 · ADR-0038).
 - **Bulk method ingestion (Stage 4)** — `ml_ingest.py`: harmonize an external ML method corpus
   into the fused schema, deduped vs the curated 61 and written to a SEPARATE lower-trust seed
   (`seeds/ml_bulk.json`), edges tagged `paperswithcode (bulk)`. Curated = author-VERIFIED; bulk
