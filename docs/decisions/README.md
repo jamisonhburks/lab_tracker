@@ -38,3 +38,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0024](0024-validity-gates.md) | Pre-registered validity gates (interim, hypothesis-orthogonal) | 2026-08-14 | Accepted | #30 |
 | [0025](0025-campaign-program.md) | Campaign/program object — experiment lineage + planner | 2026-08-14 | Accepted | #31 |
 | [0026](0026-pydantic-validation.md) | Pydantic validation + retry on the structured-output boundary | 2026-08-14 | Accepted | #32 |
+| [0027](0027-fused-ml-schema.md) | Fused ML+biomedical schema — methods as a distinct epistemic class | 2026-08-14 | Accepted | #33 |

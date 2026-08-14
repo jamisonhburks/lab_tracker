@@ -312,8 +312,24 @@ def load_combined() -> None:
     _reset()
 
 
+def load_ml_demo() -> None:
+    """A tiny FUSED biomedical<->ML graph (ml_schema.seed_fused_demo): the method layer
+    (authorship, lineage, benchmark-vs-stable trust) plugged into the same traversal code,
+    bridged to a disease via DataModality. KG_BACKEND=ml_demo."""
+    import ml_schema
+    nodes, edges = ml_schema.seed_fused_demo()
+    _G["nodes"] = pl.DataFrame({NODE_ID: [n[0] for n in nodes],
+                                NODE_NAME: [n[1] for n in nodes],
+                                NODE_CAT: [n[2] for n in nodes]})
+    _G["edges"] = pl.DataFrame({EDGE_SUBJ: [e[0] for e in edges],
+                                EDGE_PRED: [e[1] for e in edges],
+                                EDGE_OBJ: [e[2] for e in edges],
+                                EDGE_SRC: [e[3] for e in edges]})
+    _reset()
+
+
 _BACKENDS = {"demo": load_demo, "hetionet": load_hetionet, "monarch": load_monarch,
-             "combined": load_combined, "optimuskg": load_optimuskg}
+             "combined": load_combined, "ml_demo": load_ml_demo, "optimuskg": load_optimuskg}
 
 
 def _graph() -> tuple:
@@ -544,7 +560,8 @@ def find_paths(entity_a: str, entity_c: str, max_len: int = 3) -> str:
 # Sources whose edges are low-trust corroboration (mere co-occurrence / text-mined
 # / computational). A path leaning on these is only "weakly grounded".
 _LOW_TRUST = ("cooccurrence", "co-occurrence", "text", "predicted", "stargeo",
-              "lincs", "string")   # STRING PPIs include predicted/text-mined links
+              "lincs", "string",   # STRING PPIs include predicted/text-mined links
+              "benchmark", "leaderboard", "sota")   # ML: benchmark-relative + non-stationary
 
 
 def _trustworthy(source: str) -> bool:

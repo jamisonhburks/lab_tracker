@@ -4,6 +4,14 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Fused ML+biomedical schema** — `ml_schema.py` + `KG_BACKEND=ml_demo`: an ML/method
+  layer built around methods being epistemically distinct from phenomena — authorship
+  (first/last author, lab), Publication+year, lineage (`derived_from`/`superseded_by`),
+  and an edge epistemic class where `achieves`/`outperforms` are LOW-trust (benchmark-
+  relative, non-stationary) vs stable `suited_to`/`trained_with`. Bridge = Disease→
+  DataModality→Architecture. Verified: cross-domain path (AF→ECG→Transformer), lineage
+  (RoBERTa→BERT→Transformer), and the trust split grounds benchmark edges weak. Plugs into
+  the existing traversal unchanged (PR #33 · ADR-0027).
 - **Pydantic validation on structured output** — `schemas.py` + `llm.parse()`:
   keeps the proven constrained-decoding schema, adds Pydantic validation of the RESULT
   with retry-on-failure (feeds the error back) + code-fence stripping + type coercion.
