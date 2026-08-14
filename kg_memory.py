@@ -328,8 +328,24 @@ def load_ml_demo() -> None:
     _reset()
 
 
+def load_ml() -> None:
+    """The REAL fused ML+biomedical seed (seeds/ml_fused.json, built by ml_seed.py): real
+    arXiv authorship/dates, curated lineage + reified benchmarks + biomedical bridge."""
+    import ml_schema
+    nodes, edges = ml_schema.load_fused_seed()
+    _G["nodes"] = pl.DataFrame({NODE_ID: [n[0] for n in nodes],
+                                NODE_NAME: [n[1] for n in nodes],
+                                NODE_CAT: [n[2] for n in nodes]})
+    _G["edges"] = pl.DataFrame({EDGE_SUBJ: [e[0] for e in edges],
+                                EDGE_PRED: [e[1] for e in edges],
+                                EDGE_OBJ: [e[2] for e in edges],
+                                EDGE_SRC: [e[3] for e in edges]})
+    _reset()
+
+
 _BACKENDS = {"demo": load_demo, "hetionet": load_hetionet, "monarch": load_monarch,
-             "combined": load_combined, "ml_demo": load_ml_demo, "optimuskg": load_optimuskg}
+             "combined": load_combined, "ml_demo": load_ml_demo, "ml": load_ml,
+             "optimuskg": load_optimuskg}
 
 
 def _graph() -> tuple:

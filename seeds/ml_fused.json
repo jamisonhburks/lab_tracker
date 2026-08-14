@@ -1,0 +1,910 @@
+{
+  "nodes": [
+    [
+      "MONDO:AF",
+      "atrial fibrillation",
+      "Disease"
+    ],
+    [
+      "MONDO:t2d",
+      "type 2 diabetes mellitus",
+      "Disease"
+    ],
+    [
+      "MODALITY:ECG",
+      "ECG (12-lead)",
+      "DataModality"
+    ],
+    [
+      "MODALITY:imaging",
+      "medical imaging",
+      "DataModality"
+    ],
+    [
+      "MODALITY:genomic",
+      "genomic sequence",
+      "DataModality"
+    ],
+    [
+      "MODALITY:ehr",
+      "tabular EHR",
+      "DataModality"
+    ],
+    [
+      "TASK:seq-clf",
+      "sequence classification",
+      "Task"
+    ],
+    [
+      "TASK:seg",
+      "segmentation",
+      "Task"
+    ],
+    [
+      "TASK:survival",
+      "time-to-event / survival",
+      "Task"
+    ],
+    [
+      "LOSS:focal",
+      "focal loss",
+      "Loss"
+    ],
+    [
+      "LOSS:coxpl",
+      "Cox partial likelihood",
+      "Loss"
+    ],
+    [
+      "METRIC:auroc",
+      "AUROC",
+      "Metric"
+    ],
+    [
+      "METRIC:cindex",
+      "C-index",
+      "Metric"
+    ],
+    [
+      "METHOD:Transformer",
+      "Transformer",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Ashish Vaswani",
+      "Ashish Vaswani",
+      "Author"
+    ],
+    [
+      "AUTHOR:Illia Polosukhin",
+      "Illia Polosukhin",
+      "Author"
+    ],
+    [
+      "LAB:Google Brain",
+      "Google Brain",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1706.03762",
+      "arXiv:1706.03762 (2017)",
+      "Publication"
+    ],
+    [
+      "METHOD:BERT",
+      "BERT",
+      "Model"
+    ],
+    [
+      "AUTHOR:Jacob Devlin",
+      "Jacob Devlin",
+      "Author"
+    ],
+    [
+      "AUTHOR:Kristina Toutanova",
+      "Kristina Toutanova",
+      "Author"
+    ],
+    [
+      "LAB:Google",
+      "Google",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1810.04805",
+      "arXiv:1810.04805 (2018)",
+      "Publication"
+    ],
+    [
+      "METHOD:RoBERTa",
+      "RoBERTa",
+      "Model"
+    ],
+    [
+      "AUTHOR:Yinhan Liu",
+      "Yinhan Liu",
+      "Author"
+    ],
+    [
+      "AUTHOR:Veselin Stoyanov",
+      "Veselin Stoyanov",
+      "Author"
+    ],
+    [
+      "LAB:FAIR / UW",
+      "FAIR / UW",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1907.11692",
+      "arXiv:1907.11692 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:GPT-3",
+      "GPT-3",
+      "Model"
+    ],
+    [
+      "AUTHOR:Tom B. Brown",
+      "Tom B. Brown",
+      "Author"
+    ],
+    [
+      "AUTHOR:Dario Amodei",
+      "Dario Amodei",
+      "Author"
+    ],
+    [
+      "LAB:OpenAI",
+      "OpenAI",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:2005.14165",
+      "arXiv:2005.14165 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:ViT",
+      "ViT",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Alexey Dosovitskiy",
+      "Alexey Dosovitskiy",
+      "Author"
+    ],
+    [
+      "AUTHOR:Neil Houlsby",
+      "Neil Houlsby",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:2010.11929",
+      "arXiv:2010.11929 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:ResNet",
+      "ResNet",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Kaiming He",
+      "Kaiming He",
+      "Author"
+    ],
+    [
+      "AUTHOR:Jian Sun",
+      "Jian Sun",
+      "Author"
+    ],
+    [
+      "LAB:Microsoft Research",
+      "Microsoft Research",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1512.03385",
+      "arXiv:1512.03385 (2015)",
+      "Publication"
+    ],
+    [
+      "METHOD:U-Net",
+      "U-Net",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Olaf Ronneberger",
+      "Olaf Ronneberger",
+      "Author"
+    ],
+    [
+      "AUTHOR:Thomas Brox",
+      "Thomas Brox",
+      "Author"
+    ],
+    [
+      "LAB:U Freiburg",
+      "U Freiburg",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1505.04597",
+      "arXiv:1505.04597 (2015)",
+      "Publication"
+    ],
+    [
+      "METHOD:GCN",
+      "GCN",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Thomas N. Kipf",
+      "Thomas N. Kipf",
+      "Author"
+    ],
+    [
+      "AUTHOR:Max Welling",
+      "Max Welling",
+      "Author"
+    ],
+    [
+      "LAB:U Amsterdam",
+      "U Amsterdam",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1609.02907",
+      "arXiv:1609.02907 (2016)",
+      "Publication"
+    ],
+    [
+      "METHOD:GAN",
+      "GAN",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Ian J. Goodfellow",
+      "Ian J. Goodfellow",
+      "Author"
+    ],
+    [
+      "AUTHOR:Yoshua Bengio",
+      "Yoshua Bengio",
+      "Author"
+    ],
+    [
+      "LAB:U Montreal",
+      "U Montreal",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1406.2661",
+      "arXiv:1406.2661 (2014)",
+      "Publication"
+    ],
+    [
+      "METHOD:VAE",
+      "VAE",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Diederik P Kingma",
+      "Diederik P Kingma",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1312.6114",
+      "arXiv:1312.6114 (2013)",
+      "Publication"
+    ],
+    [
+      "METHOD:Adam",
+      "Adam",
+      "Method"
+    ],
+    [
+      "AUTHOR:Diederik P. Kingma",
+      "Diederik P. Kingma",
+      "Author"
+    ],
+    [
+      "AUTHOR:Jimmy Ba",
+      "Jimmy Ba",
+      "Author"
+    ],
+    [
+      "LAB:U Amsterdam / Toronto",
+      "U Amsterdam / Toronto",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1412.6980",
+      "arXiv:1412.6980 (2014)",
+      "Publication"
+    ],
+    [
+      "METHOD:BatchNorm",
+      "BatchNorm",
+      "Method"
+    ],
+    [
+      "AUTHOR:Sergey Ioffe",
+      "Sergey Ioffe",
+      "Author"
+    ],
+    [
+      "AUTHOR:Christian Szegedy",
+      "Christian Szegedy",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1502.03167",
+      "arXiv:1502.03167 (2015)",
+      "Publication"
+    ],
+    [
+      "METHOD:DDPM",
+      "DDPM",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Jonathan Ho",
+      "Jonathan Ho",
+      "Author"
+    ],
+    [
+      "AUTHOR:Pieter Abbeel",
+      "Pieter Abbeel",
+      "Author"
+    ],
+    [
+      "LAB:UC Berkeley",
+      "UC Berkeley",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:2006.11239",
+      "arXiv:2006.11239 (2020)",
+      "Publication"
+    ],
+    [
+      "BENCH:BERT/GLUE/avg/2018",
+      "BERT: 80.5 avg on GLUE (2018)",
+      "BenchmarkResult"
+    ],
+    [
+      "DATASET:GLUE",
+      "GLUE",
+      "Dataset"
+    ],
+    [
+      "METRIC:avg",
+      "avg",
+      "Metric"
+    ],
+    [
+      "BENCH:RoBERTa/GLUE/avg/2019",
+      "RoBERTa: 88.5 avg on GLUE (2019)",
+      "BenchmarkResult"
+    ],
+    [
+      "BENCH:ResNet/ImageNet/top-1/2015",
+      "ResNet: 78.3 top-1 on ImageNet (2015)",
+      "BenchmarkResult"
+    ],
+    [
+      "DATASET:ImageNet",
+      "ImageNet",
+      "Dataset"
+    ],
+    [
+      "METRIC:top-1",
+      "top-1",
+      "Metric"
+    ],
+    [
+      "BENCH:ViT/ImageNet/top-1/2020",
+      "ViT: 88.5 top-1 on ImageNet (2020)",
+      "BenchmarkResult"
+    ]
+  ],
+  "edges": [
+    [
+      "MONDO:AF",
+      "manifests_in",
+      "MODALITY:ECG",
+      "clinical knowledge"
+    ],
+    [
+      "MONDO:t2d",
+      "manifests_in",
+      "MODALITY:ehr",
+      "clinical knowledge"
+    ],
+    [
+      "METHOD:Transformer",
+      "suited_to",
+      "MODALITY:ECG",
+      "methodological"
+    ],
+    [
+      "METHOD:ResNet",
+      "suited_to",
+      "MODALITY:imaging",
+      "methodological"
+    ],
+    [
+      "METHOD:ViT",
+      "suited_to",
+      "MODALITY:imaging",
+      "methodological"
+    ],
+    [
+      "METHOD:U-Net",
+      "suited_to",
+      "MODALITY:imaging",
+      "methodological"
+    ],
+    [
+      "METHOD:GCN",
+      "suited_to",
+      "MODALITY:genomic",
+      "methodological"
+    ],
+    [
+      "METHOD:Transformer",
+      "used_for",
+      "TASK:seq-clf",
+      "methodological"
+    ],
+    [
+      "METHOD:U-Net",
+      "used_for",
+      "TASK:seg",
+      "methodological"
+    ],
+    [
+      "METHOD:Transformer",
+      "trained_with",
+      "LOSS:focal",
+      "methodological"
+    ],
+    [
+      "TASK:seq-clf",
+      "evaluated_by",
+      "METRIC:auroc",
+      "methodological"
+    ],
+    [
+      "TASK:survival",
+      "evaluated_by",
+      "METRIC:cindex",
+      "methodological"
+    ],
+    [
+      "TASK:survival",
+      "trained_with",
+      "LOSS:coxpl",
+      "methodological"
+    ],
+    [
+      "METHOD:Transformer",
+      "first_author",
+      "AUTHOR:Ashish Vaswani",
+      "arXiv:1706.03762"
+    ],
+    [
+      "METHOD:Transformer",
+      "last_author",
+      "AUTHOR:Illia Polosukhin",
+      "arXiv:1706.03762"
+    ],
+    [
+      "METHOD:Transformer",
+      "from_lab",
+      "LAB:Google Brain",
+      "arXiv:1706.03762"
+    ],
+    [
+      "METHOD:Transformer",
+      "introduced_by",
+      "PUB:arXiv:1706.03762",
+      "arXiv:1706.03762"
+    ],
+    [
+      "METHOD:BERT",
+      "first_author",
+      "AUTHOR:Jacob Devlin",
+      "arXiv:1810.04805"
+    ],
+    [
+      "METHOD:BERT",
+      "last_author",
+      "AUTHOR:Kristina Toutanova",
+      "arXiv:1810.04805"
+    ],
+    [
+      "METHOD:BERT",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:1810.04805"
+    ],
+    [
+      "METHOD:BERT",
+      "introduced_by",
+      "PUB:arXiv:1810.04805",
+      "arXiv:1810.04805"
+    ],
+    [
+      "METHOD:BERT",
+      "derived_from",
+      "METHOD:Transformer",
+      "arXiv:1810.04805"
+    ],
+    [
+      "METHOD:BERT",
+      "superseded_by",
+      "METHOD:RoBERTa",
+      "arXiv:1810.04805"
+    ],
+    [
+      "METHOD:RoBERTa",
+      "first_author",
+      "AUTHOR:Yinhan Liu",
+      "arXiv:1907.11692"
+    ],
+    [
+      "METHOD:RoBERTa",
+      "last_author",
+      "AUTHOR:Veselin Stoyanov",
+      "arXiv:1907.11692"
+    ],
+    [
+      "METHOD:RoBERTa",
+      "from_lab",
+      "LAB:FAIR / UW",
+      "arXiv:1907.11692"
+    ],
+    [
+      "METHOD:RoBERTa",
+      "introduced_by",
+      "PUB:arXiv:1907.11692",
+      "arXiv:1907.11692"
+    ],
+    [
+      "METHOD:RoBERTa",
+      "derived_from",
+      "METHOD:BERT",
+      "arXiv:1907.11692"
+    ],
+    [
+      "METHOD:GPT-3",
+      "first_author",
+      "AUTHOR:Tom B. Brown",
+      "arXiv:2005.14165"
+    ],
+    [
+      "METHOD:GPT-3",
+      "last_author",
+      "AUTHOR:Dario Amodei",
+      "arXiv:2005.14165"
+    ],
+    [
+      "METHOD:GPT-3",
+      "from_lab",
+      "LAB:OpenAI",
+      "arXiv:2005.14165"
+    ],
+    [
+      "METHOD:GPT-3",
+      "introduced_by",
+      "PUB:arXiv:2005.14165",
+      "arXiv:2005.14165"
+    ],
+    [
+      "METHOD:GPT-3",
+      "derived_from",
+      "METHOD:Transformer",
+      "arXiv:2005.14165"
+    ],
+    [
+      "METHOD:ViT",
+      "first_author",
+      "AUTHOR:Alexey Dosovitskiy",
+      "arXiv:2010.11929"
+    ],
+    [
+      "METHOD:ViT",
+      "last_author",
+      "AUTHOR:Neil Houlsby",
+      "arXiv:2010.11929"
+    ],
+    [
+      "METHOD:ViT",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:2010.11929"
+    ],
+    [
+      "METHOD:ViT",
+      "introduced_by",
+      "PUB:arXiv:2010.11929",
+      "arXiv:2010.11929"
+    ],
+    [
+      "METHOD:ViT",
+      "derived_from",
+      "METHOD:Transformer",
+      "arXiv:2010.11929"
+    ],
+    [
+      "METHOD:ResNet",
+      "first_author",
+      "AUTHOR:Kaiming He",
+      "arXiv:1512.03385"
+    ],
+    [
+      "METHOD:ResNet",
+      "last_author",
+      "AUTHOR:Jian Sun",
+      "arXiv:1512.03385"
+    ],
+    [
+      "METHOD:ResNet",
+      "from_lab",
+      "LAB:Microsoft Research",
+      "arXiv:1512.03385"
+    ],
+    [
+      "METHOD:ResNet",
+      "introduced_by",
+      "PUB:arXiv:1512.03385",
+      "arXiv:1512.03385"
+    ],
+    [
+      "METHOD:U-Net",
+      "first_author",
+      "AUTHOR:Olaf Ronneberger",
+      "arXiv:1505.04597"
+    ],
+    [
+      "METHOD:U-Net",
+      "last_author",
+      "AUTHOR:Thomas Brox",
+      "arXiv:1505.04597"
+    ],
+    [
+      "METHOD:U-Net",
+      "from_lab",
+      "LAB:U Freiburg",
+      "arXiv:1505.04597"
+    ],
+    [
+      "METHOD:U-Net",
+      "introduced_by",
+      "PUB:arXiv:1505.04597",
+      "arXiv:1505.04597"
+    ],
+    [
+      "METHOD:GCN",
+      "first_author",
+      "AUTHOR:Thomas N. Kipf",
+      "arXiv:1609.02907"
+    ],
+    [
+      "METHOD:GCN",
+      "last_author",
+      "AUTHOR:Max Welling",
+      "arXiv:1609.02907"
+    ],
+    [
+      "METHOD:GCN",
+      "from_lab",
+      "LAB:U Amsterdam",
+      "arXiv:1609.02907"
+    ],
+    [
+      "METHOD:GCN",
+      "introduced_by",
+      "PUB:arXiv:1609.02907",
+      "arXiv:1609.02907"
+    ],
+    [
+      "METHOD:GAN",
+      "first_author",
+      "AUTHOR:Ian J. Goodfellow",
+      "arXiv:1406.2661"
+    ],
+    [
+      "METHOD:GAN",
+      "last_author",
+      "AUTHOR:Yoshua Bengio",
+      "arXiv:1406.2661"
+    ],
+    [
+      "METHOD:GAN",
+      "from_lab",
+      "LAB:U Montreal",
+      "arXiv:1406.2661"
+    ],
+    [
+      "METHOD:GAN",
+      "introduced_by",
+      "PUB:arXiv:1406.2661",
+      "arXiv:1406.2661"
+    ],
+    [
+      "METHOD:VAE",
+      "first_author",
+      "AUTHOR:Diederik P Kingma",
+      "arXiv:1312.6114"
+    ],
+    [
+      "METHOD:VAE",
+      "last_author",
+      "AUTHOR:Max Welling",
+      "arXiv:1312.6114"
+    ],
+    [
+      "METHOD:VAE",
+      "from_lab",
+      "LAB:U Amsterdam",
+      "arXiv:1312.6114"
+    ],
+    [
+      "METHOD:VAE",
+      "introduced_by",
+      "PUB:arXiv:1312.6114",
+      "arXiv:1312.6114"
+    ],
+    [
+      "METHOD:Adam",
+      "first_author",
+      "AUTHOR:Diederik P. Kingma",
+      "arXiv:1412.6980"
+    ],
+    [
+      "METHOD:Adam",
+      "last_author",
+      "AUTHOR:Jimmy Ba",
+      "arXiv:1412.6980"
+    ],
+    [
+      "METHOD:Adam",
+      "from_lab",
+      "LAB:U Amsterdam / Toronto",
+      "arXiv:1412.6980"
+    ],
+    [
+      "METHOD:Adam",
+      "introduced_by",
+      "PUB:arXiv:1412.6980",
+      "arXiv:1412.6980"
+    ],
+    [
+      "METHOD:BatchNorm",
+      "first_author",
+      "AUTHOR:Sergey Ioffe",
+      "arXiv:1502.03167"
+    ],
+    [
+      "METHOD:BatchNorm",
+      "last_author",
+      "AUTHOR:Christian Szegedy",
+      "arXiv:1502.03167"
+    ],
+    [
+      "METHOD:BatchNorm",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:1502.03167"
+    ],
+    [
+      "METHOD:BatchNorm",
+      "introduced_by",
+      "PUB:arXiv:1502.03167",
+      "arXiv:1502.03167"
+    ],
+    [
+      "METHOD:DDPM",
+      "first_author",
+      "AUTHOR:Jonathan Ho",
+      "arXiv:2006.11239"
+    ],
+    [
+      "METHOD:DDPM",
+      "last_author",
+      "AUTHOR:Pieter Abbeel",
+      "arXiv:2006.11239"
+    ],
+    [
+      "METHOD:DDPM",
+      "from_lab",
+      "LAB:UC Berkeley",
+      "arXiv:2006.11239"
+    ],
+    [
+      "METHOD:DDPM",
+      "introduced_by",
+      "PUB:arXiv:2006.11239",
+      "arXiv:2006.11239"
+    ],
+    [
+      "METHOD:BERT",
+      "reports_result",
+      "BENCH:BERT/GLUE/avg/2018",
+      "benchmark:Devlin 2018 2018"
+    ],
+    [
+      "BENCH:BERT/GLUE/avg/2018",
+      "on_dataset",
+      "DATASET:GLUE",
+      "benchmark:Devlin 2018 2018"
+    ],
+    [
+      "BENCH:BERT/GLUE/avg/2018",
+      "measures",
+      "METRIC:avg",
+      "benchmark:Devlin 2018 2018"
+    ],
+    [
+      "METHOD:RoBERTa",
+      "reports_result",
+      "BENCH:RoBERTa/GLUE/avg/2019",
+      "benchmark:Liu 2019 2019"
+    ],
+    [
+      "BENCH:RoBERTa/GLUE/avg/2019",
+      "on_dataset",
+      "DATASET:GLUE",
+      "benchmark:Liu 2019 2019"
+    ],
+    [
+      "BENCH:RoBERTa/GLUE/avg/2019",
+      "measures",
+      "METRIC:avg",
+      "benchmark:Liu 2019 2019"
+    ],
+    [
+      "METHOD:ResNet",
+      "reports_result",
+      "BENCH:ResNet/ImageNet/top-1/2015",
+      "benchmark:He 2015 (ResNet-152) 2015"
+    ],
+    [
+      "BENCH:ResNet/ImageNet/top-1/2015",
+      "on_dataset",
+      "DATASET:ImageNet",
+      "benchmark:He 2015 (ResNet-152) 2015"
+    ],
+    [
+      "BENCH:ResNet/ImageNet/top-1/2015",
+      "measures",
+      "METRIC:top-1",
+      "benchmark:He 2015 (ResNet-152) 2015"
+    ],
+    [
+      "METHOD:ViT",
+      "reports_result",
+      "BENCH:ViT/ImageNet/top-1/2020",
+      "benchmark:Dosovitskiy 2020 (ViT-L/16, JFT) 2020"
+    ],
+    [
+      "BENCH:ViT/ImageNet/top-1/2020",
+      "on_dataset",
+      "DATASET:ImageNet",
+      "benchmark:Dosovitskiy 2020 (ViT-L/16, JFT) 2020"
+    ],
+    [
+      "BENCH:ViT/ImageNet/top-1/2020",
+      "measures",
+      "METRIC:top-1",
+      "benchmark:Dosovitskiy 2020 (ViT-L/16, JFT) 2020"
+    ]
+  ],
+  "n_methods": 13,
+  "n_benchmarks": 4
+}

@@ -101,6 +101,74 @@ class Method:
         return nodes, edges
 
 
+@dataclass
+class BenchmarkResult:
+    """A REIFIED benchmark result — the (model, dataset, metric, VALUE, DATE) tuple as a
+    first-class node, the ML parallel to a reified biomedical Association+Evidence. Because
+    value and date are stored (not just an edge), you can rank a leaderboard and watch a
+    method's effectiveness get superseded over time. Benchmark claims are epistemically
+    LOW-trust + non-stationary, so the edge source is tagged 'benchmark:'."""
+    model: str
+    dataset: str
+    metric: str
+    value: float
+    date: int | None = None
+    higher_is_better: bool = True
+    source: str = ""
+
+    def result_id(self) -> str:
+        return f"BENCH:{self.model}/{self.dataset}/{self.metric}/{self.date}"
+
+    def to_rows(self):
+        rid = self.result_id()
+        did, mid = f"DATASET:{self.dataset}", f"METRIC:{self.metric}"
+        label = f"{self.model}: {self.value} {self.metric} on {self.dataset}" + \
+                (f" ({self.date})" if self.date else "")
+        src = "benchmark:" + (self.source or self.dataset) + (f" {self.date}" if self.date else "")
+        nodes = [(rid, label, "BenchmarkResult"), (did, self.dataset, "Dataset"),
+                 (mid, self.metric, "Metric")]
+        edges = [(f"METHOD:{self.model}", "reports_result", rid, src),
+                 (rid, "on_dataset", did, src), (rid, "measures", mid, src)]
+        return nodes, edges
+
+
+def leaderboard(results, dataset: str, metric: str) -> str:
+    """Rank + date a (dataset, metric) leaderboard from reified results — the temporal view
+    that makes non-stationarity legible (who held SOTA when, and what superseded it)."""
+    rows = [r for r in results if r.dataset == dataset and r.metric == metric]
+    if not rows:
+        return f"(no results for {dataset}/{metric})"
+    rows.sort(key=lambda r: r.value, reverse=rows[0].higher_is_better)
+    out = [f"Leaderboard — {dataset} / {metric} (best first; dates show the churn):"]
+    for r in rows:
+        out.append(f"  {r.value:>7} {r.metric:<8} {r.model:<12} ({r.date or '?'})  [{r.source}]")
+    return "\n".join(out)
+
+
+def fused_rows(methods, benchmarks, bridge_nodes=None, bridge_edges=None):
+    """Assemble (nodes, edges) from Method objects, BenchmarkResult objects, and an optional
+    hand-curated biomedical<->ML bridge. Deduped by node id."""
+    nodes, edges = list(bridge_nodes or []), list(bridge_edges or [])
+    for m in methods:
+        n, e = m.to_rows(); nodes += n; edges += e
+    for b in benchmarks:
+        n, e = b.to_rows(); nodes += n; edges += e
+    seen, uniq = set(), []
+    for r in nodes:
+        if r[0] not in seen:
+            seen.add(r[0]); uniq.append(r)
+    return uniq, edges
+
+
+def load_fused_seed(path=None):
+    """Read the cached REAL fused seed (built by ml_seed.py) → (nodes, edges) tuples."""
+    import json
+    from pathlib import Path
+    p = Path(path) if path else Path(__file__).parent / "seeds" / "ml_fused.json"
+    d = json.loads(p.read_text(encoding="utf-8"))
+    return [tuple(n) for n in d["nodes"]], [tuple(e) for e in d["edges"]]
+
+
 def seed_fused_demo():
     """A tiny FUSED biomedical<->ML graph demonstrating the schema. Authorship here is
     ILLUSTRATIVE (first authors + labs are the reliable signal); a real build populates it
