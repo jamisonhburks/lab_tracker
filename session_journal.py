@@ -174,19 +174,10 @@ class SessionJournal:
                 find.append(s)
         top = [t for t, _ in collections.Counter(
             re.findall(r"\b[A-Z][A-Za-z0-9\-]{2,}\b", text)).most_common(4)]
-        stub = ["# RETROACTIVELY DRAFTED from an ad-hoc session — REVIEW + COMPLETE before use.",
-                "id: H000   # assign the next H00N",
-                f"title: \"(draft) {' / '.join(top[:2]) or 'session analyses'}\"",
-                "question: \"(what were these analyses implicitly asking?)\"",
-                "null_hypothesis: \"H0: ...\"",
-                "alternative_hypothesis: \"H1: ...\"",
-                f"recurring_entities: [{', '.join(top)}]",
-                "method: |"]
-        stub += [f"  - {e[:100]}" for e in exp[:6]] or ["  (fill from the analyses run)"]
-        stub += ["observed_in_session: |"]
-        stub += [f"  - {f[:100]}" for f in find[:6]] or ["  (none captured)"]
-        stub += ["status: \"draft\""]
-        return "\n".join(stub)
+        import misc_research                              # shared stub builder — one format
+        return misc_research.hypothesis_stub(
+            top, exp, find,
+            header="# RETROACTIVELY DRAFTED from an ad-hoc session — REVIEW + COMPLETE before use.")
 
     def promotion_review(self, min_chars: int = 300) -> str:
         """Once enough content has accrued, recommend which components are ready to propose

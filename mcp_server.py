@@ -224,9 +224,17 @@ if _SHARED:
 
     @mcp.tool
     def group_misc_findings() -> str:
-        """Cluster the exploratory pool by shared entities: scattered analyses that TOGETHER may
-        imply a latent hypothesis worth formalizing into shared WIP."""
+        """Cluster the exploratory pool by shared entity — KG-normalized so SYNONYMS collapse
+        (plus an embedding merge for off-graph synonyms). Each cluster of scattered analyses may
+        imply a latent hypothesis; formalize one with formalize_misc_group(N)."""
         return misc.group_misc()
+
+    @mcp.tool
+    def formalize_misc_group(theme: int = 1) -> str:
+        """Turn a GROUP of misc findings (theme N from group_misc_findings) straight into a DRAFT
+        hypothesis + method stub — one step from scattered analyses to a formalizable hypothesis.
+        Review/complete, then save to hypotheses/H00N_*.yaml (shared WIP)."""
+        return misc.formalize_group(theme)
 
     @mcp.tool
     def list_misc_findings() -> str:

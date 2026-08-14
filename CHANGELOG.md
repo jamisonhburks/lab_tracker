@@ -4,6 +4,15 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Semantic grouping + one-step formalize** — misc-finding grouping now clusters SYNONYMS, and a
+  cluster drafts a hypothesis in one call. `_canon_key` keys entities by KG node id (gene aliases,
+  disease synonyms) so ontology synonyms collapse; `_semantic_merge` adds a precision-first
+  embedding pass (threshold 0.80, calibrated) for off-graph surface variants, graceful if the
+  embedder is down. A shared `hypothesis_stub` backs both `session_journal.formalize_retroactively`
+  and the new `misc_research.formalize_group(theme)` (MCP `formalize_misc_group`, 19 shared tools),
+  so a cluster → draft hypothesis in the same format a session gives. Verified: `myocardial
+  infarction`≈`acute myocardial infarction` merge clusters two different-subject findings; unrelated
+  stays separate (PR #51 · ADR-0044).
 - **Exploratory lane** (`misc_research.py`) — for sessions that just run analyses, not a
   pre-registered hypothesis. `session_journal.session_mode()` detects an `adhoc_series` (≥2
   experiments/findings, no hypothesis) and asks: attach the Research Workflow retroactively

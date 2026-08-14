@@ -55,3 +55,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0041](0041-session-journal.md) | Session journal — keep the personal tier alive during a live session | 2026-08-14 | Accepted | #48 |
 | [0042](0042-synthesize-on-compact.md) | Synthesize-before-clear/compact (Claude Code hooks) | 2026-08-14 | Accepted | #49 |
 | [0043](0043-exploratory-lane.md) | The exploratory lane — ad-hoc analyses, misc findings, match + group | 2026-08-14 | Accepted | #50 |
+| [0044](0044-semantic-grouping-formalize.md) | Semantic grouping (synonyms cluster) + one-step cluster→hypothesis | 2026-08-14 | Accepted | #51 |
