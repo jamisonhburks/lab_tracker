@@ -8,7 +8,9 @@ decision behind it (see `docs/decisions/`). Dates are approximate build dates.
   seminal methods (NLP/CV/graph/generative/SSL/RL/tabular) with REAL first/last-author +
   year from arXiv, hand-curated lineage, and a title-keyword GUARD that drops any mistyped
   id before it can mis-attribute authorship (all 61 passed). Added XGBoost so tabular-EHR
-  bridges (T2D→EHR→XGBoost); 274 nodes / 304 edges (ADR-0028).
+  bridges. Split EHR by data STRUCTURE — longitudinal event-based (OMOP-CDM/MEDS
+  → Transformer/GRU) vs aggregated tabular (→ XGBoost); MIMIC/eICU modeled as
+  realizable-as-either. 281 nodes / 316 edges (ADR-0028).
 - **Reified benchmarks + real ML seeding** — `ml_schema.BenchmarkResult` reifies
   (model, dataset, metric, VALUE, DATE) as a traversable node + `leaderboard()` temporal
   view; `ml_seed.py` fetches REAL authorship/dates from the arXiv API for ~13 seminal

@@ -26,9 +26,44 @@
       "DataModality"
     ],
     [
-      "MODALITY:ehr",
-      "tabular EHR",
+      "MODALITY:ehr-events",
+      "longitudinal event-based EHR (event streams)",
       "DataModality"
+    ],
+    [
+      "MODALITY:ehr-tabular",
+      "aggregated tabular EHR (per-encounter feature vectors)",
+      "DataModality"
+    ],
+    [
+      "STD:omop",
+      "OMOP-CDM",
+      "DataStandard"
+    ],
+    [
+      "STD:meds",
+      "MEDS (Medical Event Data Standard)",
+      "DataStandard"
+    ],
+    [
+      "DATASET:mimic",
+      "MIMIC-IV",
+      "Dataset"
+    ],
+    [
+      "DATASET:eicu",
+      "eICU",
+      "Dataset"
+    ],
+    [
+      "CAVEAT:irregular",
+      "irregular sampling / variable-length sequences",
+      "Caveat"
+    ],
+    [
+      "CAVEAT:aggloss",
+      "information loss from aggregation",
+      "Caveat"
     ],
     [
       "TASK:seq-clf",
@@ -1380,9 +1415,93 @@
     ],
     [
       "MONDO:t2d",
-      "manifests_in",
-      "MODALITY:ehr",
+      "studied_via",
+      "MODALITY:ehr-events",
       "clinical knowledge"
+    ],
+    [
+      "MONDO:t2d",
+      "studied_via",
+      "MODALITY:ehr-tabular",
+      "clinical knowledge"
+    ],
+    [
+      "STD:omop",
+      "encodes",
+      "MODALITY:ehr-events",
+      "OHDSI"
+    ],
+    [
+      "STD:meds",
+      "encodes",
+      "MODALITY:ehr-events",
+      "MEDS"
+    ],
+    [
+      "DATASET:mimic",
+      "conforms_to",
+      "STD:omop",
+      "MIMIC-IV OMOP release"
+    ],
+    [
+      "DATASET:mimic",
+      "available_as",
+      "MODALITY:ehr-events",
+      "event-level source"
+    ],
+    [
+      "DATASET:mimic",
+      "available_as",
+      "MODALITY:ehr-tabular",
+      "commonly flattened for ML"
+    ],
+    [
+      "DATASET:eicu",
+      "available_as",
+      "MODALITY:ehr-events",
+      "event-level source"
+    ],
+    [
+      "DATASET:eicu",
+      "available_as",
+      "MODALITY:ehr-tabular",
+      "commonly flattened for ML"
+    ],
+    [
+      "MODALITY:ehr-events",
+      "has_caveat",
+      "CAVEAT:irregular",
+      "clinical ML"
+    ],
+    [
+      "MODALITY:ehr-tabular",
+      "has_caveat",
+      "CAVEAT:aggloss",
+      "clinical ML"
+    ],
+    [
+      "METHOD:Transformer",
+      "suited_to",
+      "MODALITY:ehr-events",
+      "methodological"
+    ],
+    [
+      "METHOD:GRU",
+      "suited_to",
+      "MODALITY:ehr-events",
+      "methodological"
+    ],
+    [
+      "METHOD:XGBoost",
+      "suited_to",
+      "MODALITY:ehr-tabular",
+      "methodological"
+    ],
+    [
+      "METHOD:XGBoost",
+      "used_for",
+      "TASK:survival",
+      "methodological"
     ],
     [
       "METHOD:Transformer",
@@ -1412,18 +1531,6 @@
       "METHOD:GCN",
       "suited_to",
       "MODALITY:genomic",
-      "methodological"
-    ],
-    [
-      "METHOD:XGBoost",
-      "suited_to",
-      "MODALITY:ehr",
-      "methodological"
-    ],
-    [
-      "METHOD:XGBoost",
-      "used_for",
-      "TASK:survival",
       "methodological"
     ],
     [
