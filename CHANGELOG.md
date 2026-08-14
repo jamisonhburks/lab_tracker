@@ -4,6 +4,12 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Pydantic validation on structured output** — `schemas.py` + `llm.parse()`:
+  keeps the proven constrained-decoding schema, adds Pydantic validation of the RESULT
+  with retry-on-failure (feeds the error back) + code-fence stripping + type coercion.
+  All 6 structured-output sites (agent ×4, critic, campaign) hardened. Verified: bad-JSON
+  retry, missing-field retry, fenced-reply strip, `"250"`→int. A targeted boundary
+  hardening — no framework (LangChain/LangGraph judged overkill) (PR #32 · ADR-0026).
 - **Validity gates** — `validity.py`: pre-registered, hypothesis-ORTHOGONAL interim
   checks (cohort integrity, data scale, positive/negative controls) declared in the
   spec's `validity_gates` block. A `halt` gate stops a broken run (marked invalid, not

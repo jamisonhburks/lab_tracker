@@ -36,6 +36,7 @@ import critic
 import novelty
 import specialist
 import tool_ledger
+import schemas
 
 MAX_STEPS = 10      # safety cap so a misbehaving loop can't run forever
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
@@ -146,9 +147,9 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
             f"abstract explicitly reports.\n\nAbstract:\n{paper['abstract']}"
         )
         try:
-            resp = llm.chat([{"role": "user", "content": prompt}],
-                            schema=STUDY_EXTRACT_SCHEMA)
-            assocs = json.loads(resp.text).get("associations", [])
+            result = llm.parse([{"role": "user", "content": prompt}],
+                               STUDY_EXTRACT_SCHEMA, schemas.StudyExtract)
+            assocs = [a.model_dump() for a in result.associations]
         except Exception:
             continue
         for a in assocs:
@@ -298,8 +299,8 @@ def generate_hypothesis(entity_a: str, entity_c: str, max_len: int = 3) -> str:
         "establish — directionality, causality, confounders)."
     )
     try:
-        h = json.loads(llm.chat([{"role": "user", "content": prompt}],
-                                schema=HYPOTHESIS_SCHEMA).text)
+        h = llm.parse([{"role": "user", "content": prompt}],
+                      HYPOTHESIS_SCHEMA, schemas.Hypothesis).model_dump()
     except Exception as err:
         return f"Hypothesis generation failed: {err}"
 
@@ -797,9 +798,8 @@ def _plan_tools(question: str) -> list:
         "list tools you merely might use."
     )
     try:
-        resp = llm.chat([{"role": "user", "content": prompt}], schema=TOOL_PLAN_SCHEMA)
-        return [it for it in json.loads(resp.text).get("intended", [])
-                if it.get("tool") in names]
+        plan = llm.parse([{"role": "user", "content": prompt}], TOOL_PLAN_SCHEMA, schemas.ToolPlan)
+        return [{"tool": it.tool, "why": it.why} for it in plan.intended if it.tool in names]
     except Exception:
         return []
 
@@ -898,9 +898,9 @@ def _consolidate(messages: list, seen: set) -> list:
         "or empty strings if the claim is not a relation between two named entities."
     )
     try:
-        resp = llm.chat(messages + [{"role": "user", "content": prompt}],
-                        schema=CONSOLIDATION_SCHEMA)
-        findings = json.loads(resp.text).get("findings", [])
+        result = llm.parse(messages + [{"role": "user", "content": prompt}],
+                           CONSOLIDATION_SCHEMA, schemas.Consolidation)
+        findings = [f.model_dump() for f in result.findings]
     except Exception as err:  # keep the toy robust if consolidation hiccups
         print(f"[consolidation failed: {err}]")
         return []

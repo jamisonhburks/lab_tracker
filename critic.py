@@ -21,6 +21,7 @@ import urllib.parse
 import urllib.request
 
 import llm
+import schemas
 
 import kg_memory as kg
 
@@ -101,8 +102,8 @@ def criticize(record: dict, abstract: str | None = None, votes: int = 1) -> dict
     )
     def _once() -> dict:
         try:
-            resp = llm.chat([{"role": "user", "content": prompt}], schema=VERDICT_SCHEMA)
-            return json.loads(resp.text)
+            return llm.parse([{"role": "user", "content": prompt}],
+                             VERDICT_SCHEMA, schemas.Verdict).model_dump()
         except Exception as err:
             return {"verdict": "uncertain", "reason": f"critic error: {err}"}
 
