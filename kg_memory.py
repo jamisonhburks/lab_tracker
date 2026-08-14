@@ -262,6 +262,53 @@ def _drugbank_to_chebi() -> dict:
     return out
 
 
+def _sym_keys(label: str) -> set:
+    """Normalized match keys for a symptom/phenotype label: lowercased, punctuation-stripped,
+    plus a de-pluralized form and, for MeSH INVERTED names ('Vision, Low'), the de-inverted
+    form ('Low Vision'). Both sides of the crosswalk use this, so matching is symmetric."""
+    s = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ,]+", "", (label or "").strip().lower())).strip()
+    if not s:
+        return set()
+    out = {s}
+    if s.endswith("s") and not s.endswith("ss"):
+        out.add(s[:-1])
+    if "," in s:                                   # MeSH inverted: 'aphasia, conduction'
+        rev = " ".join(reversed([p.strip() for p in s.split(",")]))
+        out.add(rev)
+        if rev.endswith("s") and not rev.endswith("ss"):
+            out.add(rev[:-1])
+    return {k.replace(",", "").strip() for k in out if k.replace(",", "").strip()}
+
+
+def _mesh_symptom_to_hpo(symptoms: list) -> dict:
+    """Hetionet 'Symptom:<MeSH>' node id -> HPO id, matched on NAME + exact synonyms.
+
+    Unlike the DOID/DrugBank crosswalks (parsed from cross-reference columns), HPO nodes in
+    Monarch carry NO MeSH xref — their xrefs are UMLS/SNOMED. So this is a lexical crosswalk,
+    PRECISION-FIRST: matches only on exact name / exact-synonym (+ plural + MeSH-inversion).
+    Rationale: a miss just leaves the node un-linked (the prior behavior), but a wrong merge
+    would forge a false mechanistic path — so we accept lower recall to protect grounding.
+    """
+    f = DATA_DIR / "monarch-kg_nodes.tsv"
+    if not f.exists():
+        load_monarch()
+    hp = (pl.read_csv(f, separator="\t", infer_schema_length=0,
+                      columns=["id", "name", "exact_synonym"])
+          .filter(pl.col("id").str.starts_with("HP:")))
+    idx = {}
+    for hid, nm, syn in zip(hp["id"].to_list(), hp["name"].to_list(), hp["exact_synonym"].to_list()):
+        for label in [nm] + re.split(r"\|", syn or ""):
+            for k in _sym_keys(label):
+                idx.setdefault(k, hid)             # first HPO term wins a key
+    out = {}
+    for sid, nm in symptoms:
+        for k in _sym_keys(nm):
+            if k in idx:
+                out[sid] = idx[k]
+                break
+    return out
+
+
 def _apply_id_map(df: "pl.DataFrame", cols: list, mapping: dict) -> "pl.DataFrame":
     """Rewrite id columns through a {old_id -> new_id} map (unmapped ids unchanged)."""
     mdf = pl.DataFrame({"_old": list(mapping.keys()), "_new": list(mapping.values())})
@@ -277,18 +324,23 @@ def load_combined() -> None:
     GWAS-style gene associations AND Monarch's phenotype/PPI edges. A local, honest
     slice of what PrimeKG does (multi-source integration onto common vocabularies).
 
-    Node types that don't share a vocabulary across the two (Hetionet DrugBank
-    compounds vs Monarch CHEBI chemicals; Hetionet MeSH symptoms vs Monarch HPO) are
-    kept source-prefixed and simply don't cross-link — they still contribute edges.
+    Genes align to Entrez, diseases to MONDO, drugs to CHEBI, and SYMPTOMS/PHENOTYPES to
+    HPO (Hetionet's MeSH symptoms matched onto Monarch's HPO by name/synonym) — so a
+    Hetionet disease→symptom edge and a Monarch phenotype→gene edge now meet at one node.
+    A local, honest slice of what PrimeKG does (multi-source integration onto common vocabs).
     """
     load_hetionet(); h_nodes, h_edges = _G["nodes"], _G["edges"]
     load_monarch();  m_nodes, m_edges = _G["nodes"], _G["edges"]
 
     hgnc, doid2mondo = _hgnc_to_entrez(), _doid_to_mondo()
     drugbank2chebi = _drugbank_to_chebi()
+    symptoms = [(nid, nm) for nid, nm in zip(h_nodes[NODE_ID].to_list(), h_nodes[NODE_NAME].to_list())
+                if nid.startswith("Symptom:")]
+    sym2hpo = _mesh_symptom_to_hpo(symptoms)         # Hetionet MeSH symptom -> HPO id
 
     # Hetionet ids -> canonical: Gene:<entrez> -> NCBIGene:<entrez>; Disease:DOID:x ->
-    # MONDO; Compound:DB<x> -> CHEBI (so Hetionet's drug edges join Monarch's chemicals).
+    # MONDO; Compound:DB<x> -> CHEBI; Symptom:<MeSH> -> HPO (so Hetionet's symptom edges
+    # join Monarch's phenotype/gene edges on the shared HPO node).
     h_map = {}
     for nid in h_nodes[NODE_ID].to_list():
         if nid.startswith("Gene:"):
@@ -297,6 +349,8 @@ def load_combined() -> None:
             h_map[nid] = doid2mondo.get(nid[len("Disease:"):], nid)
         elif nid.startswith("Compound:") and nid[len("Compound:"):] in drugbank2chebi:
             h_map[nid] = drugbank2chebi[nid[len("Compound:"):]]
+        elif nid in sym2hpo:
+            h_map[nid] = sym2hpo[nid]
     # Monarch ids -> canonical: HGNC:x -> NCBIGene:<entrez> (MONDO/HP/CHEBI stay)
     m_map = {}
     for nid in m_nodes[NODE_ID].to_list():
