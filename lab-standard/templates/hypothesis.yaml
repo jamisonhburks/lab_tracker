@@ -1,0 +1,51 @@
+# hypotheses/H{NNN}_{slug}.yaml  — pre-registration template
+# Copy this, fill EVERY required field, run the hypothesis-workflow.md checks, then have
+# the hypothesis-planner agent flip status draft -> approved. Do not implement a draft.
+#
+# Fields above the line are the lab-canonical minimum (see CLAUDE.md). The blocks below
+# the line are the lab-standard extensions that make the eventual finding promotable —
+# fill them in as you run the grounding/calibration/novelty checks.
+
+id: H{NNN}                          # zero-padded, monotonic within the project
+title: "Short descriptive title"
+question: "The scientific question, phrased so a result could answer it."
+null_hypothesis: "H₀: ... (state it explicitly; if you can't, you can't test it)"
+alternative_hypothesis: "H₁: ... with the concrete threshold you'll judge by"
+data:
+  source: "data/processed/..."      # never data/raw/ for outputs; raw is read-only
+  type: "tabular | waveform | genomic | ehr-events | ehr-tabular | mixed"
+  notes: >
+    Preprocessing assumptions, cohort definition, label coding, units. Call out anything
+    a validity gate should check (e.g. expected value range, how cases are coded).
+method: "High-level approach + the statistical test(s). Name the correction(s) you'll apply."
+success_metric: >
+  The PRIMARY metric AND the threshold for claiming success, decided now, before data.
+  Name the correction (Bonferroni AND Benjamini-Hochberg FDR when >1 test) and the
+  required effect size. This is what the results-evaluator will hold you to.
+min_runs: 3                         # >=3 for any stochastic method (lab standard)
+created: YYYY-MM-DD
+status: "draft"                     # draft -> approved -> running -> complete | abandoned
+
+# ---------------------------------------------------------------------------------------
+# LAB-STANDARD EXTENSIONS (recommended — the metadata the promotion gate needs)
+
+provenance:                         # how this hypothesis was FORMED (fill from the substrate)
+  kg_grounding: "ground_claim verdict: grounded | weakly_grounded | novel_unverified | off_graph"
+  kg_paths:                         # the A->B->C chains find_paths returned, with sources
+    - "TypeA --predicate--> Bridge --predicate--> TypeC   (source)"
+  calibration: "calibrate_link percentile / empirical p-value vs degree-matched null"
+  novelty: "check_novelty verdict: bridge_published | emerging_bridge | novel_bridge | novel_juxtaposition"
+  builds_on: []                     # prior H{NNN} ids this depends on (campaign lineage)
+
+validity_gates:                     # interim, hypothesis-ORTHOGONAL checks, pre-committed
+  - name: cohort_integrity          # labels well-formed, no leakage, outcome coded as expected
+    action: halt                    # halt | flag
+  - name: data_scale                # value ranges/units sane for the modality
+    action: flag
+  - name: negative_control          # a relation that should show NOTHING
+    action: flag
+  - name: positive_control          # a relation that should reproduce a KNOWN effect
+    action: flag
+
+# pre_registration:                 # optional richer block (see H002 for a worked example):
+#   design, multiple_testing_scope, covariate_set, replication_rule, power_check, ...

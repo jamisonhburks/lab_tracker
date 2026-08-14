@@ -4,6 +4,16 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Lab-standard onboarding playbook** — a self-describing layer (docs only) so a fresh
+  session can scaffold a new project or conform an existing one to the standard, then keep
+  future sessions on-standard. Root `AGENTS.md` routes by intent → `lab-standard/`:
+  `START-HERE`, `new-project`, `conform-project`, `hypothesis-workflow`,
+  `experiment-workflow`, `promotion` (local semantic → shared WIP → shared consensus),
+  `project-structure`, `using-the-substrate`, plus `templates/` (`hypothesis.yaml` with
+  explicit `provenance:`/`validity_gates:` blocks, `project-README.md`, and
+  `project-CLAUDE.md` dropped into each project so the rules travel with the work). No new
+  code/deps — pure guidance over the existing MCP tools, 4-agent split, gates, and
+  `contribute()` (PR #40 · ADR-0033).
 - **`contribute()` write-path** — `contribute.py`: findings flow into shared CONSENSUS
   (the one gated tier) — normalized, critic-gated (literature→abstract, experiment→committed
   provenance), routed conservatively (novel/contradictory→pending_review, corroborating-
