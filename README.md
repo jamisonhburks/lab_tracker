@@ -44,7 +44,8 @@ python agent.py                                                               # 
 - **[`AGENTS.md`](AGENTS.md)** — read first if you're an agent starting or organizing a
   project. Routes to **[`lab-standard/`](lab-standard/)**, the onboarding playbook that
   scaffolds/conforms projects and promotes their work local semantic → shared WIP →
-  shared consensus.
+  shared consensus. Run `python scaffold.py new "<title>"` (or `conform <path>`) to
+  auto-build a standard-conforming project skeleton.
 - **[`docs/decisions/`](docs/decisions/)** — Architecture Decision Records: *why*
   each choice was made, alternatives, and evidence. Start here.
 - **[`CHANGELOG.md`](CHANGELOG.md)** — reverse-chronological change summary.

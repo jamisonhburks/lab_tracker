@@ -53,11 +53,17 @@ Existing projects almost always lack these three; add them (see the tracking rul
 Reproducibility gaps are common in legacy work — **record them as gaps, don't fabricate**
 a seed or a version you can't verify.
 
-## 4. Add the standard-carrying files
+## 4. Add the standard-carrying files (one command — non-destructive)
 
-- Copy `templates/project-CLAUDE.md` → `<project>/CLAUDE.md` (so future sessions conform).
-- Copy `templates/project-README.md` → `<project>/README.md`; set status and list the
-  `H{NNN}`s with their statuses.
+```sh
+python scaffold.py conform <path-to-existing-project> --title "<Project Title>"
+```
+
+This creates only **missing** standard dirs and drops `CLAUDE.md` (so future sessions
+conform), `README.md`, and `notes/00_conformance_audit.md` **only if absent** — it never
+moves or overwrites your existing files. Then fill the README status + `H{NNN}` table by hand.
+(By hand: copy from [`templates/`](templates/) and fill placeholders — the helper just does
+that deterministically.)
 
 ## 5. Reconcile with the shared substrate, then stop
 
