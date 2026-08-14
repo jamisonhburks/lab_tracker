@@ -4,6 +4,13 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **ML bridge breadth (Stage 2)** — broadened the curated disease↔modality↔task↔architecture
+  bridge in `ml_seed.py` (one appended block, no schema change): +6 diseases (glaucoma, AD,
+  heart failure, sepsis, diabetic retinopathy, epilepsy), +6 modalities (fundus, OCT, MRI/CT,
+  histopathology WSI, EEG, clinical text), +7 tasks, +5 losses, +7 metrics, +6 caveats, ~100
+  edges wiring EXISTING arXiv-attributed architectures to them. Seed 281→318 nodes / 316→419
+  edges, all 61 methods preserved. `recommend_methods("glaucoma")` now returns fundus/OCT/
+  genomic methods with authorship, losses, metrics + caveats (PR #43 · ADR-0036).
 - **Resilient live retrieval (`net.py`)** — one shared helper (`urlopen_retry` / `fetch_bytes`
   / `fetch_text`) that every external fetch routes through (PubMed, arXiv, Monarch, Hetionet,
   HGNC). Retries only transient failures (connection/timeout, HTTP 429/5xx; 404 fails fast)
