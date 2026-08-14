@@ -12,6 +12,12 @@ decision behind it (see `docs/decisions/`). Dates are approximate build dates.
   cohort gate halts the `{AD:0}` case (the H002 `AD='AA'` bug); on H002 the data-scale
   gate FLAGGED GSE48350's max=59.24 — a real log-scale anomaly the original run missed.
   Folded into the provenance card (PR #30 · ADR-0024).
+- **Campaign / program object** — `campaign.py`: a lineage (DAG) of atomic experiments
+  (`campaigns/{name}.json`) where result-driven adaptivity safely lives. Auto-syncs each
+  node's verdict from its evaluation report; `next_step()` proposes the NEXT atomic
+  experiment from the last verdict + the evaluator's recommendations (LLM-assisted,
+  human-approved draft). Verified: H001->H002 lineage; planner proposed H003 (ROSMAP
+  snRNA-seq, powered, cell-type-aware) tagged draft/do-not-mutate-H002 (PR #31 · ADR-0025).
 
 ## 2026-08-13
 - **Scaling profile + `scaling.py`** — content accounting per experiment (bytes/lines/
