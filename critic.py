@@ -18,9 +18,9 @@ link must survive. The critic catches hallucinations and junk, not new ideas.
 import json
 import re
 import urllib.parse
-import urllib.request
 
 import llm
+import net
 import schemas
 
 import kg_memory as kg
@@ -54,8 +54,7 @@ def _fetch_abstract(pmid: str) -> str:
     url = f"{EUTILS}/efetch.fcgi?" + urllib.parse.urlencode(
         {"db": "pubmed", "id": pmid, "rettype": "abstract", "retmode": "text"})
     try:
-        with urllib.request.urlopen(url, timeout=30) as r:
-            return r.read().decode("utf-8", "replace")[:6000]
+        return net.fetch_text(url, timeout=30)[:6000]
     except Exception:
         return ""
 

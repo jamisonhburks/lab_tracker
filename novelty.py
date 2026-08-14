@@ -36,9 +36,9 @@ reported hit count, so this is cheap.
 """
 
 import json
-import time
 import urllib.parse
-import urllib.request
+
+import net
 
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
@@ -50,22 +50,18 @@ ESTABLISHED_N = 50
 BRIDGE_KNOWN_N = 10
 
 
-def _pubmed_count(term: str, retries: int = 2) -> int:
+def _pubmed_count(term: str) -> int:
     """Number of PubMed records matching `term` (retmax=0 -> just the count).
 
-    Retries with backoff: without an API key NCBI rate-limits to ~3 req/sec, so
-    rapid successive counts get throttled — a retry clears the transient error and
-    keeps a real 0 distinct from a query failure (-1)."""
+    `net.fetch_text` retries with backoff on transient errors: without an API key NCBI
+    rate-limits to ~3 req/sec, so rapid successive counts get throttled — the retry clears
+    the transient error and keeps a real 0 distinct from a query failure (-1)."""
     url = f"{EUTILS}/esearch.fcgi?" + urllib.parse.urlencode(
         {"db": "pubmed", "term": term, "retmax": 0, "retmode": "json"})
-    for attempt in range(retries + 1):
-        try:
-            with urllib.request.urlopen(url, timeout=30) as r:
-                return int(json.load(r)["esearchresult"]["count"])
-        except Exception:
-            if attempt < retries:
-                time.sleep(0.4 * (attempt + 1))
-    return -1        # signal "could not query" rather than a false zero
+    try:
+        return int(json.loads(net.fetch_text(url, timeout=30))["esearchresult"]["count"])
+    except Exception:
+        return -1        # signal "could not query" rather than a false zero
 
 
 def _q(s: str) -> str:
