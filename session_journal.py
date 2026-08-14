@@ -123,10 +123,76 @@ class SessionJournal:
         self._stop.set()
 
     # --- promotion recommendation ------------------------------------------- #
+    def _counts(self) -> dict:
+        counts = {"hypothesis": 0, "experiment": 0, "finding": 0}
+        for line in self._read().splitlines():
+            s = line.strip()
+            if s and not s.startswith("#") and (c := _classify(s)):
+                counts[c] += 1
+        return counts
+
+    def session_mode(self) -> str:
+        """Classify the session shape: 'hypothesis_driven' (a hypothesis was stated),
+        'adhoc_series' (>=2 experiments/findings but NO hypothesis — a series of tests with no
+        setup), or 'sparse' (not much yet)."""
+        c = self._counts()
+        if c["hypothesis"] >= 1:
+            return "hypothesis_driven"
+        if c["experiment"] + c["finding"] >= 2:
+            return "adhoc_series"
+        return "sparse"
+
+    def workflow_suggestion(self) -> str:
+        """If the session is an ad-hoc series with no hypothesis/setup, ASK whether to attach
+        the Research Workflow retroactively — or log the work as miscellaneous."""
+        if self.session_mode() != "adhoc_series":
+            return ""
+        return ("\n⚠ This session looks like a SERIES OF ANALYSES with no hypothesis/setup. Attach"
+                " the Research Workflow?\n"
+                "   (a) FORMALIZE RETROACTIVELY — draft a hypothesis + methods from what you ran"
+                " → session_journal formalize_retroactively(); or\n"
+                "   (b) LOG AS MISCELLANEOUS — if this isn't tied to a hypothesis, send findings to"
+                " the lab's exploratory pool (rigor-checked + matched to the lab KG):"
+                " misc_research.log_misc(claim, subject, object, method, ...).")
+
+    def formalize_retroactively(self) -> str:
+        """'Attach the Research Workflow' after the fact: assemble a hypothesis + method STUB
+        from a series of analyses that had no setup (recurring entities → the link; experiment
+        notes → the method; findings → observed). A DRAFT the thinker reviews/completes."""
+        import collections
+        import re
+        text = self._read()
+        exp, find = [], []
+        for line in text.splitlines():
+            s = line.strip()
+            if not s or s.startswith("#"):
+                continue
+            c = _classify(s)
+            if c == "experiment":
+                exp.append(s)
+            elif c == "finding":
+                find.append(s)
+        top = [t for t, _ in collections.Counter(
+            re.findall(r"\b[A-Z][A-Za-z0-9\-]{2,}\b", text)).most_common(4)]
+        stub = ["# RETROACTIVELY DRAFTED from an ad-hoc session — REVIEW + COMPLETE before use.",
+                "id: H000   # assign the next H00N",
+                f"title: \"(draft) {' / '.join(top[:2]) or 'session analyses'}\"",
+                "question: \"(what were these analyses implicitly asking?)\"",
+                "null_hypothesis: \"H0: ...\"",
+                "alternative_hypothesis: \"H1: ...\"",
+                f"recurring_entities: [{', '.join(top)}]",
+                "method: |"]
+        stub += [f"  - {e[:100]}" for e in exp[:6]] or ["  (fill from the analyses run)"]
+        stub += ["observed_in_session: |"]
+        stub += [f"  - {f[:100]}" for f in find[:6]] or ["  (none captured)"]
+        stub += ["status: \"draft\""]
+        return "\n".join(stub)
+
     def promotion_review(self, min_chars: int = 300) -> str:
         """Once enough content has accrued, recommend which components are ready to propose
         from PERSONAL notes up to SHARED WIP. Heuristic + honest: it FLAGS candidates for a
-        human/thinker to promote, it does not promote anything itself."""
+        human/thinker to promote, it does not promote anything itself. If the session is an
+        ad-hoc series with no hypothesis, it also asks whether to attach the Research Workflow."""
         cur = self._read()
         cands = {"hypothesis": [], "experiment": [], "finding": []}
         for line in cur.splitlines():
@@ -139,7 +205,8 @@ class SessionJournal:
         n = sum(len(v) for v in cands.values())
         if len(cur) < min_chars or n == 0:
             return (f"[promotion] not enough yet — {len(cur)} chars, {n} candidate "
-                    "component(s). Keep working; components get flagged as they accrue.")
+                    "component(s). Keep working; components get flagged as they accrue."
+                    + self.workflow_suggestion())
         label = {"hypothesis": "Hypotheses  → formalize as hypotheses/H00N_*.yaml",
                  "experiment": "Experiment ideas  → experiments/ (pre-register first)",
                  "finding":    "Findings  → contribute() AFTER they're tested"}
@@ -153,7 +220,7 @@ class SessionJournal:
         out.append("Promote the hypotheses/experiments to shared WIP (formalize as YAML / "
                    "experiment dirs); findings go via contribute() once tested. Nothing is "
                    "promoted automatically — this is a recommendation.")
-        return "\n".join(out)
+        return "\n".join(out) + self.workflow_suggestion()
 
     def status(self) -> str:
         n_ck = sum(1 for _ in self.log.open()) if self.log.exists() else 0
