@@ -1,0 +1,20 @@
+[
+  {
+    "name": "cohort_integrity",
+    "passed": true,
+    "severity": "halt",
+    "detail": "arms={'AD': 100, 'control': 100}, min_per_arm=20"
+  },
+  {
+    "name": "data_scale",
+    "passed": true,
+    "severity": "halt",
+    "detail": "kind=log, observed_max=8.34, max_expected=30.0"
+  },
+  {
+    "name": "negative_control[NULL_GENE_set]",
+    "passed": true,
+    "severity": "flag",
+    "detail": "NULL_GENE_set: frac_significant=0.011 (max 0.1)"
+  }
+]

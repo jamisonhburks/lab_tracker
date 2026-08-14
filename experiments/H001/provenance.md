@@ -35,6 +35,7 @@
   16. statsmodels.multipletests (fdr_bh)
   17. matplotlib.savefig (volcano)
 - **Statistical standards:** Bonferroni + BH-FDR, effect sizes, ≥3 runs/robustness checks, reproducibility log.
+- **Validity gates (pre-registered, hypothesis-orthogonal):** cohort_integrity=PASS(halt); data_scale=PASS(halt); negative_control[NULL_GENE_set]=PASS(flag)
 
 ## Result
 - **Metrics:** metrics.csv (150 rows)

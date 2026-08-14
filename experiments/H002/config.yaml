@@ -139,6 +139,22 @@ power:
   alpha_power: 0.05
 
 # ---------------------------------------------------------------------------
+# Validity gates — PRE-REGISTERED, hypothesis-orthogonal interim checks. The
+# cohort_integrity halt would have caught the AD='AA' coding bug (0 cases) at
+# fetch time instead of via a downstream crash.
+# ---------------------------------------------------------------------------
+validity_gates:
+  cohort_integrity:
+    min_per_arm: 5           # each dataset must have >= 5 AD and >= 5 control subjects
+    severity: halt
+  data_scale:
+    kind: log
+    max_expected: 30.0       # log-scale expression (RMA / processed signal)
+    severity: flag           # GSE48350 max ~59 is anomalous for clean log2 — FLAG for
+                             # follow-up (don't auto-invalidate; threshold is uncertain
+                             # for this series). A real catch the original run missed.
+
+# ---------------------------------------------------------------------------
 # Provenance
 # ---------------------------------------------------------------------------
 provenance:

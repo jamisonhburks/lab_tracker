@@ -50,6 +50,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils.log_run_metadata import log_run_metadata
 import tool_ledger
+import validity
 
 
 # ---------------------------------------------------------------------------
@@ -471,6 +472,20 @@ def main() -> None:
     canonical_df.to_csv(data_out, index=False)
     led.record("generate_synthetic_expression",
                {"seed": seeds[0], "canonical": True, "n_genes": n_total_genes}, "experiment")
+
+    # Pre-registered validity gates (hypothesis-orthogonal machinery checks).
+    gates = validity.Gates(logger)
+    vg = cfg.get("validity_gates", {})
+    if "cohort_integrity" in vg:
+        g = vg["cohort_integrity"]
+        gates.cohort_integrity({"AD": n_cases, "control": n_controls},
+                               g["min_per_arm"], g.get("severity", "halt"))
+    if "data_scale" in vg:
+        g = vg["data_scale"]
+        gene_cols_c = [c for c in canonical_df.columns
+                       if c not in ("sample_id", "group", "SYNTHETIC_DATA", "KNOWN_GROUND_TRUTH")]
+        gates.data_scale(canonical_df[gene_cols_c].to_numpy().ravel(),
+                         g.get("kind", "log"), g["max_expected"], g.get("severity", "halt"))
     logger.info(f"Synthetic dataset saved to: {data_out} "
                 f"(shape: {canonical_df.shape})")
     logger.info("NOTE: SYNTHETIC_DATA column = True for all rows. "
@@ -537,6 +552,16 @@ def main() -> None:
     ]
     metrics_df = metrics_df[ordered_cols]
     metrics_df.to_csv(metrics_path, index=False)
+
+    # Negative-control gate: the NULL_GENE_* set has no planted effect and should stay
+    # null (validates FDR control — orthogonal to the planted/hypothesis genes).
+    if "negative_control" in vg:
+        g = vg["negative_control"]
+        null_rows = metrics_df[metrics_df["gene"].str.startswith("NULL_GENE")]
+        frac = float(null_rows["significant_bh"].mean()) if len(null_rows) else 0.0
+        gates.negative_control("NULL_GENE_set", frac, g["max_frac_significant"], g.get("severity", "flag"))
+    gates.save(PROJECT_ROOT / "experiments" / "H001" / "validity.json")
+    logger.info(gates.summary())
     logger.info(f"Metrics saved to: {metrics_path} "
                 f"(rows: {len(metrics_df)}, columns: {list(metrics_df.columns)})")
 

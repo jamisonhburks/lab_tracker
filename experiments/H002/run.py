@@ -71,6 +71,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils.log_run_metadata import log_run_metadata  # noqa: E402
 import tool_ledger  # noqa: E402
+import validity  # noqa: E402
 
 
 # ===========================================================================
@@ -1117,6 +1118,9 @@ def main():
     # Experiment tool ledger: the scientific/statistical ops performed, in order.
     led = tool_ledger.ToolLedger(task="H002 real-data differential-expression experiment",
                                  run_id="H002", experiment_id="H002")
+    # Pre-registered validity gates (hypothesis-orthogonal machinery checks).
+    gates = validity.Gates(logger)
+    vg = cfg.get("validity_gates", {})
 
     # ===================================================================
     # PRIMARY DATASET: GSE48350
@@ -1157,6 +1161,17 @@ def main():
     common_primary = gene_expr_primary.columns.intersection(meta_primary_raw.index)
     gene_expr_primary = gene_expr_primary[common_primary]
     meta_primary      = meta_primary_raw.loc[common_primary]
+
+    # Validity gates on the PRIMARY cohort (halt-on-fail; would have caught AD='AA').
+    if "cohort_integrity" in vg:
+        g = vg["cohort_integrity"]
+        arms = {"control": int((meta_primary["diagnosis"] == 0).sum()),
+                "AD": int((meta_primary["diagnosis"] == 1).sum())}
+        gates.cohort_integrity(arms, g["min_per_arm"], g.get("severity", "halt"))
+    if "data_scale" in vg:
+        g = vg["data_scale"]
+        gates.data_scale(gene_expr_primary.to_numpy().ravel(),
+                         g.get("kind", "log"), g["max_expected"], g.get("severity", "halt"))
 
     # --- Primary OLS (all regions) ---
     # Formula: expression ~ diagnosis + age + sex_male + C(region)
@@ -1287,6 +1302,13 @@ def main():
     gene_expr_rep = gene_expr_rep[common_rep]
     meta_rep      = meta_rep.loc[common_rep]
 
+    # Validity gate on the REPLICATION cohort.
+    if "cohort_integrity" in vg:
+        g = vg["cohort_integrity"]
+        arms = {"control": int((meta_rep["diagnosis"] == 0).sum()),
+                "AD": int((meta_rep["diagnosis"] == 1).sum())}
+        gates.cohort_integrity(arms, g["min_per_arm"], g.get("severity", "halt"))
+
     # --- Replication OLS (frontal cortex; no region covariate) ---
     # TODO: If PMI is missing for many subjects, consider whether to drop pmi from formula.
     rep_formula_rhs = "diagnosis + age + sex_male"
@@ -1347,6 +1369,8 @@ def main():
     led.record("matplotlib.savefig", {"artifact": "forest_plot", "formats": ["png", "pdf"]}, "experiment")
     ledger_path = led.save(PROJECT_ROOT / "experiments" / "H002" / "tool_ledger.json")
     logger.info(f"Tool ledger (scientific ops) saved to: {ledger_path}")
+    gates.save(PROJECT_ROOT / "experiments" / "H002" / "validity.json")
+    logger.info(gates.summary())
 
     # ===================================================================
     # Save metrics.csv
