@@ -11,13 +11,71 @@ connect the two entities. It is explicitly a heuristic, not a calibrated
 probability.
 """
 
+import json
 import math
 import random
 import statistics
+import urllib.parse
 
-from kg_memory import _index, _label, _resolve, enumerate_paths
+import net
+from kg_memory import _index, _label, _meta, _resolve, enumerate_paths
 
 W_DEG = 0.4   # hub penalty exponent for degree-weighted path count (Rephetio-style)
+_EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+
+
+def _pubmed_abstracts(query: str, n: int = 2) -> str:
+    """A few PubMed abstracts for a query (no LLM). Best-effort; degrades to a note."""
+    try:
+        su = f"{_EUTILS}/esearch.fcgi?" + urllib.parse.urlencode(
+            {"db": "pubmed", "term": query, "retmax": n, "retmode": "json"})
+        ids = json.loads(net.fetch_text(su, timeout=20))["esearchresult"]["idlist"]
+        if not ids:
+            return "(no PubMed hits)"
+        fu = f"{_EUTILS}/efetch.fcgi?" + urllib.parse.urlencode(
+            {"db": "pubmed", "id": ",".join(ids), "rettype": "abstract", "retmode": "text"})
+        return net.fetch_text(fu, timeout=25).strip()
+    except Exception as err:
+        return f"(PubMed unavailable: {err})"
+
+
+def refine_evidence(entity_a: str, entity_c: str, max_bridges: int = 4,
+                    max_papers: int = 2, max_len: int = 3) -> str:
+    """Gather the EVIDENCE needed to refine a hypothesis — with NO generation. For each KG
+    bridge between A and C: its mechanism (the incident predicates), the A–bridge–C PubMed
+    triple co-mention count (novelty), and targeted abstracts. The client's model reads this
+    and makes the critic call ITSELF, then records confirmed links via
+    contribute(critic_verdict=...). This is the substrate half of the refinement loop —
+    the thinker supplies the judgment the local model used to make."""
+    import novelty
+    a, c, paths, _ = enumerate_paths(entity_a, entity_c, max_len=max_len)
+    if a is None or c is None:
+        missing = entity_a if a is None else entity_c
+        return f"'{missing}' not found in the knowledge graph."
+    if not paths:
+        return f"No KG path connects {_label(a)} and {_label(c)} — nothing to refine."
+    a_name, c_name = _label(a), _label(c)
+
+    bridges = {}                                    # distinct internal nodes + incident predicates
+    for p in paths:
+        seq = [p[0][0]] + [e[4] for e in p]
+        preds = [e[1] for e in p]
+        for i, mid in enumerate(seq[1:-1], start=1):
+            bridges.setdefault(mid, (_label(mid), f"{preds[i-1]} → {preds[i]}"))
+    items = list(bridges.items())[:max_bridges]
+
+    out = [f"Refinement evidence: {a_name} <-> {c_name}  "
+           f"({len(bridges)} bridge(s); showing top {len(items)})",
+           "Substrate-gathered, NO LLM. YOU are the critic: judge each bridge (real lead vs "
+           "hub/transitivity artifact), then record confirmed links via "
+           "contribute(critic_verdict='accept'|'reject').", ""]
+    for mid, (bname, mech) in items:
+        nov = novelty.classify(a_name, c_name, via=bname)
+        out.append(f"• {bname}  [mech: {mech}]  triple_comentions={nov['n_bridge']}  "
+                   f"novelty={nov['status']}")
+        lit = _pubmed_abstracts(f"{a_name} {bname} {c_name}", max_papers)[:800]
+        out.append("    " + lit.replace("\n", "\n    "))
+    return "\n".join(out)
 
 
 def _atomic_sources(paths) -> set:

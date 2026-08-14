@@ -327,7 +327,7 @@ def generate_hypothesis(entity_a: str, entity_c: str, max_len: int = 3) -> str:
 
 
 def refine_hypothesis(entity_a: str, entity_c: str, max_bridges: int = 4,
-                      max_papers: int = 2) -> str:
+                      max_papers: int = 2, critic_fn=None) -> str:
     """THE LOOP: for each bridge the KG surfaces between A and C, triage whether the
     link is 'already known' — cheaply by novelty, then (for the un-known ones)
     expensively by a targeted literature search + critic pass.
@@ -339,6 +339,10 @@ def refine_hypothesis(entity_a: str, entity_c: str, max_bridges: int = 4,
 
     EXPENSIVE: up to max_bridges * max_papers PubMed fetches + LLM extractions, plus a
     critic call per curated record. Keep the caps small.
+
+    `critic_fn` lets a THINKER (Claude) be the critic instead of the local model; for a fully
+    substrate-driven flow, use `hypothesis_tools.refine_evidence` (no LLM) to gather the
+    evidence, judge it yourself, then record via `contribute(critic_verdict=...)`.
     """
     a, c, paths, _ = kg.enumerate_paths(entity_a, entity_c)
     if a is None or c is None:
@@ -368,8 +372,9 @@ def refine_hypothesis(entity_a: str, entity_c: str, max_bridges: int = 4,
         new = [r for r in kg_writer._load() if kg_writer._rec_key(r) not in before]
         rel = [r for r in new if bname.lower() in r["subject"].lower()
                or bname.lower() in r["object"].lower()]
+        _crit = critic_fn or critic.criticize          # thinker-supplied critic, else local
         accepted = sum(1 for r in rel
-                       if (v := critic.criticize(r)).get("verdict") == "accept"
+                       if (v := _crit(r)).get("verdict") == "accept"
                        and v.get("source_supported"))
         label = ("supported — real link (verify)" if accepted > 0 else
                  "unsupported — likely spurious" if rel else
