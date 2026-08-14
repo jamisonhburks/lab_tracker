@@ -214,4 +214,16 @@ def propose_experiment(entity_a: str, entity_c: str, hypothesis: str = "",
         "- report effect size + 95% CI alongside p-values",
         "- power: size the cohort for the target effect; >=3 runs for stochastic models",
     ]
+
+    # KG-grounded ML method selection (traversal of the fused ML graph — not a hardcoded
+    # map). Appended when either entity bridges to a data modality.
+    try:
+        import method_select
+        for ent in (entity_a, entity_c):
+            rec = method_select.recommend_methods(ent)
+            if "not found" not in rec and "No data modality" not in rec:
+                lines.append("\n" + rec)
+                break
+    except Exception:
+        pass
     return "\n".join(lines)

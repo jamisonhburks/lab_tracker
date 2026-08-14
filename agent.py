@@ -37,6 +37,7 @@ import novelty
 import specialist
 import tool_ledger
 import schemas
+import method_select
 
 MAX_STEPS = 10      # safety cap so a misbehaving loop can't run forever
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
@@ -606,6 +607,26 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "recommend_methods",
+            "description": (
+                "KG-grounded ML METHOD selection: given a data modality (e.g. 'ECG', "
+                "'longitudinal event-based EHR') or a disease, traverse the fused ML graph "
+                "to return suited architectures (with authorship), their losses, metrics, "
+                "and caveats — a graph query, not a lookup table. EHR splits into "
+                "event-based (OMOP/MEDS→sequence models) vs aggregated tabular (→XGBoost)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "target": {"type": "string", "description": "A data modality or disease name."},
+                },
+                "required": ["target"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "propose_experiment",
             "description": (
                 "Infer what DATA, DATASETS, METHODS, and STATISTICAL TESTS would be "
@@ -736,6 +757,7 @@ DISPATCH = {
     "refine_hypothesis": refine_hypothesis,
     "check_novelty": novelty.check_novelty,
     "assess_hypothesis": hyp.assess_hypothesis,
+    "recommend_methods": method_select.recommend_methods,
     "propose_experiment": hyp.propose_experiment,
     "calibrate_link": hyp.calibrate_link,
     "curate_literature": curate_literature,
