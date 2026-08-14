@@ -437,9 +437,11 @@ def _clean(s: str) -> str:
 def _norm_index() -> dict:
     global _NORM
     if _NORM is None:
-        _NORM = {}
-        for nid, (nm, _) in _meta().items():
-            _NORM.setdefault(_clean(nm), nid)   # first node wins a cleaned name
+        meta = _meta()          # force the load FIRST (it may _reset() _NORM), THEN build
+        idx = {}                # into a local so a cold-start reset can't clobber it
+        for nid, (nm, _) in meta.items():
+            idx.setdefault(_clean(nm), nid)     # first node wins a cleaned name
+        _NORM = idx
     return _NORM
 
 

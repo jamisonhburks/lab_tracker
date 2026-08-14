@@ -41,6 +41,7 @@ import novelty
 import memory
 import kg_writer
 import confidence
+import contribute as contrib
 
 try:                                  # method selection lands with Stage 3
     import method_select
@@ -150,6 +151,24 @@ if _SHARED:
             lineage = " → ".join(n["experiment_id"] for n in c.get("nodes", []))
             lines.append(f"  campaign {c['name']}: {lineage}")
         return "\n".join(lines) if len(lines) > 1 else "No tracked work yet."
+
+    @mcp.tool
+    def contribute_finding(subject: str, predicate: str, object: str, source: str,
+                           source_kind: str = "literature", direction: str = "supports",
+                           abstract: str = "") -> str:
+        """WRITE-PATH into shared CONSENSUS knowledge (the only gated tier). Normalizes,
+        critic-gates (literature → re-reads the abstract; experiment → verified by committed
+        provenance), routes CONSERVATIVELY (novel/contradictory → peer review; corroborating
+        an already-supported edge → auto-merge), and records with attribution. `source` is a
+        PMID or experiment-id; set SUBSTRATE_CONTRIBUTOR for attribution."""
+        return contrib.contribute(subject, predicate, object, source=source,
+                                  source_kind=source_kind, direction=direction,
+                                  abstract=abstract or None)
+
+    @mcp.tool
+    def review_queue() -> str:
+        """Contributions awaiting peer review (novel/contradictory), by contributor."""
+        return contrib.review_queue()
 
     if method_select is not None:
         @mcp.tool
