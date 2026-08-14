@@ -4,6 +4,12 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Reified benchmarks + real ML seeding** — `ml_schema.BenchmarkResult` reifies
+  (model, dataset, metric, VALUE, DATE) as a traversable node + `leaderboard()` temporal
+  view; `ml_seed.py` fetches REAL authorship/dates from the arXiv API for ~13 seminal
+  methods → `seeds/ml_fused.json` (`KG_BACKEND=ml`). Verified: real authorship (ResNet
+  He/Sun 2015, ViT Dosovitskiy/Houlsby 2020); GLUE churn RoBERTa 88.5(2019)>BERT 80.5(2018)
+  (PR #34 · ADR-0028).
 - **Fused ML+biomedical schema** — `ml_schema.py` + `KG_BACKEND=ml_demo`: an ML/method
   layer built around methods being epistemically distinct from phenomena — authorship
   (first/last author, lab), Publication+year, lineage (`derived_from`/`superseded_by`),
