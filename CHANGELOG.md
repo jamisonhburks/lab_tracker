@@ -4,6 +4,12 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **KG-grounded method selection (Stage 3)** — `method_select.recommend_methods` turns
+  'what method for this data?' into a GRAPH TRAVERSAL (modality→suited_to→used_for→
+  trained_with→evaluated_by + caveats + authorship + trust split), backend-independent.
+  Wired into `propose_experiment` (appends after the study-design essentials) and exposed
+  as a tool. Verified: ECG→Transformer; T2D event-based→Transformer/GRU vs tabular→XGBoost
+  (PR #36 · ADR-0029).
 - **ML layer — Stage 1 curated expansion** — grew the arXiv-seeded method set 13→61
   seminal methods (NLP/CV/graph/generative/SSL/RL/tabular) with REAL first/last-author +
   year from arXiv, hand-curated lineage, and a title-keyword GUARD that drops any mistyped
