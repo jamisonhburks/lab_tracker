@@ -41,6 +41,10 @@ python agent.py                                                               # 
 
 ## Docs & audit trail
 
+- **[`AGENTS.md`](AGENTS.md)** — read first if you're an agent starting or organizing a
+  project. Routes to **[`lab-standard/`](lab-standard/)**, the onboarding playbook that
+  scaffolds/conforms projects and promotes their work local semantic → shared WIP →
+  shared consensus.
 - **[`docs/decisions/`](docs/decisions/)** — Architecture Decision Records: *why*
   each choice was made, alternatives, and evidence. Start here.
 - **[`CHANGELOG.md`](CHANGELOG.md)** — reverse-chronological change summary.
