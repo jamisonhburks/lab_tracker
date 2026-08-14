@@ -4,6 +4,14 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **Synthesize before clear/compact** — Claude Code hooks (`.claude/settings.json` +
+  `.claude/hooks/synthesize_session.py`) so a lab member's session captures its research before
+  context is lost. Manual `/compact` (`PreCompact`) BLOCKS once with a **prompt** — "synthesize
+  first?" — so the model can distil the session with full context, then re-run to proceed (or
+  re-run to skip). Auto-compact and `/clear` (`SessionEnd`) can't block, so they heuristically
+  synthesize the transcript into the session journal + `promotion_review` and notify. Reuses
+  `session_journal`; everything lands in the local personal tier. Hooks require the user's
+  Claude Code trust approval before they run. Verified all paths (PR #49 · ADR-0042).
 - **Session journal** — `session_journal.py` keeps the PERSONAL tier alive DURING a live session,
   not just at run boundaries. `note()` appends to `memory/sessions/<id>/notes.md`; `checkpoint()`
   diffs against the last snapshot and, if anything changed, appends an append-only, hashed,
