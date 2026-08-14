@@ -52,3 +52,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0038](0038-idea-intake-followup.md) | Idea intake — `assess_idea` (evaluate → propose → opt-in refine) | 2026-08-14 | Accepted | #45 |
 | [0039](0039-mesh-hpo-symptom-merge.md) | MeSH↔HPO symptom/phenotype merge in the combined KG | 2026-08-14 | Accepted | #46 |
 | [0040](0040-thinker-supplied-critic.md) | Thinker-supplied critic verdict — Claude gates consensus, substrate stays LLM-free | 2026-08-14 | Accepted | #47 |
+| [0041](0041-session-journal.md) | Session journal — keep the personal tier alive during a live session | 2026-08-14 | Accepted | #48 |

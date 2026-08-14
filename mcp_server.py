@@ -262,6 +262,37 @@ if _PERSONAL:
         except Exception as err:
             return f"[personal semantic memory unavailable: {err}]"
 
+    # --- session journal: keep the personal tier alive DURING a live session --- #
+    _JOURNAL = {"j": None}
+
+    def _journal():
+        if _JOURNAL["j"] is None:
+            import session_journal
+            _JOURNAL["j"] = session_journal.SessionJournal(
+                session_id=os.environ.get("SESSION_ID"))
+        return _JOURNAL["j"]
+
+    @mcp.tool
+    def journal_note(text: str) -> str:
+        """Append a note to THIS session's personal notes (local, private). Jot ideas,
+        candidate hypotheses, methods, partial results as you work."""
+        _journal().note(text)
+        return "noted."
+
+    @mcp.tool
+    def journal_checkpoint() -> str:
+        """Checkpoint the session notes: record what CHANGED since last time, with provenance
+        (append-only, timestamped, content-hashed). Call periodically (e.g. hourly — drive it
+        from your client's scheduler) so a long active session keeps a durable trail."""
+        return _journal().checkpoint(force=True) or "no change since last checkpoint."
+
+    @mcp.tool
+    def promotion_review() -> str:
+        """Once enough has accrued in your personal notes, recommend which components are
+        ready to propose UP to SHARED WIP (hypotheses → YAML, experiments → dirs, findings →
+        contribute after testing). A recommendation only — nothing is promoted automatically."""
+        return _journal().promotion_review()
+
 
 if __name__ == "__main__":
     mcp.run()   # stdio transport (default)
