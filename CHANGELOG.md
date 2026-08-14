@@ -4,6 +4,11 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **ML layer — Stage 1 curated expansion** — grew the arXiv-seeded method set 13→61
+  seminal methods (NLP/CV/graph/generative/SSL/RL/tabular) with REAL first/last-author +
+  year from arXiv, hand-curated lineage, and a title-keyword GUARD that drops any mistyped
+  id before it can mis-attribute authorship (all 61 passed). Added XGBoost so tabular-EHR
+  bridges (T2D→EHR→XGBoost); 274 nodes / 304 edges (ADR-0028).
 - **Reified benchmarks + real ML seeding** — `ml_schema.BenchmarkResult` reifies
   (model, dataset, metric, VALUE, DATE) as a traversable node + `leaderboard()` temporal
   view; `ml_seed.py` fetches REAL authorship/dates from the arXiv API for ~13 seminal

@@ -66,6 +66,91 @@
       "Metric"
     ],
     [
+      "METHOD:Seq2Seq",
+      "Seq2Seq",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Ilya Sutskever",
+      "Ilya Sutskever",
+      "Author"
+    ],
+    [
+      "AUTHOR:Quoc V. Le",
+      "Quoc V. Le",
+      "Author"
+    ],
+    [
+      "LAB:Google",
+      "Google",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1409.3215",
+      "arXiv:1409.3215 (2014)",
+      "Publication"
+    ],
+    [
+      "METHOD:Bahdanau-Attention",
+      "Bahdanau-Attention",
+      "Method"
+    ],
+    [
+      "AUTHOR:Dzmitry Bahdanau",
+      "Dzmitry Bahdanau",
+      "Author"
+    ],
+    [
+      "AUTHOR:Yoshua Bengio",
+      "Yoshua Bengio",
+      "Author"
+    ],
+    [
+      "LAB:Montreal",
+      "Montreal",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1409.0473",
+      "arXiv:1409.0473 (2014)",
+      "Publication"
+    ],
+    [
+      "METHOD:GRU",
+      "GRU",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Kyunghyun Cho",
+      "Kyunghyun Cho",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1406.1078",
+      "arXiv:1406.1078 (2014)",
+      "Publication"
+    ],
+    [
+      "METHOD:Word2Vec",
+      "Word2Vec",
+      "Method"
+    ],
+    [
+      "AUTHOR:Tomas Mikolov",
+      "Tomas Mikolov",
+      "Author"
+    ],
+    [
+      "AUTHOR:Jeffrey Dean",
+      "Jeffrey Dean",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1301.3781",
+      "arXiv:1301.3781 (2013)",
+      "Publication"
+    ],
+    [
       "METHOD:Transformer",
       "Transformer",
       "Architecture"
@@ -106,11 +191,6 @@
       "Author"
     ],
     [
-      "LAB:Google",
-      "Google",
-      "Lab"
-    ],
-    [
       "PUB:arXiv:1810.04805",
       "arXiv:1810.04805 (2018)",
       "Publication"
@@ -141,6 +221,161 @@
       "Publication"
     ],
     [
+      "METHOD:ALBERT",
+      "ALBERT",
+      "Model"
+    ],
+    [
+      "AUTHOR:Zhenzhong Lan",
+      "Zhenzhong Lan",
+      "Author"
+    ],
+    [
+      "AUTHOR:Radu Soricut",
+      "Radu Soricut",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1909.11942",
+      "arXiv:1909.11942 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:DistilBERT",
+      "DistilBERT",
+      "Model"
+    ],
+    [
+      "AUTHOR:Victor Sanh",
+      "Victor Sanh",
+      "Author"
+    ],
+    [
+      "AUTHOR:Thomas Wolf",
+      "Thomas Wolf",
+      "Author"
+    ],
+    [
+      "LAB:Hugging Face",
+      "Hugging Face",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1910.01108",
+      "arXiv:1910.01108 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:ELECTRA",
+      "ELECTRA",
+      "Model"
+    ],
+    [
+      "AUTHOR:Kevin Clark",
+      "Kevin Clark",
+      "Author"
+    ],
+    [
+      "AUTHOR:Christopher D. Manning",
+      "Christopher D. Manning",
+      "Author"
+    ],
+    [
+      "LAB:Stanford / Google",
+      "Stanford / Google",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:2003.10555",
+      "arXiv:2003.10555 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:XLNet",
+      "XLNet",
+      "Model"
+    ],
+    [
+      "AUTHOR:Zhilin Yang",
+      "Zhilin Yang",
+      "Author"
+    ],
+    [
+      "LAB:CMU / Google",
+      "CMU / Google",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1906.08237",
+      "arXiv:1906.08237 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:T5",
+      "T5",
+      "Model"
+    ],
+    [
+      "AUTHOR:Colin Raffel",
+      "Colin Raffel",
+      "Author"
+    ],
+    [
+      "AUTHOR:Peter J. Liu",
+      "Peter J. Liu",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1910.10683",
+      "arXiv:1910.10683 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:BART",
+      "BART",
+      "Model"
+    ],
+    [
+      "AUTHOR:Mike Lewis",
+      "Mike Lewis",
+      "Author"
+    ],
+    [
+      "AUTHOR:Luke Zettlemoyer",
+      "Luke Zettlemoyer",
+      "Author"
+    ],
+    [
+      "LAB:FAIR",
+      "FAIR",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1910.13461",
+      "arXiv:1910.13461 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:ELMo",
+      "ELMo",
+      "Model"
+    ],
+    [
+      "AUTHOR:Matthew E. Peters",
+      "Matthew E. Peters",
+      "Author"
+    ],
+    [
+      "LAB:Allen AI",
+      "Allen AI",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1802.05365",
+      "arXiv:1802.05365 (2018)",
+      "Publication"
+    ],
+    [
       "METHOD:GPT-3",
       "GPT-3",
       "Model"
@@ -166,23 +401,138 @@
       "Publication"
     ],
     [
-      "METHOD:ViT",
-      "ViT",
+      "METHOD:InstructGPT",
+      "InstructGPT",
+      "Model"
+    ],
+    [
+      "AUTHOR:Long Ouyang",
+      "Long Ouyang",
+      "Author"
+    ],
+    [
+      "AUTHOR:Ryan Lowe",
+      "Ryan Lowe",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:2203.02155",
+      "arXiv:2203.02155 (2022)",
+      "Publication"
+    ],
+    [
+      "METHOD:LLaMA",
+      "LLaMA",
+      "Model"
+    ],
+    [
+      "AUTHOR:Hugo Touvron",
+      "Hugo Touvron",
+      "Author"
+    ],
+    [
+      "AUTHOR:Guillaume Lample",
+      "Guillaume Lample",
+      "Author"
+    ],
+    [
+      "LAB:Meta",
+      "Meta",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:2302.13971",
+      "arXiv:2302.13971 (2023)",
+      "Publication"
+    ],
+    [
+      "METHOD:PaLM",
+      "PaLM",
+      "Model"
+    ],
+    [
+      "AUTHOR:Aakanksha Chowdhery",
+      "Aakanksha Chowdhery",
+      "Author"
+    ],
+    [
+      "AUTHOR:Noah Fiedel",
+      "Noah Fiedel",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:2204.02311",
+      "arXiv:2204.02311 (2022)",
+      "Publication"
+    ],
+    [
+      "METHOD:Chinchilla",
+      "Chinchilla",
+      "Model"
+    ],
+    [
+      "AUTHOR:Jordan Hoffmann",
+      "Jordan Hoffmann",
+      "Author"
+    ],
+    [
+      "AUTHOR:Laurent Sifre",
+      "Laurent Sifre",
+      "Author"
+    ],
+    [
+      "LAB:DeepMind",
+      "DeepMind",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:2203.15556",
+      "arXiv:2203.15556 (2022)",
+      "Publication"
+    ],
+    [
+      "METHOD:VGG",
+      "VGG",
       "Architecture"
     ],
     [
-      "AUTHOR:Alexey Dosovitskiy",
-      "Alexey Dosovitskiy",
+      "AUTHOR:Karen Simonyan",
+      "Karen Simonyan",
       "Author"
     ],
     [
-      "AUTHOR:Neil Houlsby",
-      "Neil Houlsby",
+      "AUTHOR:Andrew Zisserman",
+      "Andrew Zisserman",
       "Author"
     ],
     [
-      "PUB:arXiv:2010.11929",
-      "arXiv:2010.11929 (2020)",
+      "LAB:Oxford VGG",
+      "Oxford VGG",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1409.1556",
+      "arXiv:1409.1556 (2014)",
+      "Publication"
+    ],
+    [
+      "METHOD:GoogLeNet",
+      "GoogLeNet",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Christian Szegedy",
+      "Christian Szegedy",
+      "Author"
+    ],
+    [
+      "AUTHOR:Andrew Rabinovich",
+      "Andrew Rabinovich",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1409.4842",
+      "arXiv:1409.4842 (2014)",
       "Publication"
     ],
     [
@@ -211,6 +561,66 @@
       "Publication"
     ],
     [
+      "METHOD:DenseNet",
+      "DenseNet",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Gao Huang",
+      "Gao Huang",
+      "Author"
+    ],
+    [
+      "AUTHOR:Kilian Q. Weinberger",
+      "Kilian Q. Weinberger",
+      "Author"
+    ],
+    [
+      "LAB:Cornell / Tsinghua",
+      "Cornell / Tsinghua",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1608.06993",
+      "arXiv:1608.06993 (2016)",
+      "Publication"
+    ],
+    [
+      "METHOD:MobileNet",
+      "MobileNet",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Andrew G. Howard",
+      "Andrew G. Howard",
+      "Author"
+    ],
+    [
+      "AUTHOR:Hartwig Adam",
+      "Hartwig Adam",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1704.04861",
+      "arXiv:1704.04861 (2017)",
+      "Publication"
+    ],
+    [
+      "METHOD:EfficientNet",
+      "EfficientNet",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Mingxing Tan",
+      "Mingxing Tan",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1905.11946",
+      "arXiv:1905.11946 (2019)",
+      "Publication"
+    ],
+    [
       "METHOD:U-Net",
       "U-Net",
       "Architecture"
@@ -236,28 +646,118 @@
       "Publication"
     ],
     [
-      "METHOD:GCN",
-      "GCN",
+      "METHOD:Faster-RCNN",
+      "Faster-RCNN",
       "Architecture"
     ],
     [
-      "AUTHOR:Thomas N. Kipf",
-      "Thomas N. Kipf",
+      "AUTHOR:Shaoqing Ren",
+      "Shaoqing Ren",
       "Author"
     ],
     [
-      "AUTHOR:Max Welling",
-      "Max Welling",
+      "PUB:arXiv:1506.01497",
+      "arXiv:1506.01497 (2015)",
+      "Publication"
+    ],
+    [
+      "METHOD:YOLO",
+      "YOLO",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Joseph Redmon",
+      "Joseph Redmon",
       "Author"
     ],
     [
-      "LAB:U Amsterdam",
-      "U Amsterdam",
+      "AUTHOR:Ali Farhadi",
+      "Ali Farhadi",
+      "Author"
+    ],
+    [
+      "LAB:UW / FAIR",
+      "UW / FAIR",
       "Lab"
     ],
     [
-      "PUB:arXiv:1609.02907",
-      "arXiv:1609.02907 (2016)",
+      "PUB:arXiv:1506.02640",
+      "arXiv:1506.02640 (2015)",
+      "Publication"
+    ],
+    [
+      "METHOD:Mask-RCNN",
+      "Mask-RCNN",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Ross Girshick",
+      "Ross Girshick",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1703.06870",
+      "arXiv:1703.06870 (2017)",
+      "Publication"
+    ],
+    [
+      "METHOD:ViT",
+      "ViT",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Alexey Dosovitskiy",
+      "Alexey Dosovitskiy",
+      "Author"
+    ],
+    [
+      "AUTHOR:Neil Houlsby",
+      "Neil Houlsby",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:2010.11929",
+      "arXiv:2010.11929 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:Swin",
+      "Swin",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Ze Liu",
+      "Ze Liu",
+      "Author"
+    ],
+    [
+      "AUTHOR:Baining Guo",
+      "Baining Guo",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:2103.14030",
+      "arXiv:2103.14030 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:ConvNeXt",
+      "ConvNeXt",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Zhuang Liu",
+      "Zhuang Liu",
+      "Author"
+    ],
+    [
+      "AUTHOR:Saining Xie",
+      "Saining Xie",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:2201.03545",
+      "arXiv:2201.03545 (2022)",
       "Publication"
     ],
     [
@@ -271,11 +771,6 @@
       "Author"
     ],
     [
-      "AUTHOR:Yoshua Bengio",
-      "Yoshua Bengio",
-      "Author"
-    ],
-    [
       "LAB:U Montreal",
       "U Montreal",
       "Lab"
@@ -283,6 +778,106 @@
     [
       "PUB:arXiv:1406.2661",
       "arXiv:1406.2661 (2014)",
+      "Publication"
+    ],
+    [
+      "METHOD:DCGAN",
+      "DCGAN",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Alec Radford",
+      "Alec Radford",
+      "Author"
+    ],
+    [
+      "AUTHOR:Soumith Chintala",
+      "Soumith Chintala",
+      "Author"
+    ],
+    [
+      "LAB:indico / FAIR",
+      "indico / FAIR",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1511.06434",
+      "arXiv:1511.06434 (2015)",
+      "Publication"
+    ],
+    [
+      "METHOD:WGAN",
+      "WGAN",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Martin Arjovsky",
+      "Martin Arjovsky",
+      "Author"
+    ],
+    [
+      "AUTHOR:L\u00e9on Bottou",
+      "L\u00e9on Bottou",
+      "Author"
+    ],
+    [
+      "LAB:Courant / FAIR",
+      "Courant / FAIR",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1701.07875",
+      "arXiv:1701.07875 (2017)",
+      "Publication"
+    ],
+    [
+      "METHOD:StyleGAN",
+      "StyleGAN",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Tero Karras",
+      "Tero Karras",
+      "Author"
+    ],
+    [
+      "AUTHOR:Timo Aila",
+      "Timo Aila",
+      "Author"
+    ],
+    [
+      "LAB:NVIDIA",
+      "NVIDIA",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1812.04948",
+      "arXiv:1812.04948 (2018)",
+      "Publication"
+    ],
+    [
+      "METHOD:CycleGAN",
+      "CycleGAN",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Jun-Yan Zhu",
+      "Jun-Yan Zhu",
+      "Author"
+    ],
+    [
+      "AUTHOR:Alexei A. Efros",
+      "Alexei A. Efros",
+      "Author"
+    ],
+    [
+      "LAB:Berkeley",
+      "Berkeley",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1703.10593",
+      "arXiv:1703.10593 (2017)",
       "Publication"
     ],
     [
@@ -296,8 +891,238 @@
       "Author"
     ],
     [
+      "AUTHOR:Max Welling",
+      "Max Welling",
+      "Author"
+    ],
+    [
+      "LAB:U Amsterdam",
+      "U Amsterdam",
+      "Lab"
+    ],
+    [
       "PUB:arXiv:1312.6114",
       "arXiv:1312.6114 (2013)",
+      "Publication"
+    ],
+    [
+      "METHOD:DDPM",
+      "DDPM",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Jonathan Ho",
+      "Jonathan Ho",
+      "Author"
+    ],
+    [
+      "AUTHOR:Pieter Abbeel",
+      "Pieter Abbeel",
+      "Author"
+    ],
+    [
+      "LAB:UC Berkeley",
+      "UC Berkeley",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:2006.11239",
+      "arXiv:2006.11239 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:LatentDiffusion",
+      "LatentDiffusion",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Robin Rombach",
+      "Robin Rombach",
+      "Author"
+    ],
+    [
+      "AUTHOR:Bj\u00f6rn Ommer",
+      "Bj\u00f6rn Ommer",
+      "Author"
+    ],
+    [
+      "LAB:LMU Munich",
+      "LMU Munich",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:2112.10752",
+      "arXiv:2112.10752 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:SimCLR",
+      "SimCLR",
+      "Method"
+    ],
+    [
+      "AUTHOR:Ting Chen",
+      "Ting Chen",
+      "Author"
+    ],
+    [
+      "AUTHOR:Geoffrey Hinton",
+      "Geoffrey Hinton",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:2002.05709",
+      "arXiv:2002.05709 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:MoCo",
+      "MoCo",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:1911.05722",
+      "arXiv:1911.05722 (2019)",
+      "Publication"
+    ],
+    [
+      "METHOD:BYOL",
+      "BYOL",
+      "Method"
+    ],
+    [
+      "AUTHOR:Jean-Bastien Grill",
+      "Jean-Bastien Grill",
+      "Author"
+    ],
+    [
+      "AUTHOR:Michal Valko",
+      "Michal Valko",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:2006.07733",
+      "arXiv:2006.07733 (2020)",
+      "Publication"
+    ],
+    [
+      "METHOD:MAE",
+      "MAE",
+      "Method"
+    ],
+    [
+      "PUB:arXiv:2111.06377",
+      "arXiv:2111.06377 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:CLIP",
+      "CLIP",
+      "Model"
+    ],
+    [
+      "PUB:arXiv:2103.00020",
+      "arXiv:2103.00020 (2021)",
+      "Publication"
+    ],
+    [
+      "METHOD:GCN",
+      "GCN",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Thomas N. Kipf",
+      "Thomas N. Kipf",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1609.02907",
+      "arXiv:1609.02907 (2016)",
+      "Publication"
+    ],
+    [
+      "METHOD:GraphSAGE",
+      "GraphSAGE",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:William L. Hamilton",
+      "William L. Hamilton",
+      "Author"
+    ],
+    [
+      "AUTHOR:Jure Leskovec",
+      "Jure Leskovec",
+      "Author"
+    ],
+    [
+      "LAB:Stanford",
+      "Stanford",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1706.02216",
+      "arXiv:1706.02216 (2017)",
+      "Publication"
+    ],
+    [
+      "METHOD:GAT",
+      "GAT",
+      "Architecture"
+    ],
+    [
+      "AUTHOR:Petar Veli\u010dkovi\u0107",
+      "Petar Veli\u010dkovi\u0107",
+      "Author"
+    ],
+    [
+      "LAB:Cambridge / Montreal",
+      "Cambridge / Montreal",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1710.10903",
+      "arXiv:1710.10903 (2017)",
+      "Publication"
+    ],
+    [
+      "METHOD:Node2Vec",
+      "Node2Vec",
+      "Method"
+    ],
+    [
+      "AUTHOR:Aditya Grover",
+      "Aditya Grover",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1607.00653",
+      "arXiv:1607.00653 (2016)",
+      "Publication"
+    ],
+    [
+      "METHOD:XGBoost",
+      "XGBoost",
+      "Method"
+    ],
+    [
+      "AUTHOR:Tianqi Chen",
+      "Tianqi Chen",
+      "Author"
+    ],
+    [
+      "AUTHOR:Carlos Guestrin",
+      "Carlos Guestrin",
+      "Author"
+    ],
+    [
+      "LAB:U Washington",
+      "U Washington",
+      "Lab"
+    ],
+    [
+      "PUB:arXiv:1603.02754",
+      "arXiv:1603.02754 (2016)",
       "Publication"
     ],
     [
@@ -336,38 +1161,173 @@
       "Author"
     ],
     [
-      "AUTHOR:Christian Szegedy",
-      "Christian Szegedy",
-      "Author"
-    ],
-    [
       "PUB:arXiv:1502.03167",
       "arXiv:1502.03167 (2015)",
       "Publication"
     ],
     [
-      "METHOD:DDPM",
-      "DDPM",
-      "Architecture"
+      "METHOD:LayerNorm",
+      "LayerNorm",
+      "Method"
     ],
     [
-      "AUTHOR:Jonathan Ho",
-      "Jonathan Ho",
+      "AUTHOR:Jimmy Lei Ba",
+      "Jimmy Lei Ba",
       "Author"
     ],
     [
-      "AUTHOR:Pieter Abbeel",
-      "Pieter Abbeel",
+      "AUTHOR:Geoffrey E. Hinton",
+      "Geoffrey E. Hinton",
       "Author"
     ],
     [
-      "LAB:UC Berkeley",
-      "UC Berkeley",
+      "LAB:Toronto",
+      "Toronto",
       "Lab"
     ],
     [
-      "PUB:arXiv:2006.11239",
-      "arXiv:2006.11239 (2020)",
+      "PUB:arXiv:1607.06450",
+      "arXiv:1607.06450 (2016)",
+      "Publication"
+    ],
+    [
+      "METHOD:Dropout",
+      "Dropout",
+      "Method"
+    ],
+    [
+      "AUTHOR:Ruslan R. Salakhutdinov",
+      "Ruslan R. Salakhutdinov",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1207.0580",
+      "arXiv:1207.0580 (2012)",
+      "Publication"
+    ],
+    [
+      "METHOD:DQN",
+      "DQN",
+      "Model"
+    ],
+    [
+      "AUTHOR:Volodymyr Mnih",
+      "Volodymyr Mnih",
+      "Author"
+    ],
+    [
+      "AUTHOR:Martin Riedmiller",
+      "Martin Riedmiller",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1312.5602",
+      "arXiv:1312.5602 (2013)",
+      "Publication"
+    ],
+    [
+      "METHOD:A3C",
+      "A3C",
+      "Method"
+    ],
+    [
+      "AUTHOR:Koray Kavukcuoglu",
+      "Koray Kavukcuoglu",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1602.01783",
+      "arXiv:1602.01783 (2016)",
+      "Publication"
+    ],
+    [
+      "METHOD:TRPO",
+      "TRPO",
+      "Method"
+    ],
+    [
+      "AUTHOR:John Schulman",
+      "John Schulman",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1502.05477",
+      "arXiv:1502.05477 (2015)",
+      "Publication"
+    ],
+    [
+      "METHOD:PPO",
+      "PPO",
+      "Method"
+    ],
+    [
+      "AUTHOR:Oleg Klimov",
+      "Oleg Klimov",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1707.06347",
+      "arXiv:1707.06347 (2017)",
+      "Publication"
+    ],
+    [
+      "METHOD:DDPG",
+      "DDPG",
+      "Method"
+    ],
+    [
+      "AUTHOR:Timothy P. Lillicrap",
+      "Timothy P. Lillicrap",
+      "Author"
+    ],
+    [
+      "AUTHOR:Daan Wierstra",
+      "Daan Wierstra",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1509.02971",
+      "arXiv:1509.02971 (2015)",
+      "Publication"
+    ],
+    [
+      "METHOD:SAC",
+      "SAC",
+      "Method"
+    ],
+    [
+      "AUTHOR:Tuomas Haarnoja",
+      "Tuomas Haarnoja",
+      "Author"
+    ],
+    [
+      "AUTHOR:Sergey Levine",
+      "Sergey Levine",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1801.01290",
+      "arXiv:1801.01290 (2018)",
+      "Publication"
+    ],
+    [
+      "METHOD:AlphaZero",
+      "AlphaZero",
+      "Model"
+    ],
+    [
+      "AUTHOR:David Silver",
+      "David Silver",
+      "Author"
+    ],
+    [
+      "AUTHOR:Demis Hassabis",
+      "Demis Hassabis",
+      "Author"
+    ],
+    [
+      "PUB:arXiv:1712.01815",
+      "arXiv:1712.01815 (2017)",
       "Publication"
     ],
     [
@@ -455,6 +1415,18 @@
       "methodological"
     ],
     [
+      "METHOD:XGBoost",
+      "suited_to",
+      "MODALITY:ehr",
+      "methodological"
+    ],
+    [
+      "METHOD:XGBoost",
+      "used_for",
+      "TASK:survival",
+      "methodological"
+    ],
+    [
       "METHOD:Transformer",
       "used_for",
       "TASK:seq-clf",
@@ -491,6 +1463,102 @@
       "methodological"
     ],
     [
+      "METHOD:Seq2Seq",
+      "first_author",
+      "AUTHOR:Ilya Sutskever",
+      "arXiv:1409.3215"
+    ],
+    [
+      "METHOD:Seq2Seq",
+      "last_author",
+      "AUTHOR:Quoc V. Le",
+      "arXiv:1409.3215"
+    ],
+    [
+      "METHOD:Seq2Seq",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:1409.3215"
+    ],
+    [
+      "METHOD:Seq2Seq",
+      "introduced_by",
+      "PUB:arXiv:1409.3215",
+      "arXiv:1409.3215"
+    ],
+    [
+      "METHOD:Bahdanau-Attention",
+      "first_author",
+      "AUTHOR:Dzmitry Bahdanau",
+      "arXiv:1409.0473"
+    ],
+    [
+      "METHOD:Bahdanau-Attention",
+      "last_author",
+      "AUTHOR:Yoshua Bengio",
+      "arXiv:1409.0473"
+    ],
+    [
+      "METHOD:Bahdanau-Attention",
+      "from_lab",
+      "LAB:Montreal",
+      "arXiv:1409.0473"
+    ],
+    [
+      "METHOD:Bahdanau-Attention",
+      "introduced_by",
+      "PUB:arXiv:1409.0473",
+      "arXiv:1409.0473"
+    ],
+    [
+      "METHOD:GRU",
+      "first_author",
+      "AUTHOR:Kyunghyun Cho",
+      "arXiv:1406.1078"
+    ],
+    [
+      "METHOD:GRU",
+      "last_author",
+      "AUTHOR:Yoshua Bengio",
+      "arXiv:1406.1078"
+    ],
+    [
+      "METHOD:GRU",
+      "from_lab",
+      "LAB:Montreal",
+      "arXiv:1406.1078"
+    ],
+    [
+      "METHOD:GRU",
+      "introduced_by",
+      "PUB:arXiv:1406.1078",
+      "arXiv:1406.1078"
+    ],
+    [
+      "METHOD:Word2Vec",
+      "first_author",
+      "AUTHOR:Tomas Mikolov",
+      "arXiv:1301.3781"
+    ],
+    [
+      "METHOD:Word2Vec",
+      "last_author",
+      "AUTHOR:Jeffrey Dean",
+      "arXiv:1301.3781"
+    ],
+    [
+      "METHOD:Word2Vec",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:1301.3781"
+    ],
+    [
+      "METHOD:Word2Vec",
+      "introduced_by",
+      "PUB:arXiv:1301.3781",
+      "arXiv:1301.3781"
+    ],
+    [
       "METHOD:Transformer",
       "first_author",
       "AUTHOR:Ashish Vaswani",
@@ -512,6 +1580,18 @@
       "METHOD:Transformer",
       "introduced_by",
       "PUB:arXiv:1706.03762",
+      "arXiv:1706.03762"
+    ],
+    [
+      "METHOD:Transformer",
+      "derived_from",
+      "METHOD:Seq2Seq",
+      "arXiv:1706.03762"
+    ],
+    [
+      "METHOD:Transformer",
+      "derived_from",
+      "METHOD:Bahdanau-Attention",
       "arXiv:1706.03762"
     ],
     [
@@ -581,6 +1661,210 @@
       "arXiv:1907.11692"
     ],
     [
+      "METHOD:ALBERT",
+      "first_author",
+      "AUTHOR:Zhenzhong Lan",
+      "arXiv:1909.11942"
+    ],
+    [
+      "METHOD:ALBERT",
+      "last_author",
+      "AUTHOR:Radu Soricut",
+      "arXiv:1909.11942"
+    ],
+    [
+      "METHOD:ALBERT",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:1909.11942"
+    ],
+    [
+      "METHOD:ALBERT",
+      "introduced_by",
+      "PUB:arXiv:1909.11942",
+      "arXiv:1909.11942"
+    ],
+    [
+      "METHOD:ALBERT",
+      "derived_from",
+      "METHOD:BERT",
+      "arXiv:1909.11942"
+    ],
+    [
+      "METHOD:DistilBERT",
+      "first_author",
+      "AUTHOR:Victor Sanh",
+      "arXiv:1910.01108"
+    ],
+    [
+      "METHOD:DistilBERT",
+      "last_author",
+      "AUTHOR:Thomas Wolf",
+      "arXiv:1910.01108"
+    ],
+    [
+      "METHOD:DistilBERT",
+      "from_lab",
+      "LAB:Hugging Face",
+      "arXiv:1910.01108"
+    ],
+    [
+      "METHOD:DistilBERT",
+      "introduced_by",
+      "PUB:arXiv:1910.01108",
+      "arXiv:1910.01108"
+    ],
+    [
+      "METHOD:DistilBERT",
+      "derived_from",
+      "METHOD:BERT",
+      "arXiv:1910.01108"
+    ],
+    [
+      "METHOD:ELECTRA",
+      "first_author",
+      "AUTHOR:Kevin Clark",
+      "arXiv:2003.10555"
+    ],
+    [
+      "METHOD:ELECTRA",
+      "last_author",
+      "AUTHOR:Christopher D. Manning",
+      "arXiv:2003.10555"
+    ],
+    [
+      "METHOD:ELECTRA",
+      "from_lab",
+      "LAB:Stanford / Google",
+      "arXiv:2003.10555"
+    ],
+    [
+      "METHOD:ELECTRA",
+      "introduced_by",
+      "PUB:arXiv:2003.10555",
+      "arXiv:2003.10555"
+    ],
+    [
+      "METHOD:ELECTRA",
+      "derived_from",
+      "METHOD:BERT",
+      "arXiv:2003.10555"
+    ],
+    [
+      "METHOD:XLNet",
+      "first_author",
+      "AUTHOR:Zhilin Yang",
+      "arXiv:1906.08237"
+    ],
+    [
+      "METHOD:XLNet",
+      "last_author",
+      "AUTHOR:Quoc V. Le",
+      "arXiv:1906.08237"
+    ],
+    [
+      "METHOD:XLNet",
+      "from_lab",
+      "LAB:CMU / Google",
+      "arXiv:1906.08237"
+    ],
+    [
+      "METHOD:XLNet",
+      "introduced_by",
+      "PUB:arXiv:1906.08237",
+      "arXiv:1906.08237"
+    ],
+    [
+      "METHOD:XLNet",
+      "derived_from",
+      "METHOD:Transformer",
+      "arXiv:1906.08237"
+    ],
+    [
+      "METHOD:T5",
+      "first_author",
+      "AUTHOR:Colin Raffel",
+      "arXiv:1910.10683"
+    ],
+    [
+      "METHOD:T5",
+      "last_author",
+      "AUTHOR:Peter J. Liu",
+      "arXiv:1910.10683"
+    ],
+    [
+      "METHOD:T5",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:1910.10683"
+    ],
+    [
+      "METHOD:T5",
+      "introduced_by",
+      "PUB:arXiv:1910.10683",
+      "arXiv:1910.10683"
+    ],
+    [
+      "METHOD:T5",
+      "derived_from",
+      "METHOD:Transformer",
+      "arXiv:1910.10683"
+    ],
+    [
+      "METHOD:BART",
+      "first_author",
+      "AUTHOR:Mike Lewis",
+      "arXiv:1910.13461"
+    ],
+    [
+      "METHOD:BART",
+      "last_author",
+      "AUTHOR:Luke Zettlemoyer",
+      "arXiv:1910.13461"
+    ],
+    [
+      "METHOD:BART",
+      "from_lab",
+      "LAB:FAIR",
+      "arXiv:1910.13461"
+    ],
+    [
+      "METHOD:BART",
+      "introduced_by",
+      "PUB:arXiv:1910.13461",
+      "arXiv:1910.13461"
+    ],
+    [
+      "METHOD:BART",
+      "derived_from",
+      "METHOD:Transformer",
+      "arXiv:1910.13461"
+    ],
+    [
+      "METHOD:ELMo",
+      "first_author",
+      "AUTHOR:Matthew E. Peters",
+      "arXiv:1802.05365"
+    ],
+    [
+      "METHOD:ELMo",
+      "last_author",
+      "AUTHOR:Luke Zettlemoyer",
+      "arXiv:1802.05365"
+    ],
+    [
+      "METHOD:ELMo",
+      "from_lab",
+      "LAB:Allen AI",
+      "arXiv:1802.05365"
+    ],
+    [
+      "METHOD:ELMo",
+      "introduced_by",
+      "PUB:arXiv:1802.05365",
+      "arXiv:1802.05365"
+    ],
+    [
       "METHOD:GPT-3",
       "first_author",
       "AUTHOR:Tom B. Brown",
@@ -609,6 +1893,390 @@
       "derived_from",
       "METHOD:Transformer",
       "arXiv:2005.14165"
+    ],
+    [
+      "METHOD:InstructGPT",
+      "first_author",
+      "AUTHOR:Long Ouyang",
+      "arXiv:2203.02155"
+    ],
+    [
+      "METHOD:InstructGPT",
+      "last_author",
+      "AUTHOR:Ryan Lowe",
+      "arXiv:2203.02155"
+    ],
+    [
+      "METHOD:InstructGPT",
+      "from_lab",
+      "LAB:OpenAI",
+      "arXiv:2203.02155"
+    ],
+    [
+      "METHOD:InstructGPT",
+      "introduced_by",
+      "PUB:arXiv:2203.02155",
+      "arXiv:2203.02155"
+    ],
+    [
+      "METHOD:InstructGPT",
+      "derived_from",
+      "METHOD:GPT-3",
+      "arXiv:2203.02155"
+    ],
+    [
+      "METHOD:LLaMA",
+      "first_author",
+      "AUTHOR:Hugo Touvron",
+      "arXiv:2302.13971"
+    ],
+    [
+      "METHOD:LLaMA",
+      "last_author",
+      "AUTHOR:Guillaume Lample",
+      "arXiv:2302.13971"
+    ],
+    [
+      "METHOD:LLaMA",
+      "from_lab",
+      "LAB:Meta",
+      "arXiv:2302.13971"
+    ],
+    [
+      "METHOD:LLaMA",
+      "introduced_by",
+      "PUB:arXiv:2302.13971",
+      "arXiv:2302.13971"
+    ],
+    [
+      "METHOD:LLaMA",
+      "derived_from",
+      "METHOD:Transformer",
+      "arXiv:2302.13971"
+    ],
+    [
+      "METHOD:PaLM",
+      "first_author",
+      "AUTHOR:Aakanksha Chowdhery",
+      "arXiv:2204.02311"
+    ],
+    [
+      "METHOD:PaLM",
+      "last_author",
+      "AUTHOR:Noah Fiedel",
+      "arXiv:2204.02311"
+    ],
+    [
+      "METHOD:PaLM",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:2204.02311"
+    ],
+    [
+      "METHOD:PaLM",
+      "introduced_by",
+      "PUB:arXiv:2204.02311",
+      "arXiv:2204.02311"
+    ],
+    [
+      "METHOD:PaLM",
+      "derived_from",
+      "METHOD:Transformer",
+      "arXiv:2204.02311"
+    ],
+    [
+      "METHOD:Chinchilla",
+      "first_author",
+      "AUTHOR:Jordan Hoffmann",
+      "arXiv:2203.15556"
+    ],
+    [
+      "METHOD:Chinchilla",
+      "last_author",
+      "AUTHOR:Laurent Sifre",
+      "arXiv:2203.15556"
+    ],
+    [
+      "METHOD:Chinchilla",
+      "from_lab",
+      "LAB:DeepMind",
+      "arXiv:2203.15556"
+    ],
+    [
+      "METHOD:Chinchilla",
+      "introduced_by",
+      "PUB:arXiv:2203.15556",
+      "arXiv:2203.15556"
+    ],
+    [
+      "METHOD:Chinchilla",
+      "derived_from",
+      "METHOD:Transformer",
+      "arXiv:2203.15556"
+    ],
+    [
+      "METHOD:VGG",
+      "first_author",
+      "AUTHOR:Karen Simonyan",
+      "arXiv:1409.1556"
+    ],
+    [
+      "METHOD:VGG",
+      "last_author",
+      "AUTHOR:Andrew Zisserman",
+      "arXiv:1409.1556"
+    ],
+    [
+      "METHOD:VGG",
+      "from_lab",
+      "LAB:Oxford VGG",
+      "arXiv:1409.1556"
+    ],
+    [
+      "METHOD:VGG",
+      "introduced_by",
+      "PUB:arXiv:1409.1556",
+      "arXiv:1409.1556"
+    ],
+    [
+      "METHOD:GoogLeNet",
+      "first_author",
+      "AUTHOR:Christian Szegedy",
+      "arXiv:1409.4842"
+    ],
+    [
+      "METHOD:GoogLeNet",
+      "last_author",
+      "AUTHOR:Andrew Rabinovich",
+      "arXiv:1409.4842"
+    ],
+    [
+      "METHOD:GoogLeNet",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:1409.4842"
+    ],
+    [
+      "METHOD:GoogLeNet",
+      "introduced_by",
+      "PUB:arXiv:1409.4842",
+      "arXiv:1409.4842"
+    ],
+    [
+      "METHOD:ResNet",
+      "first_author",
+      "AUTHOR:Kaiming He",
+      "arXiv:1512.03385"
+    ],
+    [
+      "METHOD:ResNet",
+      "last_author",
+      "AUTHOR:Jian Sun",
+      "arXiv:1512.03385"
+    ],
+    [
+      "METHOD:ResNet",
+      "from_lab",
+      "LAB:Microsoft Research",
+      "arXiv:1512.03385"
+    ],
+    [
+      "METHOD:ResNet",
+      "introduced_by",
+      "PUB:arXiv:1512.03385",
+      "arXiv:1512.03385"
+    ],
+    [
+      "METHOD:ResNet",
+      "superseded_by",
+      "METHOD:DenseNet",
+      "arXiv:1512.03385"
+    ],
+    [
+      "METHOD:DenseNet",
+      "first_author",
+      "AUTHOR:Gao Huang",
+      "arXiv:1608.06993"
+    ],
+    [
+      "METHOD:DenseNet",
+      "last_author",
+      "AUTHOR:Kilian Q. Weinberger",
+      "arXiv:1608.06993"
+    ],
+    [
+      "METHOD:DenseNet",
+      "from_lab",
+      "LAB:Cornell / Tsinghua",
+      "arXiv:1608.06993"
+    ],
+    [
+      "METHOD:DenseNet",
+      "introduced_by",
+      "PUB:arXiv:1608.06993",
+      "arXiv:1608.06993"
+    ],
+    [
+      "METHOD:DenseNet",
+      "derived_from",
+      "METHOD:ResNet",
+      "arXiv:1608.06993"
+    ],
+    [
+      "METHOD:MobileNet",
+      "first_author",
+      "AUTHOR:Andrew G. Howard",
+      "arXiv:1704.04861"
+    ],
+    [
+      "METHOD:MobileNet",
+      "last_author",
+      "AUTHOR:Hartwig Adam",
+      "arXiv:1704.04861"
+    ],
+    [
+      "METHOD:MobileNet",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:1704.04861"
+    ],
+    [
+      "METHOD:MobileNet",
+      "introduced_by",
+      "PUB:arXiv:1704.04861",
+      "arXiv:1704.04861"
+    ],
+    [
+      "METHOD:EfficientNet",
+      "first_author",
+      "AUTHOR:Mingxing Tan",
+      "arXiv:1905.11946"
+    ],
+    [
+      "METHOD:EfficientNet",
+      "last_author",
+      "AUTHOR:Quoc V. Le",
+      "arXiv:1905.11946"
+    ],
+    [
+      "METHOD:EfficientNet",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:1905.11946"
+    ],
+    [
+      "METHOD:EfficientNet",
+      "introduced_by",
+      "PUB:arXiv:1905.11946",
+      "arXiv:1905.11946"
+    ],
+    [
+      "METHOD:U-Net",
+      "first_author",
+      "AUTHOR:Olaf Ronneberger",
+      "arXiv:1505.04597"
+    ],
+    [
+      "METHOD:U-Net",
+      "last_author",
+      "AUTHOR:Thomas Brox",
+      "arXiv:1505.04597"
+    ],
+    [
+      "METHOD:U-Net",
+      "from_lab",
+      "LAB:U Freiburg",
+      "arXiv:1505.04597"
+    ],
+    [
+      "METHOD:U-Net",
+      "introduced_by",
+      "PUB:arXiv:1505.04597",
+      "arXiv:1505.04597"
+    ],
+    [
+      "METHOD:Faster-RCNN",
+      "first_author",
+      "AUTHOR:Shaoqing Ren",
+      "arXiv:1506.01497"
+    ],
+    [
+      "METHOD:Faster-RCNN",
+      "last_author",
+      "AUTHOR:Jian Sun",
+      "arXiv:1506.01497"
+    ],
+    [
+      "METHOD:Faster-RCNN",
+      "from_lab",
+      "LAB:Microsoft Research",
+      "arXiv:1506.01497"
+    ],
+    [
+      "METHOD:Faster-RCNN",
+      "introduced_by",
+      "PUB:arXiv:1506.01497",
+      "arXiv:1506.01497"
+    ],
+    [
+      "METHOD:Faster-RCNN",
+      "superseded_by",
+      "METHOD:Mask-RCNN",
+      "arXiv:1506.01497"
+    ],
+    [
+      "METHOD:YOLO",
+      "first_author",
+      "AUTHOR:Joseph Redmon",
+      "arXiv:1506.02640"
+    ],
+    [
+      "METHOD:YOLO",
+      "last_author",
+      "AUTHOR:Ali Farhadi",
+      "arXiv:1506.02640"
+    ],
+    [
+      "METHOD:YOLO",
+      "from_lab",
+      "LAB:UW / FAIR",
+      "arXiv:1506.02640"
+    ],
+    [
+      "METHOD:YOLO",
+      "introduced_by",
+      "PUB:arXiv:1506.02640",
+      "arXiv:1506.02640"
+    ],
+    [
+      "METHOD:Mask-RCNN",
+      "first_author",
+      "AUTHOR:Kaiming He",
+      "arXiv:1703.06870"
+    ],
+    [
+      "METHOD:Mask-RCNN",
+      "last_author",
+      "AUTHOR:Ross Girshick",
+      "arXiv:1703.06870"
+    ],
+    [
+      "METHOD:Mask-RCNN",
+      "from_lab",
+      "LAB:FAIR",
+      "arXiv:1703.06870"
+    ],
+    [
+      "METHOD:Mask-RCNN",
+      "introduced_by",
+      "PUB:arXiv:1703.06870",
+      "arXiv:1703.06870"
+    ],
+    [
+      "METHOD:Mask-RCNN",
+      "derived_from",
+      "METHOD:Faster-RCNN",
+      "arXiv:1703.06870"
     ],
     [
       "METHOD:ViT",
@@ -641,76 +2309,64 @@
       "arXiv:2010.11929"
     ],
     [
-      "METHOD:ResNet",
+      "METHOD:Swin",
       "first_author",
-      "AUTHOR:Kaiming He",
-      "arXiv:1512.03385"
+      "AUTHOR:Ze Liu",
+      "arXiv:2103.14030"
     ],
     [
-      "METHOD:ResNet",
+      "METHOD:Swin",
       "last_author",
-      "AUTHOR:Jian Sun",
-      "arXiv:1512.03385"
+      "AUTHOR:Baining Guo",
+      "arXiv:2103.14030"
     ],
     [
-      "METHOD:ResNet",
+      "METHOD:Swin",
       "from_lab",
       "LAB:Microsoft Research",
-      "arXiv:1512.03385"
+      "arXiv:2103.14030"
     ],
     [
+      "METHOD:Swin",
+      "introduced_by",
+      "PUB:arXiv:2103.14030",
+      "arXiv:2103.14030"
+    ],
+    [
+      "METHOD:Swin",
+      "derived_from",
+      "METHOD:ViT",
+      "arXiv:2103.14030"
+    ],
+    [
+      "METHOD:ConvNeXt",
+      "first_author",
+      "AUTHOR:Zhuang Liu",
+      "arXiv:2201.03545"
+    ],
+    [
+      "METHOD:ConvNeXt",
+      "last_author",
+      "AUTHOR:Saining Xie",
+      "arXiv:2201.03545"
+    ],
+    [
+      "METHOD:ConvNeXt",
+      "from_lab",
+      "LAB:FAIR",
+      "arXiv:2201.03545"
+    ],
+    [
+      "METHOD:ConvNeXt",
+      "introduced_by",
+      "PUB:arXiv:2201.03545",
+      "arXiv:2201.03545"
+    ],
+    [
+      "METHOD:ConvNeXt",
+      "derived_from",
       "METHOD:ResNet",
-      "introduced_by",
-      "PUB:arXiv:1512.03385",
-      "arXiv:1512.03385"
-    ],
-    [
-      "METHOD:U-Net",
-      "first_author",
-      "AUTHOR:Olaf Ronneberger",
-      "arXiv:1505.04597"
-    ],
-    [
-      "METHOD:U-Net",
-      "last_author",
-      "AUTHOR:Thomas Brox",
-      "arXiv:1505.04597"
-    ],
-    [
-      "METHOD:U-Net",
-      "from_lab",
-      "LAB:U Freiburg",
-      "arXiv:1505.04597"
-    ],
-    [
-      "METHOD:U-Net",
-      "introduced_by",
-      "PUB:arXiv:1505.04597",
-      "arXiv:1505.04597"
-    ],
-    [
-      "METHOD:GCN",
-      "first_author",
-      "AUTHOR:Thomas N. Kipf",
-      "arXiv:1609.02907"
-    ],
-    [
-      "METHOD:GCN",
-      "last_author",
-      "AUTHOR:Max Welling",
-      "arXiv:1609.02907"
-    ],
-    [
-      "METHOD:GCN",
-      "from_lab",
-      "LAB:U Amsterdam",
-      "arXiv:1609.02907"
-    ],
-    [
-      "METHOD:GCN",
-      "introduced_by",
-      "PUB:arXiv:1609.02907",
-      "arXiv:1609.02907"
+      "arXiv:2201.03545"
     ],
     [
       "METHOD:GAN",
@@ -737,6 +2393,126 @@
       "arXiv:1406.2661"
     ],
     [
+      "METHOD:DCGAN",
+      "first_author",
+      "AUTHOR:Alec Radford",
+      "arXiv:1511.06434"
+    ],
+    [
+      "METHOD:DCGAN",
+      "last_author",
+      "AUTHOR:Soumith Chintala",
+      "arXiv:1511.06434"
+    ],
+    [
+      "METHOD:DCGAN",
+      "from_lab",
+      "LAB:indico / FAIR",
+      "arXiv:1511.06434"
+    ],
+    [
+      "METHOD:DCGAN",
+      "introduced_by",
+      "PUB:arXiv:1511.06434",
+      "arXiv:1511.06434"
+    ],
+    [
+      "METHOD:DCGAN",
+      "derived_from",
+      "METHOD:GAN",
+      "arXiv:1511.06434"
+    ],
+    [
+      "METHOD:WGAN",
+      "first_author",
+      "AUTHOR:Martin Arjovsky",
+      "arXiv:1701.07875"
+    ],
+    [
+      "METHOD:WGAN",
+      "last_author",
+      "AUTHOR:L\u00e9on Bottou",
+      "arXiv:1701.07875"
+    ],
+    [
+      "METHOD:WGAN",
+      "from_lab",
+      "LAB:Courant / FAIR",
+      "arXiv:1701.07875"
+    ],
+    [
+      "METHOD:WGAN",
+      "introduced_by",
+      "PUB:arXiv:1701.07875",
+      "arXiv:1701.07875"
+    ],
+    [
+      "METHOD:WGAN",
+      "derived_from",
+      "METHOD:GAN",
+      "arXiv:1701.07875"
+    ],
+    [
+      "METHOD:StyleGAN",
+      "first_author",
+      "AUTHOR:Tero Karras",
+      "arXiv:1812.04948"
+    ],
+    [
+      "METHOD:StyleGAN",
+      "last_author",
+      "AUTHOR:Timo Aila",
+      "arXiv:1812.04948"
+    ],
+    [
+      "METHOD:StyleGAN",
+      "from_lab",
+      "LAB:NVIDIA",
+      "arXiv:1812.04948"
+    ],
+    [
+      "METHOD:StyleGAN",
+      "introduced_by",
+      "PUB:arXiv:1812.04948",
+      "arXiv:1812.04948"
+    ],
+    [
+      "METHOD:StyleGAN",
+      "derived_from",
+      "METHOD:GAN",
+      "arXiv:1812.04948"
+    ],
+    [
+      "METHOD:CycleGAN",
+      "first_author",
+      "AUTHOR:Jun-Yan Zhu",
+      "arXiv:1703.10593"
+    ],
+    [
+      "METHOD:CycleGAN",
+      "last_author",
+      "AUTHOR:Alexei A. Efros",
+      "arXiv:1703.10593"
+    ],
+    [
+      "METHOD:CycleGAN",
+      "from_lab",
+      "LAB:Berkeley",
+      "arXiv:1703.10593"
+    ],
+    [
+      "METHOD:CycleGAN",
+      "introduced_by",
+      "PUB:arXiv:1703.10593",
+      "arXiv:1703.10593"
+    ],
+    [
+      "METHOD:CycleGAN",
+      "derived_from",
+      "METHOD:GAN",
+      "arXiv:1703.10593"
+    ],
+    [
       "METHOD:VAE",
       "first_author",
       "AUTHOR:Diederik P Kingma",
@@ -759,6 +2535,318 @@
       "introduced_by",
       "PUB:arXiv:1312.6114",
       "arXiv:1312.6114"
+    ],
+    [
+      "METHOD:DDPM",
+      "first_author",
+      "AUTHOR:Jonathan Ho",
+      "arXiv:2006.11239"
+    ],
+    [
+      "METHOD:DDPM",
+      "last_author",
+      "AUTHOR:Pieter Abbeel",
+      "arXiv:2006.11239"
+    ],
+    [
+      "METHOD:DDPM",
+      "from_lab",
+      "LAB:UC Berkeley",
+      "arXiv:2006.11239"
+    ],
+    [
+      "METHOD:DDPM",
+      "introduced_by",
+      "PUB:arXiv:2006.11239",
+      "arXiv:2006.11239"
+    ],
+    [
+      "METHOD:LatentDiffusion",
+      "first_author",
+      "AUTHOR:Robin Rombach",
+      "arXiv:2112.10752"
+    ],
+    [
+      "METHOD:LatentDiffusion",
+      "last_author",
+      "AUTHOR:Bj\u00f6rn Ommer",
+      "arXiv:2112.10752"
+    ],
+    [
+      "METHOD:LatentDiffusion",
+      "from_lab",
+      "LAB:LMU Munich",
+      "arXiv:2112.10752"
+    ],
+    [
+      "METHOD:LatentDiffusion",
+      "introduced_by",
+      "PUB:arXiv:2112.10752",
+      "arXiv:2112.10752"
+    ],
+    [
+      "METHOD:LatentDiffusion",
+      "derived_from",
+      "METHOD:DDPM",
+      "arXiv:2112.10752"
+    ],
+    [
+      "METHOD:SimCLR",
+      "first_author",
+      "AUTHOR:Ting Chen",
+      "arXiv:2002.05709"
+    ],
+    [
+      "METHOD:SimCLR",
+      "last_author",
+      "AUTHOR:Geoffrey Hinton",
+      "arXiv:2002.05709"
+    ],
+    [
+      "METHOD:SimCLR",
+      "from_lab",
+      "LAB:Google",
+      "arXiv:2002.05709"
+    ],
+    [
+      "METHOD:SimCLR",
+      "introduced_by",
+      "PUB:arXiv:2002.05709",
+      "arXiv:2002.05709"
+    ],
+    [
+      "METHOD:MoCo",
+      "first_author",
+      "AUTHOR:Kaiming He",
+      "arXiv:1911.05722"
+    ],
+    [
+      "METHOD:MoCo",
+      "last_author",
+      "AUTHOR:Ross Girshick",
+      "arXiv:1911.05722"
+    ],
+    [
+      "METHOD:MoCo",
+      "from_lab",
+      "LAB:FAIR",
+      "arXiv:1911.05722"
+    ],
+    [
+      "METHOD:MoCo",
+      "introduced_by",
+      "PUB:arXiv:1911.05722",
+      "arXiv:1911.05722"
+    ],
+    [
+      "METHOD:BYOL",
+      "first_author",
+      "AUTHOR:Jean-Bastien Grill",
+      "arXiv:2006.07733"
+    ],
+    [
+      "METHOD:BYOL",
+      "last_author",
+      "AUTHOR:Michal Valko",
+      "arXiv:2006.07733"
+    ],
+    [
+      "METHOD:BYOL",
+      "from_lab",
+      "LAB:DeepMind",
+      "arXiv:2006.07733"
+    ],
+    [
+      "METHOD:BYOL",
+      "introduced_by",
+      "PUB:arXiv:2006.07733",
+      "arXiv:2006.07733"
+    ],
+    [
+      "METHOD:MAE",
+      "first_author",
+      "AUTHOR:Kaiming He",
+      "arXiv:2111.06377"
+    ],
+    [
+      "METHOD:MAE",
+      "last_author",
+      "AUTHOR:Ross Girshick",
+      "arXiv:2111.06377"
+    ],
+    [
+      "METHOD:MAE",
+      "from_lab",
+      "LAB:FAIR",
+      "arXiv:2111.06377"
+    ],
+    [
+      "METHOD:MAE",
+      "introduced_by",
+      "PUB:arXiv:2111.06377",
+      "arXiv:2111.06377"
+    ],
+    [
+      "METHOD:MAE",
+      "derived_from",
+      "METHOD:ViT",
+      "arXiv:2111.06377"
+    ],
+    [
+      "METHOD:CLIP",
+      "first_author",
+      "AUTHOR:Alec Radford",
+      "arXiv:2103.00020"
+    ],
+    [
+      "METHOD:CLIP",
+      "last_author",
+      "AUTHOR:Ilya Sutskever",
+      "arXiv:2103.00020"
+    ],
+    [
+      "METHOD:CLIP",
+      "from_lab",
+      "LAB:OpenAI",
+      "arXiv:2103.00020"
+    ],
+    [
+      "METHOD:CLIP",
+      "introduced_by",
+      "PUB:arXiv:2103.00020",
+      "arXiv:2103.00020"
+    ],
+    [
+      "METHOD:GCN",
+      "first_author",
+      "AUTHOR:Thomas N. Kipf",
+      "arXiv:1609.02907"
+    ],
+    [
+      "METHOD:GCN",
+      "last_author",
+      "AUTHOR:Max Welling",
+      "arXiv:1609.02907"
+    ],
+    [
+      "METHOD:GCN",
+      "from_lab",
+      "LAB:U Amsterdam",
+      "arXiv:1609.02907"
+    ],
+    [
+      "METHOD:GCN",
+      "introduced_by",
+      "PUB:arXiv:1609.02907",
+      "arXiv:1609.02907"
+    ],
+    [
+      "METHOD:GraphSAGE",
+      "first_author",
+      "AUTHOR:William L. Hamilton",
+      "arXiv:1706.02216"
+    ],
+    [
+      "METHOD:GraphSAGE",
+      "last_author",
+      "AUTHOR:Jure Leskovec",
+      "arXiv:1706.02216"
+    ],
+    [
+      "METHOD:GraphSAGE",
+      "from_lab",
+      "LAB:Stanford",
+      "arXiv:1706.02216"
+    ],
+    [
+      "METHOD:GraphSAGE",
+      "introduced_by",
+      "PUB:arXiv:1706.02216",
+      "arXiv:1706.02216"
+    ],
+    [
+      "METHOD:GraphSAGE",
+      "derived_from",
+      "METHOD:GCN",
+      "arXiv:1706.02216"
+    ],
+    [
+      "METHOD:GAT",
+      "first_author",
+      "AUTHOR:Petar Veli\u010dkovi\u0107",
+      "arXiv:1710.10903"
+    ],
+    [
+      "METHOD:GAT",
+      "last_author",
+      "AUTHOR:Yoshua Bengio",
+      "arXiv:1710.10903"
+    ],
+    [
+      "METHOD:GAT",
+      "from_lab",
+      "LAB:Cambridge / Montreal",
+      "arXiv:1710.10903"
+    ],
+    [
+      "METHOD:GAT",
+      "introduced_by",
+      "PUB:arXiv:1710.10903",
+      "arXiv:1710.10903"
+    ],
+    [
+      "METHOD:GAT",
+      "derived_from",
+      "METHOD:GCN",
+      "arXiv:1710.10903"
+    ],
+    [
+      "METHOD:Node2Vec",
+      "first_author",
+      "AUTHOR:Aditya Grover",
+      "arXiv:1607.00653"
+    ],
+    [
+      "METHOD:Node2Vec",
+      "last_author",
+      "AUTHOR:Jure Leskovec",
+      "arXiv:1607.00653"
+    ],
+    [
+      "METHOD:Node2Vec",
+      "from_lab",
+      "LAB:Stanford",
+      "arXiv:1607.00653"
+    ],
+    [
+      "METHOD:Node2Vec",
+      "introduced_by",
+      "PUB:arXiv:1607.00653",
+      "arXiv:1607.00653"
+    ],
+    [
+      "METHOD:XGBoost",
+      "first_author",
+      "AUTHOR:Tianqi Chen",
+      "arXiv:1603.02754"
+    ],
+    [
+      "METHOD:XGBoost",
+      "last_author",
+      "AUTHOR:Carlos Guestrin",
+      "arXiv:1603.02754"
+    ],
+    [
+      "METHOD:XGBoost",
+      "from_lab",
+      "LAB:U Washington",
+      "arXiv:1603.02754"
+    ],
+    [
+      "METHOD:XGBoost",
+      "introduced_by",
+      "PUB:arXiv:1603.02754",
+      "arXiv:1603.02754"
     ],
     [
       "METHOD:Adam",
@@ -809,28 +2897,232 @@
       "arXiv:1502.03167"
     ],
     [
-      "METHOD:DDPM",
+      "METHOD:LayerNorm",
       "first_author",
-      "AUTHOR:Jonathan Ho",
-      "arXiv:2006.11239"
+      "AUTHOR:Jimmy Lei Ba",
+      "arXiv:1607.06450"
     ],
     [
-      "METHOD:DDPM",
+      "METHOD:LayerNorm",
+      "last_author",
+      "AUTHOR:Geoffrey E. Hinton",
+      "arXiv:1607.06450"
+    ],
+    [
+      "METHOD:LayerNorm",
+      "from_lab",
+      "LAB:Toronto",
+      "arXiv:1607.06450"
+    ],
+    [
+      "METHOD:LayerNorm",
+      "introduced_by",
+      "PUB:arXiv:1607.06450",
+      "arXiv:1607.06450"
+    ],
+    [
+      "METHOD:Dropout",
+      "first_author",
+      "AUTHOR:Geoffrey E. Hinton",
+      "arXiv:1207.0580"
+    ],
+    [
+      "METHOD:Dropout",
+      "last_author",
+      "AUTHOR:Ruslan R. Salakhutdinov",
+      "arXiv:1207.0580"
+    ],
+    [
+      "METHOD:Dropout",
+      "from_lab",
+      "LAB:Toronto",
+      "arXiv:1207.0580"
+    ],
+    [
+      "METHOD:Dropout",
+      "introduced_by",
+      "PUB:arXiv:1207.0580",
+      "arXiv:1207.0580"
+    ],
+    [
+      "METHOD:DQN",
+      "first_author",
+      "AUTHOR:Volodymyr Mnih",
+      "arXiv:1312.5602"
+    ],
+    [
+      "METHOD:DQN",
+      "last_author",
+      "AUTHOR:Martin Riedmiller",
+      "arXiv:1312.5602"
+    ],
+    [
+      "METHOD:DQN",
+      "from_lab",
+      "LAB:DeepMind",
+      "arXiv:1312.5602"
+    ],
+    [
+      "METHOD:DQN",
+      "introduced_by",
+      "PUB:arXiv:1312.5602",
+      "arXiv:1312.5602"
+    ],
+    [
+      "METHOD:A3C",
+      "first_author",
+      "AUTHOR:Volodymyr Mnih",
+      "arXiv:1602.01783"
+    ],
+    [
+      "METHOD:A3C",
+      "last_author",
+      "AUTHOR:Koray Kavukcuoglu",
+      "arXiv:1602.01783"
+    ],
+    [
+      "METHOD:A3C",
+      "from_lab",
+      "LAB:DeepMind",
+      "arXiv:1602.01783"
+    ],
+    [
+      "METHOD:A3C",
+      "introduced_by",
+      "PUB:arXiv:1602.01783",
+      "arXiv:1602.01783"
+    ],
+    [
+      "METHOD:TRPO",
+      "first_author",
+      "AUTHOR:John Schulman",
+      "arXiv:1502.05477"
+    ],
+    [
+      "METHOD:TRPO",
       "last_author",
       "AUTHOR:Pieter Abbeel",
-      "arXiv:2006.11239"
+      "arXiv:1502.05477"
     ],
     [
-      "METHOD:DDPM",
+      "METHOD:TRPO",
       "from_lab",
-      "LAB:UC Berkeley",
-      "arXiv:2006.11239"
+      "LAB:Berkeley",
+      "arXiv:1502.05477"
     ],
     [
-      "METHOD:DDPM",
+      "METHOD:TRPO",
       "introduced_by",
-      "PUB:arXiv:2006.11239",
-      "arXiv:2006.11239"
+      "PUB:arXiv:1502.05477",
+      "arXiv:1502.05477"
+    ],
+    [
+      "METHOD:TRPO",
+      "superseded_by",
+      "METHOD:PPO",
+      "arXiv:1502.05477"
+    ],
+    [
+      "METHOD:PPO",
+      "first_author",
+      "AUTHOR:John Schulman",
+      "arXiv:1707.06347"
+    ],
+    [
+      "METHOD:PPO",
+      "last_author",
+      "AUTHOR:Oleg Klimov",
+      "arXiv:1707.06347"
+    ],
+    [
+      "METHOD:PPO",
+      "from_lab",
+      "LAB:OpenAI",
+      "arXiv:1707.06347"
+    ],
+    [
+      "METHOD:PPO",
+      "introduced_by",
+      "PUB:arXiv:1707.06347",
+      "arXiv:1707.06347"
+    ],
+    [
+      "METHOD:PPO",
+      "derived_from",
+      "METHOD:TRPO",
+      "arXiv:1707.06347"
+    ],
+    [
+      "METHOD:DDPG",
+      "first_author",
+      "AUTHOR:Timothy P. Lillicrap",
+      "arXiv:1509.02971"
+    ],
+    [
+      "METHOD:DDPG",
+      "last_author",
+      "AUTHOR:Daan Wierstra",
+      "arXiv:1509.02971"
+    ],
+    [
+      "METHOD:DDPG",
+      "from_lab",
+      "LAB:DeepMind",
+      "arXiv:1509.02971"
+    ],
+    [
+      "METHOD:DDPG",
+      "introduced_by",
+      "PUB:arXiv:1509.02971",
+      "arXiv:1509.02971"
+    ],
+    [
+      "METHOD:SAC",
+      "first_author",
+      "AUTHOR:Tuomas Haarnoja",
+      "arXiv:1801.01290"
+    ],
+    [
+      "METHOD:SAC",
+      "last_author",
+      "AUTHOR:Sergey Levine",
+      "arXiv:1801.01290"
+    ],
+    [
+      "METHOD:SAC",
+      "from_lab",
+      "LAB:Berkeley",
+      "arXiv:1801.01290"
+    ],
+    [
+      "METHOD:SAC",
+      "introduced_by",
+      "PUB:arXiv:1801.01290",
+      "arXiv:1801.01290"
+    ],
+    [
+      "METHOD:AlphaZero",
+      "first_author",
+      "AUTHOR:David Silver",
+      "arXiv:1712.01815"
+    ],
+    [
+      "METHOD:AlphaZero",
+      "last_author",
+      "AUTHOR:Demis Hassabis",
+      "arXiv:1712.01815"
+    ],
+    [
+      "METHOD:AlphaZero",
+      "from_lab",
+      "LAB:DeepMind",
+      "arXiv:1712.01815"
+    ],
+    [
+      "METHOD:AlphaZero",
+      "introduced_by",
+      "PUB:arXiv:1712.01815",
+      "arXiv:1712.01815"
     ],
     [
       "METHOD:BERT",
@@ -905,6 +3197,6 @@
       "benchmark:Dosovitskiy 2020 (ViT-L/16, JFT) 2020"
     ]
   ],
-  "n_methods": 13,
+  "n_methods": 61,
   "n_benchmarks": 4
 }
