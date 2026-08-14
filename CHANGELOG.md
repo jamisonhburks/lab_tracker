@@ -4,6 +4,14 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-14
+- **`docs/related-work.md`** — verified prior-art map + honest novelty positioning. A multi-agent
+  literature/GitHub sweep followed by a VERIFICATION pass (each source fetched from an independent
+  host — Crossref, Nature/OUP, PMC, GitHub API; none hallucinated). Records: foundations we build
+  on and must NOT claim (Swanson LBD, Rephetio DWPC/permutation-null, GraphRAG/ToG, SciMON); the
+  closest twins to differentiate from (caura/MemClaw, Graphiti, BioRouter/SPOKEAgent, AgentRxiv,
+  Google co-scientist); the surviving wedges (fused bio+ML method-selection KG; the specific
+  gated/tiered union) and the ablations needed to publish. Verdict: novel integration, not novel
+  components (docs-only).
 - **Semantic grouping + one-step formalize** — misc-finding grouping now clusters SYNONYMS, and a
   cluster drafts a hypothesis in one call. `_canon_key` keys entities by KG node id (gene aliases,
   disease synonyms) so ontology synonyms collapse; `_semantic_merge` adds a precision-first
