@@ -40,6 +40,44 @@ class Response:
     tool_calls: list = field(default_factory=list)
 
 
+def _json_text(text: str) -> str:
+    """Strip markdown code fences if the model wrapped its JSON in them."""
+    t = (text or "").strip()
+    if t.startswith("```"):
+        t = t.split("```", 2)[1]
+        if t.lstrip().lower().startswith("json"):
+            t = t.lstrip()[4:]
+        t = t.strip().rstrip("`").strip()
+    return t
+
+
+def parse(messages: list, schema: dict, model_cls, *, backend: str | None = None,
+          model: str | None = None, retries: int = 2):
+    """Structured output with VALIDATION + retry.
+
+    `schema` drives constrained decoding (unchanged — the proven path); `model_cls` is a
+    pydantic BaseModel that validates the RESULT (types, required fields, enums). On a
+    validation/parse failure the error is fed back and the call retried, so a
+    slightly-off reply is corrected instead of crashing a bare json.loads. Returns a
+    validated `model_cls` instance; raises ValueError if it can't be validated in time.
+    """
+    convo = list(messages)
+    last = None
+    for _ in range(max(1, retries + 1)):
+        resp = chat(convo, schema=schema, backend=backend, model=model)
+        try:
+            return model_cls.model_validate_json(_json_text(resp.text))
+        except Exception as err:            # pydantic ValidationError / JSON error
+            last = err
+            convo = convo + [
+                {"role": "assistant", "content": resp.text},
+                {"role": "user", "content": (
+                    "Your last reply did not match the required JSON schema "
+                    f"({type(err).__name__}: {err}). Reply again with ONLY valid JSON "
+                    "matching the schema — no prose, no code fences.")}]
+    raise ValueError(f"structured output failed validation after {retries + 1} tries: {last}")
+
+
 def chat(messages: list, tools: list | None = None, schema: dict | None = None,
          backend: str | None = None, model: str | None = None) -> Response:
     """Model-agnostic chat. Returns normalized text + tool calls.

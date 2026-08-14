@@ -112,6 +112,7 @@ def _synthesize(question: str, last_exp: str, verdict: str, recs: str) -> str:
         return "  (no 'Recommended next steps' section found in the evaluation report)"
     try:
         import llm
+        import schemas
         schema = {"type": "object", "properties": {
             "title": {"type": "string"}, "question": {"type": "string"},
             "key_change": {"type": "string"}, "rationale": {"type": "string"}},
@@ -124,7 +125,7 @@ def _synthesize(question: str, last_exp: str, verdict: str, recs: str) -> str:
             "short title, its question, the single most important design CHANGE from the "
             "last experiment (e.g. a better-powered cohort), and a one-line rationale. "
             "Keep it a small, testable, pre-registerable experiment.")
-        r = json.loads(llm.chat([{"role": "user", "content": prompt}], schema=schema).text)
+        r = llm.parse([{"role": "user", "content": prompt}], schema, schemas.NextStep).model_dump()
         return (f"  PROPOSED NEXT EXPERIMENT (draft — needs human approval):\n"
                 f"    title:      {r['title']}\n"
                 f"    question:   {r['question']}\n"
