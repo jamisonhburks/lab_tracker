@@ -169,3 +169,60 @@ def review_queue() -> str:
                      f"  (src {e['source']}, {e['source_kind']}, "
                      f"critic={e['critic']} by {e.get('critic_by', 'local')})")
     return "\n".join(lines)
+
+
+# --------------------------------------------------------------------------- #
+# Graduation: a distilled/curated edge corroborated by many independent sources #
+# earns a proposal into GATED consensus (the evidence layer -> consensus tier). #
+# --------------------------------------------------------------------------- #
+def _edge_sources(rec: dict) -> set:
+    return {ev.get("source") for ev in rec.get("evidence", []) if ev.get("source")}
+
+
+def _already_contributed(subj: str, pred: str, obj: str) -> bool:
+    if not CONTRIB_LOG.exists():
+        return False
+    for l in CONTRIB_LOG.open(encoding="utf-8"):
+        if not l.strip():
+            continue
+        e = json.loads(l)
+        if (e["subject"].lower() == subj.lower() and e["predicate"].lower() == pred.lower()
+                and e["object"].lower() == obj.lower()):
+            return True
+    return False
+
+
+def graduation_candidates(min_sources: int = 3) -> str:
+    """Curated/distilled edges (kg_writer) backed by >= min_sources INDEPENDENT sources that
+    aren't in the consensus pipeline yet — well-corroborated enough to PROPOSE to gated consensus."""
+    cands = []
+    for r in kg_writer._load():
+        n = len(_edge_sources(r))
+        if n >= min_sources and not _already_contributed(r["subject"], r["predicate"], r["object"]):
+            cands.append((r, n))
+    if not cands:
+        return (f"No graduation candidates (need >= {min_sources} independent sources and not "
+                "already contributed). Keep distilling literature; edges accrue evidence.")
+    cands.sort(key=lambda x: -x[1])
+    out = [f"{len(cands)} edge(s) corroborated by >= {min_sources} sources — ready to PROPOSE to "
+           "consensus:"]
+    for r, n in cands[:15]:
+        out.append(f"  {r['subject']} —{r['predicate']}→ {r['object']}  ({n} independent sources)")
+    out.append("Graduate one with graduate(subject, predicate, object, critic_verdict='accept') — "
+               "it routes through the critic gate (novel → peer review; corroborating → auto-merge).")
+    return "\n".join(out)
+
+
+def graduate(subject: str, predicate: str, object: str, critic_verdict=None,
+             contributor=None) -> str:
+    """Graduate a well-corroborated distilled edge from the literature-EVIDENCE layer into GATED
+    consensus — routes it through contribute() with the accumulated corroboration as its source."""
+    recs = [r for r in kg_writer.query(subject, object)
+            if r["predicate"].lower() == predicate.lower()]
+    if not recs:
+        return f"No curated edge {subject} —{predicate}→ {object} to graduate."
+    n = len(_edge_sources(recs[0]))
+    return contribute(subject, predicate, object,
+                      source=f"distilled evidence: {n} independent source(s)",
+                      source_kind="literature", critic_verdict=critic_verdict,
+                      contributor=contributor)

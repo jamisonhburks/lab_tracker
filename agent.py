@@ -36,6 +36,7 @@ import confidence
 import critic
 import novelty
 import idea as idea_mod
+import deep_search
 import specialist
 import tool_ledger
 import schemas
@@ -129,9 +130,11 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
     fed), and captured sample_size / effect_size / risk_of_bias feed the
     negative-evidence-aware confidence scorer with real signal.
     """
+    prior = deep_search.search_status(query)          # avoid a redundant sweep the lab already did
     articles = _fetch_articles(query, max_papers)
     if not articles:
         return "No papers found to curate."
+    pmids = [p["pmid"] for p in articles if p.get("pmid")]
 
     n_assoc, n_stats, n_norm = 0, 0, 0
     for paper in articles:
@@ -172,9 +175,13 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
                 subject_id=s_norm["id"] if s_norm else None,
                 object_id=o_norm["id"] if o_norm else None)
             n_assoc += 1
+    deep_search.mark_searched(query, pmids=pmids, n_associations=n_assoc)   # so the lab won't repeat it
+    covered = "ALREADY DEEP-SEARCHED" in prior or "→ COVERED" in prior
     return (f"Curated {n_assoc} association(s) from {len(articles)} paper(s) on "
             f"{query!r} ({n_stats} with study stats, {n_norm} entities normalized "
-            f"to KG nodes).")
+            f"to KG nodes). Recorded to the deep-search cache."
+            + ("\n[note: this topic was already covered — see search_status; curated anyway "
+               "(evidence dedups + refreshes).]" if covered else ""))
 
 
 def criticize_curated_kg(subject: str = "", object: str = "", max_items: int = 10) -> str:

@@ -221,6 +221,25 @@ if _SHARED:
         return contrib.review_queue()
 
     @mcp.tool
+    def graduation_candidates(min_sources: int = 3) -> str:
+        """Distilled/curated edges backed by >= min_sources INDEPENDENT sources that aren't in the
+        consensus pipeline yet — well-corroborated enough to PROPOSE to gated consensus. The bridge
+        from the literature-evidence layer (deep-search distillations) to what the lab believes."""
+        return contrib.graduation_candidates(min_sources)
+
+    @mcp.tool
+    def graduate(subject: str, predicate: str, object: str, critic_verdict: str = "",
+                 critic_reason: str = "") -> str:
+        """Graduate a well-corroborated distilled edge (see graduation_candidates) from the
+        evidence layer into GATED consensus — routes through the critic gate (novel → peer review;
+        corroborating → auto-merge). Supply critic_verdict='accept'|'reject' as YOUR judgment."""
+        cv = None
+        if critic_verdict.strip():
+            cv = {"verdict": critic_verdict.strip(), "reason": critic_reason or "thinker verdict",
+                  "source_supported": critic_verdict.strip().lower() == "accept"}
+        return contrib.graduate(subject, predicate, object, critic_verdict=cv, contributor=_caller())
+
+    @mcp.tool
     def log_misc_finding(claim: str, subject: str = "", object: str = "", method: str = "",
                          effect_size: float | None = None, p_value: float | None = None,
                          sample_size: int | None = None, source: str = "",

@@ -30,6 +30,23 @@ ROOT = Path(__file__).parent
 CACHE = ROOT / "memory" / "search_cache.jsonl"
 _EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 COVERAGE_MIN = 3            # >= this many curated edges touching the entities counts as "covered"
+STALE_AFTER_DAYS = 180      # literature moves — a cache hit older than this is flagged for refresh
+
+
+def _age_days(ts: str):
+    try:
+        return (datetime.now() - datetime.fromisoformat(ts)).days
+    except Exception:
+        return None
+
+
+def _append_cache(topic: str, entities, contributor, n_papers: int,
+                  n_associations: int, pmids) -> None:
+    store_lock.append_jsonl(CACHE, {
+        "ts": datetime.now().isoformat(timespec="seconds"),
+        "contributor": contributor or "unknown", "topic": topic.strip(),
+        "entities": sorted({e for e in (entities or []) if e}),
+        "n_papers": n_papers, "n_associations": n_associations, "pmids": list(pmids or [])})
 
 
 def _pubmed(query: str, n: int) -> list:
@@ -84,14 +101,21 @@ def search_status(topic: str, subject: str = "", object: str = "") -> str:
     ents = [subject, object]
     hits = _cache_hits(topic, ents)
     cov = _coverage(ents)
+    stale = False
     lines = [f"Search status — topic: {topic!r}" + (f"  ({subject} ↔ {object})" if subject or object else "")]
     if hits:
         h = hits[-1]
+        age = _age_days(h.get("ts", ""))
+        stale = age is not None and age > STALE_AFTER_DAYS
         lines.append(f"  ALREADY DEEP-SEARCHED: '{h['topic']}' by {h.get('contributor', '?')} on "
-                     f"{h.get('ts', '?')[:10]} — {h.get('n_papers', '?')} papers, "
-                     f"{h.get('n_associations', '?')} associations distilled into the KG.")
+                     f"{h.get('ts', '?')[:10]}" + (f" ({age}d ago)" if age is not None else "") +
+                     f" — {h.get('n_papers', '?')} papers, {h.get('n_associations', '?')} associations."
+                     + ("  ⚠ STALE (literature moves) — a refresh may surface newer papers." if stale else ""))
     lines.append(f"  curated KG coverage for these entities: {cov} edge(s).")
-    if hits or cov >= COVERAGE_MIN:
+    if hits and stale:
+        lines.append("  → COVERED BUT STALE. Refresh: deep_fetch(...) (bias to recent papers), then "
+                     "record_distillation(...) — evidence dedups, so re-distilling is cheap and updates the cache.")
+    elif hits or cov >= COVERAGE_MIN:
         lines.append("  → COVERED. Corroborate via query_curated_findings / ground_claim; a fresh "
                      "deep search is likely redundant (saves the online sweep).")
     else:
@@ -145,14 +169,18 @@ def record_distillation(topic: str, associations: list, pmids=None,
             sample_size=a.get("sample_size"), effect_size=a.get("effect_size"),
             p_value=a.get("p_value"), risk_of_bias=a.get("risk_of_bias"))
         added += 1
-    entry = {"ts": datetime.now().isoformat(timespec="seconds"),
-             "contributor": contributor or "unknown", "topic": topic.strip(),
-             "entities": sorted({a.get("subject", "") for a in (associations or [])} |
-                                {a.get("object", "") for a in (associations or [])} - {""}),
-             "n_papers": len(set(pmids or [a.get("source") for a in (associations or [])])),
-             "n_associations": added, "pmids": list(pmids or [])}
-    store_lock.append_jsonl(CACHE, entry)
+    entities = ({a.get("subject", "") for a in (associations or [])} |
+                {a.get("object", "") for a in (associations or [])}) - {""}
+    n_papers = len(set(pmids or [a.get("source") for a in (associations or [])]))
+    _append_cache(topic, entities, contributor, n_papers, added, pmids)
     return (f"Distilled {added} association(s) into the primary KG from topic {topic!r}"
             + (f" ({skipped} skipped: malformed/no-source)" if skipped else "")
             + f". Cached — future queries on this topic corroborate against the KG "
             "(no repeat online search needed).")
+
+
+def mark_searched(topic: str, pmids=None, n_associations: int = 0,
+                  contributor=None, entities=None) -> None:
+    """Record that a topic was searched (the associations were written elsewhere — e.g. the local
+    agent's curate_literature). Marks the shared cache so the sweep isn't repeated lab-wide."""
+    _append_cache(topic, entities, contributor, len(set(pmids or [])), n_associations, pmids)
