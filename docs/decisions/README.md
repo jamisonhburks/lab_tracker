@@ -64,3 +64,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0050](0050-serendipity-nudges.md) | Serendipity nudges — surprising, relevant connections | 2026-08-15 | Accepted | #58 |
 | [0051](0051-research-story.md) | Research story — an honest narrative (caveats + how to solidify) | 2026-08-15 | Accepted | #59 |
 | [0052](0052-assistant-not-twin.md) | Assistant, not twin — personalize to the work, not the person | 2026-08-15 | Accepted | #60 |
+| [0053](0053-belief-lifecycle.md) | The belief lifecycle — belief as living state (updates, trajectory, contradictions) | 2026-08-15 | Accepted | #61 |
