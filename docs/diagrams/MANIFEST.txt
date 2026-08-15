@@ -1,0 +1,11 @@
+01-parent-diagram-the-opening-slide.mmd
+02-the-mcp-interface-the-three-trust-tiers.mmd
+03-knowledge-three-graphs-one-grammar.mmd
+04-epistemics-honesty-how-a-claim-earns-confidence.mmd
+05-self-awareness-what-the-lab-does-not-know.mmd
+06-memory-tiers-the-exploratory-lane.mmd
+07-the-experience-layer-why-people-actually-use-it.mmd
+08-the-intended-workflow-the-day-in-the-life-slide.mmd
+09-the-growth-flywheel.mmd
+10-how-a-paper-becomes-nodes-edges.mmd
+11-before-after-the-flywheel-in-one-quarter.mmd

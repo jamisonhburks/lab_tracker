@@ -1,0 +1,8 @@
+flowchart LR
+  CLAIM["a claim: A —rel→ C"] --> GRD["grounding<br/>grounded / weak / novel / off-graph"]
+  CLAIM --> CALp["calibration<br/>vs degree-preserving null"]
+  CLAIM --> NOVc["novelty<br/>PubMed co-mention"]
+  GRD & CALp & NOVc --> CONF["confidence()<br/>power-weighted evidence<br/>(underpowered null ≠ refutation)"]
+  CONF --> BEL["belief lifecycle<br/>persist · revise · trajectory · contradiction ledger"]
+  BEL --> AUD["calibration audit<br/>of edges I called 0.9, how many held?"]
+  CRIT["critic gate"] -.->|guards the write| BEL

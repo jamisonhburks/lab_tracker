@@ -276,7 +276,55 @@ Growth without governance rots. Five guards run continuously:
 
 ---
 
-## 5 · Suggested slide order
+## 5 · Before / after — the flywheel in one quarter
+
+Same code, same fixed reference KGs — but watch what the flywheel does to the brain's *own*
+knowledge. **Day 1** it's an empty scaffold; after **one quarter** of a small active lab
+(~8 researchers, ~200 sessions) turning the loop, it's a corroborated, self-aware knowledge base
+pointed at the lab's frontier. *(Numbers illustrative, derived from the measured per-session
+activity model in §4.5 — the point is the direction and the qualitative shift.)*
+
+```mermaid
+flowchart LR
+  subgraph D1["DAY 1 — empty scaffold on the fixed KGs"]
+    direction TB
+    a1["curated KG: 0 lab edges"]
+    a2["coverage: every cell 'frontier' (fog)"]
+    a3["every literature sweep: fresh &amp; expensive"]
+    a4["no belief history · nothing to calibrate"]
+  end
+  subgraph Q1["END OF Q1 — ~200 sessions later"]
+    direction TB
+    b1["~400 corroborated, de-duplicated edges"]
+    b2["frontier sharpened · some cells now adoptable"]
+    b3["~50 topics cached · most sweeps reused lab-wide"]
+    b4["living beliefs + an auditable calibration"]
+  end
+  D1 ==>|"the flywheel turns"| Q1
+  classDef d fill:#fde8e8,stroke:#c33;
+  classDef q fill:#e6f4ea,stroke:#2a7;
+  class a1,a2,a3,a4 d;
+  class b1,b2,b3,b4 q;
+```
+
+| Signal | Day 1 | End of Q1 (~200 sessions) | Why it matters |
+|---|---|---|---|
+| Curated KG (lab's own edges) | 0 | ~400, many multi-source | knowledge **compounds**, deduped |
+| Beliefs tracked | 0 | ~150 edges w/ confidence + trajectory | confidence that **updates** |
+| Contradictions | 0 | ~30 surfaced & adjudicated | disagreement **visible**, not buried |
+| Calibration | n/a (no outcomes) | ECE computable | you can **trust** the numbers |
+| Deep-search cache | empty — every sweep fresh | ~50 topics; most sweeps hit cache | pay for a search **once**, lab-wide |
+| Coverage map | all cells "frontier" (fog) | frontier sharpened; some → adoptable | a **prioritized agenda**, not a blur |
+| Dead-ends | 0 | ~20 recorded, checked at intake | stop **repeating** failed effort |
+| Exploratory pool | 0 | ~160 misc findings, grouped | hunches become **hypotheses** |
+| Semantic / episodic memory | empty | ~300 notes, recall by meaning | the lab **remembers its own work** |
+
+> **The takeaway line:** *nothing about the code changed — but the brain now knows more, knows what
+> it doesn't, and stops the lab repeating itself.* Growth is compounding **and** self-correcting.
+
+---
+
+## 6 · Suggested slide order
 1. **Substrate, not thinker** (the framing quote).
 2. **Parent diagram** (§1).
 3. **Trust tiers** (§2.1) — why a shared brain stays coherent.
@@ -287,7 +335,8 @@ Growth without governance rots. Five guards run continuously:
 8. **Experience** (§2.6) — adoption.
 9. **Day in the life** (§3).
 10. **How the brain grows** (§4) — the flywheel, ingestion table, paper→edges, governance, scaling.
-11. Close on the flywheel image: *coverage finds the gap → search fills it → the brain grows toward the lab's frontier.*
+11. **Before / after** (§5) — the flywheel's effect in one quarter.
+12. Close on the flywheel image: *coverage finds the gap → search fills it → the brain grows toward the lab's frontier.*
 
 > Every module named here has a one-line rationale in `docs/decisions/` (ADRs 0001–0058) — drill from
 > any slide straight to the decision and the code.

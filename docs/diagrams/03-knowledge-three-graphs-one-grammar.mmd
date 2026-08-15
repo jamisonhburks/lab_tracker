@@ -1,0 +1,8 @@
+flowchart TB
+  subgraph G["Knowledge graphs"]
+    GK["Grounding KGs<br/>Hetionet + Monarch = combined<br/>+MeSH↔HPO — READ-ONLY truth"]
+    MK["ML-method KG<br/>modality —suited_to→ method —used_for→ task<br/>—trained_with→ loss —evaluated_by→ metric"]
+    CK["Curated KG<br/>the lab's OWN edges, with evidence"]
+  end
+  N["Normalization<br/>genes→Entrez · diseases→MONDO · drugs→CHEBI"] --> GK & CK
+  SCH["Reified schema<br/>edge = claim + evidence + provenance + epistemic type"] --- GK & MK & CK
