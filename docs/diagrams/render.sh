@@ -6,9 +6,14 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 FMT="${FMT:-svg}"
+MMDC=(npx -y @mermaid-js/mermaid-cli@latest)
 for f in [0-9][0-9]-*.mmd; do
   out="${f%.mmd}.${FMT}"
   echo "rendering $f -> $out"
-  npx -y @mermaid-js/mermaid-cli@latest -i "$f" -o "$out" -b transparent
+  if [ "$FMT" = "png" ]; then
+    "${MMDC[@]}" -i "$f" -o "$out" -b white -s 3          # white bg, 3x scale — crisp for projection
+  else
+    "${MMDC[@]}" -i "$f" -o "$out" -b transparent          # vector — scales losslessly
+  fi
 done
 echo "done: $(ls -1 [0-9][0-9]-*.${FMT} | wc -l | tr -d ' ') diagram(s)"
