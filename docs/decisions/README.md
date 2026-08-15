@@ -60,3 +60,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0046](0046-deep-search-distillation-cache.md) | Deep-search distillation → primary KG (cache expensive sweeps) | 2026-08-15 | Accepted | #54 |
 | [0047](0047-deep-search-cache-maturation.md) | Mature the deep-search cache — expiry, graduation, curate integration | 2026-08-15 | Accepted | #55 |
 | [0048](0048-refresh-and-source-independence.md) | Scheduled cache refresh + source-independence for graduation | 2026-08-15 | Accepted | #56 |
+| [0049](0049-warm-start-briefing.md) | Warm-start briefing — the enjoyable front door | 2026-08-15 | Accepted | #57 |

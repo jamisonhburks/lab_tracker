@@ -425,6 +425,14 @@ if _PERSONAL:
         method). A DRAFT to review/complete, then save to hypotheses/H00N_*.yaml (shared WIP)."""
         return _journal().formalize_retroactively()
 
+    @mcp.tool
+    def warm_start() -> str:
+        """Your WARM START — call it when you open a session: where you left off, what changed in
+        the lab since you were last here, what's waiting on you, and one suggested next step.
+        A colleague's rundown that composes your journal + the shared WIP/consensus (read-only)."""
+        import briefing
+        return briefing.briefing(_caller())
+
 
 if __name__ == "__main__":
     # Local per-user: stdio (default). Shared lab deployment: MCP_TRANSPORT=http on a cluster

@@ -4,6 +4,15 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Warm-start briefing** (`briefing.py`) — the first "make it enjoyable" feature: opening a
+  session greets you like a colleague catching you up, not a blank prompt. Four parts — WHERE YOU
+  LEFT OFF (your last session journal), WHAT'S NEW in the lab since you were last here (new
+  consensus + contributions touching YOUR entities, a real delta vs a per-user `briefing_seen`
+  marker), WAITING ON YOU (review queue, promotion candidates, stale topics), and ONE suggested
+  next step. Read-only composition of existing signals; fast, no network, calibrated tone, no
+  leaderboard. Printed at agent-REPL startup; MCP personal `warm_start` (8 personal tools).
+  Verified: four sections render; the "what's new" delta goes quiet on the second open
+  (PR #57 · ADR-0049).
 - **Scheduled refresh + source independence** — (1) `deep_search.stale_topics()` + `refresh_stale.py`
   (cron): a scheduled job re-distils topics whose cache went stale (runs the local agent's
   `curate_literature`), so the primary KG self-heals without waiting for a re-ask; MCP `stale_topics`
