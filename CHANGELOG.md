@@ -4,6 +4,12 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Architecture overview** (`docs/architecture-overview.md`, docs-only) — a presentation companion:
+  a parent diagram of the whole system, a zoom-in per block (trust tiers, knowledge graphs,
+  epistemics/honesty, self-awareness, memory tiers, experience), the intended "day in the life"
+  workflow, and a dedicated **"how the brain grows"** section (the ingestion flywheel, the pathways
+  table, how a paper becomes normalized/reified nodes & edges, the governance that keeps quality up
+  at scale, and measured scaling properties). 10 Mermaid diagrams; every module maps to its ADR.
 - **Coverage / knowledge-gap map** (`coverage.py`, ADR-0058) — the capstone of the coverage work:
   `scope − covered` over the ML methods KG at the method-capability grain (modality × task ×
   learning-paradigm), disease-agnostic. Each gap cell is classified OPEN FRONTIER (no established
