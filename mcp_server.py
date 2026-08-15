@@ -46,6 +46,7 @@ import memory
 import kg_writer
 import confidence
 import misc_research as misc
+import deep_search as deep
 import contribute as contrib
 
 try:                                  # method selection lands with Stage 3
@@ -259,6 +260,30 @@ if _SHARED:
     def list_misc_findings() -> str:
         """The lab's exploratory (un-hypothesized) findings pool, with rigor + match status."""
         return misc.list_misc()
+
+    @mcp.tool
+    def deep_search_status(topic: str, subject: str = "", object: str = "") -> str:
+        """BEFORE a big online literature search: has this topic/entity-pair ALREADY been deep-
+        searched (cache) or is it already covered by curated edges? If so, corroborate against the
+        KG and skip the redundant sweep — the whole point is not to repeat expensive searches."""
+        return deep.search_status(topic, subject, object)
+
+    @mcp.tool
+    def deep_fetch(topic: str, extra_terms: str = "", max_papers: int = 8) -> str:
+        """Broad multi-query PubMed fetch (NO LLM) — the topic + any comma-separated query
+        variants YOU supply — deduped. Returns a corpus of abstracts for YOU to distill into
+        structured associations, which you then submit via record_distillation."""
+        variants = [t for t in extra_terms.split(",") if t.strip()]
+        return deep.deep_fetch(topic, extra_terms=variants, max_papers=max_papers)
+
+    @mcp.tool
+    def record_distillation(topic: str, associations: list, pmids: list | None = None) -> str:
+        """Write YOUR distilled associations (from a deep_fetch corpus) into the PRIMARY KG with
+        provenance, and CACHE the topic so the lab doesn't repeat the search. Each association:
+        {subject, predicate, object, direction, source: 'PMID:...', effect_size?, p_value?,
+        sample_size?}. Malformed / source-less ones are skipped. Literature-evidence layer
+        (queryable immediately) — not the gated consensus tier."""
+        return deep.record_distillation(topic, associations, pmids=pmids, contributor=_caller())
 
     if method_select is not None:
         @mcp.tool

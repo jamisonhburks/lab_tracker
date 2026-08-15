@@ -4,6 +4,15 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Deep-search distillation → primary KG** (`deep_search.py`) — cache expensive literature sweeps
+  so the lab doesn't repeat them. `search_status(topic, a, c)` checks a deep-search cache
+  (`memory/search_cache.jsonl`) + curated coverage BEFORE a big search ("already covered → skip").
+  `deep_fetch` does a broad multi-query PubMed fetch (no LLM) → corpus for the thinker to distill.
+  `record_distillation` writes the thinker's distilled associations into the primary KG (kg_writer)
+  with provenance (junk-checked, attributed via `_caller()`, locked) + caches the topic. Substrate
+  fetches/writes/caches; the thinker (Claude) distills. MCP shared +3 (`deep_search_status`,
+  `deep_fetch`, `record_distillation` = 22). Verified: status→record→status flips to COVERED, edges
+  land in the primary KG, live PubMed fetch (PR #54 · ADR-0046).
 - **Remote/HTTP MCP deployment** — one shared substrate for the whole lab. `MCP_TRANSPORT=http`
   (host/port) runs the FastMCP streamable-HTTP transport (default stays stdio, so nothing breaks);
   one instance on a cluster node loads the reference KG ONCE and serves everyone. Per-request
