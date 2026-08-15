@@ -5,7 +5,8 @@ a standalone file so you can drop it straight into a deck.
 
 - **`NN-*.mmd`** — the Mermaid source (edit-friendly; paste into [mermaid.live](https://mermaid.live)
   or any Mermaid-aware tool).
-- **`NN-*.svg`** — rendered vector (scales cleanly in Keynote / PowerPoint / Google Slides).
+- **`NN-*.svg`** — rendered vector (scales losslessly; best for Keynote / PowerPoint / Google Slides).
+- **`NN-*.png`** — rendered raster at 3× scale, white background (for tools that prefer images).
 - **`MANIFEST.txt`** — the ordered list, matching the section order in the overview.
 
 Numbering follows the document: `01` = the parent diagram, `11` = the before/after slide.
