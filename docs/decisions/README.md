@@ -67,3 +67,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0053](0053-belief-lifecycle.md) | The belief lifecycle — belief as living state (updates, trajectory, contradictions) | 2026-08-15 | Accepted | #61 |
 | [0054](0054-calibration-audit.md) | Calibration audit — the substrate audits its own confidence | 2026-08-15 | Accepted | #62 |
 | [0055](0055-project-subscriptions.md) | Follow members and projects — a change digest since you last looked | 2026-08-15 | Accepted | #63 |
+| [0056](0056-negative-knowledge-deadends.md) | Negative-knowledge store — remember dead ends, check them at intake | 2026-08-15 | Accepted | #64 |
