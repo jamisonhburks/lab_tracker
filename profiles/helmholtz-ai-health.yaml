@@ -1,0 +1,20 @@
+# Lab prior-work profile — the modular unit that makes coverage relative to a REAL frontier.
+# `modalities` / `tasks` / `paradigms` declare the lab's SCOPE (the region coverage is computed
+# over); publications (recorded separately) are what the lab has actually COVERED. A gap is a
+# scope cell with no covering publication. Different labs ship their own profile; per-researcher
+# views filter by `by` on publications. See docs/decisions/0057-lab-profile.md.
+id: helmholtz-ai-health
+kind: lab
+name: "AI for Health — Helmholtz Munich"
+members: [jamison]
+focus: >
+  AI-driven methods to answer biomedical questions, and methods development on prior AI/ML
+  models to improve (often multi-disease) disease classification. Representative questions are
+  method/representation-level: simulating latent OCT trajectories from longitudinal imaging +
+  treatment events; separating physiological EHR representations from workflow/sampling
+  artifacts; multimodal foundation models for downstream disease prediction.
+
+# SCOPE — the axes the lab works along (the relevant region for the coverage map).
+modalities: [OCT, OCT-longitudinal, fundus, EHR-physiological, EHR-labs, ECG, genomic, imaging, multimodal]
+tasks: [multi-disease-classification, trajectory-simulation, representation-learning, disentanglement, foundation-pretraining, downstream-transfer]
+paradigms: [self-supervised, foundation-model, multimodal-fusion, neural-ODE, state-space, causal-representation]
