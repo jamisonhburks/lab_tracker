@@ -198,6 +198,35 @@ if _SHARED:
         return idea.assess(entity_a, entity_c)
 
     @mcp.tool
+    def check_dead_ends(subject: str, object: str = "", approach: str = "") -> str:
+        """BEFORE committing to a line of work: has it already been tried and RULED OUT? Checks the
+        lab's negative-knowledge store — refuted links, abandoned hypotheses, overturned beliefs,
+        invalid runs, and explicit reports. Distinguishes EVIDENCED dead ends (avoid / need a
+        different approach) from SOFT ones (set aside / underpowered — revisit-worthy, not
+        disqualifying). Returns '(no prior dead end)' if clear."""
+        import deadends
+        return deadends.render_check(subject, object, approach) or "(no prior dead end on this line)"
+
+    @mcp.tool
+    def record_dead_end(subject: str, object: str = "", approach: str = "", reason: str = "other",
+                        why: str = "", revisit_if: str = "") -> str:
+        """Record a dead end — 'we tried this and it didn't work' — so the lab stops repeating it.
+        `reason`: refuted | overturned | invalid | not_reproducible | confounded | abandoned |
+        underpowered | infeasible | set_aside | other (strength is inferred: an underpowered/
+        set-aside null is SOFT/revisit-worthy, not a true dead end). Attributed + shared."""
+        import deadends
+        return deadends.record_dead_end(subject, object=object, approach=approach, reason=reason,
+                                        why=why, revisit_if=revisit_if, contributor=_caller())
+
+    @mcp.tool
+    def list_dead_ends() -> str:
+        """The lab's negative knowledge in one place — evidenced dead ends (tried and ruled out)
+        and soft ones (set aside / thin — revisit-worthy), harvested from the substrate + explicit
+        reports. What NOT to repeat."""
+        import deadends
+        return deadends.render_list()
+
+    @mcp.tool
     def research_story(campaign: str = "") -> str:
         """An HONEST narrative of a project's arc (a campaign, or all hypotheses) — NOT a highlight
         reel. Each step interweaves what went well with the CAVEATS (validity gates, grounding/

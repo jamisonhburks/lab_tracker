@@ -83,8 +83,17 @@ def assess(entity_a: str, entity_c: str, hypothesis: str = "", refine: bool = Fa
     label, guidance = _verdict(grounding, nov.get("status", "unknown"))
 
     out = [f"### {entity_a}  ↔  {entity_c}",
-           f"VERDICT: **{label}** — {guidance}", "",
-           "— Evaluation (fast) —",
+           f"VERDICT: **{label}** — {guidance}", ""]
+
+    try:                                   # intake check: has this line already hit a dead end?
+        import deadends
+        warn = deadends.render_check(entity_a, entity_c)
+        if warn:
+            out += [warn, ""]
+    except Exception:
+        pass
+
+    out += ["— Evaluation (fast) —",
            f"  KG grounding: {grounding}",
            f"  novelty: {nov.get('status', 'unknown')} "
            f"(PubMed pair co-mentions: {nov.get('n_pair', '?')})",

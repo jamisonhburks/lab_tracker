@@ -4,6 +4,19 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Negative-knowledge / dead-end store** (`deadends.py`, ADR-0056) — the lab now remembers what
+  DIDN'T work and warns about it at INTAKE, so failed effort isn't repeated. Harvests dead ends
+  from existing signals (well-powered `refuted` edges, `abandoned` hypotheses, `overturned`
+  contradictions, failed `halt` validity gates) + explicit `record_dead_end(...)` notes. Key rigor
+  distinction: EVIDENCED dead ends ("don't just repeat it") vs SOFT ones (abandoned/underpowered/
+  set-aside → revisit-worthy, not disqualifying — encoding "absence of evidence ≠ evidence of
+  absence"), with an optional `revisit_if` condition. `check()` matches a candidate line (pair/
+  entity/approach, best-effort entity normalization) and is wired into `idea.assess()` so every
+  idea assessment flags prior dead ends right under the verdict (⛔ evidenced / ⚠ soft / clear).
+  Harvest is derived-on-read (always in sync); only explicit records are stored. Shared + attributed
+  (negative knowledge is collective). MCP shared tools `check_dead_ends` / `record_dead_end` /
+  `list_dead_ends`. Verified with a hermetic demo (evidenced pair → avoid; soft pair → revisit;
+  unrelated → clear) (PR #64).
 - **Follow members & projects** (`subscriptions.py`, ADR-0055) — lab members can now FOLLOW a
   colleague (`member:<name>`) or a project (`project:<H0xx|campaign>`) and, when asking for a
   summary, get a DELTA of everything that changed on what they follow since they last looked —
