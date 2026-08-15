@@ -61,3 +61,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0047](0047-deep-search-cache-maturation.md) | Mature the deep-search cache — expiry, graduation, curate integration | 2026-08-15 | Accepted | #55 |
 | [0048](0048-refresh-and-source-independence.md) | Scheduled cache refresh + source-independence for graduation | 2026-08-15 | Accepted | #56 |
 | [0049](0049-warm-start-briefing.md) | Warm-start briefing — the enjoyable front door | 2026-08-15 | Accepted | #57 |
+| [0050](0050-serendipity-nudges.md) | Serendipity nudges — surprising, relevant connections | 2026-08-15 | Accepted | #58 |

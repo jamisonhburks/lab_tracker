@@ -4,6 +4,15 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Serendipity nudges** (`serendipity.py`) — surprising, RELEVANT connections you didn't go
+  looking for, deduped per user so they delight not spam. Types: CLUSTER (your finding shares an
+  entity with a colleague's), RESURFACING (your entity gained a new neighbor in someone's edge),
+  COLLABORATOR (an active hypothesis touches your entity — word-boundary match so IL6-style short
+  symbols hit), and BRIDGE (two of YOUR entities connect via a KG bridge — the Swanson move,
+  opt-in/deep). Cheap nudges ride in the warm-start briefing (✨ section + they can become the
+  suggested next step); the KG-bridge nudge is the MCP personal `serendipity` tool (9 personal
+  tools). Verified: cluster/resurfacing/collaborator fire, second call deduped-empty, deep runs
+  (PR #58 · ADR-0050).
 - **Warm-start briefing** (`briefing.py`) — the first "make it enjoyable" feature: opening a
   session greets you like a colleague catching you up, not a blank prompt. Four parts — WHERE YOU
   LEFT OFF (your last session journal), WHAT'S NEW in the lab since you were last here (new

@@ -433,6 +433,16 @@ if _PERSONAL:
         import briefing
         return briefing.briefing(_caller())
 
+    @mcp.tool
+    def serendipity() -> str:
+        """Surprising, RELEVANT connections you didn't go looking for — your work meeting a
+        colleague's, an active hypothesis touching your entities, and LATENT KG bridges between
+        two of your own entities. Deduped (each shown once) so it delights, not spams."""
+        import serendipity as ser
+        nd = ser.nudges(_caller(), max_nudges=4, deep=True, mark=True)
+        return "✨ Serendipity:\n" + "\n".join(f"  • {n}" for n in nd) if nd else \
+            "No fresh serendipity right now — keep working; the connections will come."
+
 
 if __name__ == "__main__":
     # Local per-user: stdio (default). Shared lab deployment: MCP_TRANSPORT=http on a cluster

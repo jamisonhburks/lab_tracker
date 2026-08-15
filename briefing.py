@@ -126,6 +126,17 @@ def briefing(contributor=None, mark: bool = True) -> str:
     out.append("\n• Waiting on you:")
     out += [f"    • {w}" for w in waiting] or ["    • nothing pending — clear runway."]
 
+    # 3b) serendipity — surprising, relevant connections (cheap nudges only; no KG/network)
+    nudges = []
+    try:
+        import serendipity
+        nudges = serendipity.nudges(who, max_nudges=2, deep=False, mark=True)
+    except Exception:
+        pass
+    if nudges:
+        out.append("\n✨ Serendipity:")
+        out += [f"    {n}" for n in nudges]
+
     # 4) one suggested next step
     if pending:
         step = f"review the {len(pending)} pending contribution(s) — review_queue()."
@@ -137,6 +148,8 @@ def briefing(contributor=None, mark: bool = True) -> str:
         step = f"take a look — a colleague just added {_edge(touch_mine[0])} on one of your entities."
     elif stale_n:
         step = "refresh a stale search topic (stale_topics / refresh_stale.py)."
+    elif nudges:
+        step = "chase a ✨ serendipity nudge above — those connections found you."
     else:
         step = "pick something fun — assess_idea on a new angle, or browse group_misc_findings for a latent theme."
     out.append(f"\n→ Suggested next: {step}")
