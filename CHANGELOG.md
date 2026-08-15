@@ -4,6 +4,21 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Modular lab/researcher prior-work profile** (`lab_profile.py` + `profiles/<id>.yaml`, ADR-0057)
+  — the baseline that makes a coverage/knowledge-gap map meaningful for a SPECIFIC lab. Reframes the
+  gap grain from biomedical entity-pairs to the **method-capability level: (modality × task ×
+  learning-paradigm), disease-agnostic** — how an AI-for-health lab actually reasons (disease is a
+  filter, not the axis). A profile declares its SCOPE (axes worked along) and records PUBLICATIONS
+  tagged onto those axes (explicit or heuristic auto-tag from the title); `scope()` and `covered()`
+  are the structured sets the coverage map will diff (`scope − covered`), and `profile_context()`
+  serves the profile + tagged pubs as IN-CONTEXT grounding for the thinker to phrase gaps and
+  propose the next method (substrate serves, thinker reasons — ADR-0030/0040). Modular: each lab
+  ships `profiles/<id>.yaml` (`SUBSTRATE_LAB` selects), per-researcher views filter by author; a
+  seed `profiles/helmholtz-ai-health.yaml` ships as the example. A work/publication corpus is WORK-
+  not-person personalization (ADR-0052). Shared MCP tools `lab_profile` / `record_publication` /
+  `covered_capabilities`. Verified hermetically (scope/covered/context; `OCT-longitudinal` kept
+  distinct via a normalization fix). Sets up PR B (`coverage.py`: adoptable vs open-frontier gaps)
+  (PR #65).
 - **Negative-knowledge / dead-end store** (`deadends.py`, ADR-0056) — the lab now remembers what
   DIDN'T work and warns about it at INTAKE, so failed effort isn't repeated. Harvests dead ends
   from existing signals (well-powered `refuted` edges, `abandoned` hypotheses, `overturned`

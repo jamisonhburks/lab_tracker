@@ -198,6 +198,33 @@ if _SHARED:
         return idea.assess(entity_a, entity_c)
 
     @mcp.tool
+    def lab_profile(member: str = "") -> str:
+        """The lab's PRIOR-WORK profile as in-context grounding: its focus, the axes it works
+        along (modality × task × learning-paradigm), and its publications tagged onto those axes —
+        what the lab has already COVERED. Pass `member` for a single researcher's view. Read this
+        to phrase coverage gaps in the lab's language and propose the next METHOD (the coverage map
+        that diffs this against available capabilities lands next). Substrate serves; you reason."""
+        import lab_profile as lp
+        return lp.profile_context(member=member or None)
+
+    @mcp.tool
+    def record_publication(title: str, year: str = "", modalities: str = "", tasks: str = "",
+                           paradigms: str = "", ref: str = "") -> str:
+        """Add a publication to the lab profile — the work the lab has COVERED. Comma-separated
+        `modalities`/`tasks`/`paradigms` are normalized to canonical axes; any left blank is
+        auto-tagged from the title (heuristic — override by supplying tags). Attributed to you."""
+        import lab_profile as lp
+        return lp.record_publication(title, year=year or None, modalities=modalities, tasks=tasks,
+                                     paradigms=paradigms, ref=ref, by=_caller())
+
+    @mcp.tool
+    def covered_capabilities(member: str = "") -> str:
+        """A structured summary of what the lab has covered vs the scope it works in — the baseline
+        the coverage map subtracts to find gaps (modality×task pairs and full cells)."""
+        import lab_profile as lp
+        return lp.render(member=member or None)
+
+    @mcp.tool
     def check_dead_ends(subject: str, object: str = "", approach: str = "") -> str:
         """BEFORE committing to a line of work: has it already been tried and RULED OUT? Checks the
         lab's negative-knowledge store — refuted links, abandoned hypotheses, overturned beliefs,
