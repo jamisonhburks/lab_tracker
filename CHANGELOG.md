@@ -4,6 +4,15 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Deep-search cache maturation** — three follow-ups. (1) EXPIRY: `search_status` ages cache hits
+  (`STALE_AFTER_DAYS`=180) → "COVERED BUT STALE, refresh" vs "covered, skip". (2) GRADUATION:
+  `graduation_candidates(min_sources)` surfaces distilled edges backed by ≥N independent sources not
+  yet in consensus; `graduate(s,p,o,critic_verdict)` routes them from the evidence layer into GATED
+  consensus via `contribute()` (well-corroborated → auto-merge; borderline → review). (3)
+  `curate_literature` now checks `search_status` first + `mark_searched` after, so the local agent
+  shares the cache and avoids redundant sweeps. MCP shared +2 (`graduation_candidates`, `graduate`
+  = 24). Verified: 957-day hit flagged stale; 3-source edge graduates + drops off candidates
+  (PR #55 · ADR-0047).
 - **Deep-search distillation → primary KG** (`deep_search.py`) — cache expensive literature sweeps
   so the lab doesn't repeat them. `search_status(topic, a, c)` checks a deep-search cache
   (`memory/search_cache.jsonl`) + curated coverage BEFORE a big search ("already covered → skip").
