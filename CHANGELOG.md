@@ -4,6 +4,11 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Design principle — assistant, not twin** (ADR-0052, docs-only) — recorded the decision to
+  DECLINE persona/preference memory. The system personalizes to the WORK (entities, pending items,
+  WIP, project arc — the warm start / serendipity / research story) but NOT to the PERSON (voice,
+  style, identity). Extends "substrate, not thinker" and protects rigor (a twin drifts toward
+  telling you what you want to hear). Future persona-modeling proposals should be declined (PR #60).
 - **Research story** (`research_story.py`) — an HONEST narrative of a project's arc, NOT a highlight
   reel. Per step it weaves what went well + the evaluator's verdict with CAVEATS (failed validity
   gates, weak/novel grounding, already-published core, min_runs, SYNTHETIC-vs-real data, and the
