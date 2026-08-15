@@ -4,6 +4,21 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Follow members & projects** (`subscriptions.py`, ADR-0055) — lab members can now FOLLOW a
+  colleague (`member:<name>`) or a project (`project:<H0xx|campaign>`) and, when asking for a
+  summary, get a DELTA of everything that changed on what they follow since they last looked —
+  hypothesis/workflow status, contributions, belief revisions (ADR-0053), contradictions, and
+  exploratory findings — grouped by target and attributed. Reuses existing units (no new project/
+  ownership schema); "membership" is inferred from attribution (a member's projects are the ones
+  their attributed work touches). Read-heavy delta-scan of the existing timestamped/attributed
+  logs; the only writes are the per-person follow registry (append-only) and a `subscription_seen`
+  marker (same mechanism as the warm start). Two surfaces: a dedicated `subscription_digest()`
+  (full view, advances the marker) and a compact preview folded into the warm-start briefing
+  (preview, doesn't advance — so the full digest still shows the detail). Personal-tier MCP tools
+  `follow` / `unfollow` / `my_subscriptions` / `subscription_digest`; a suggested-next hook in the
+  briefing. Personal, never shared consensus (ADR-0031/0052). Verified: hermetic demo (member +
+  project digest, attributed) + integration test (preview folds into warm start, seen-marker
+  advances) (PR #63).
 - **Calibration audit** (`calibration.py`, ADR-0054) — the substrate audits its OWN confidence
   (Tier 2 of the lab-brain gap review). `confidence.py` says its number is "not a calibrated
   probability"; this scores that number against realized outcomes the belief lifecycle already

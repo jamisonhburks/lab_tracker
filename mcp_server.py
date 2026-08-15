@@ -495,6 +495,36 @@ if _PERSONAL:
         return "✨ Serendipity:\n" + "\n".join(f"  • {n}" for n in nd) if nd else \
             "No fresh serendipity right now — keep working; the connections will come."
 
+    # --- subscriptions: follow colleagues + projects; a change digest --- #
+    @mcp.tool
+    def follow(target: str) -> str:
+        """FOLLOW a colleague or a project so their changes show up in your digest + warm start.
+        `target`: 'member:<name>' (their attributed work + the projects they're active on) or
+        'project:<id>' (a hypothesis id like H001, or a campaign name)."""
+        import subscriptions
+        return subscriptions.subscribe(_caller(), target)
+
+    @mcp.tool
+    def unfollow(target: str) -> str:
+        """Stop following a colleague or project (see my_subscriptions for what you follow)."""
+        import subscriptions
+        return subscriptions.unsubscribe(_caller(), target)
+
+    @mcp.tool
+    def my_subscriptions() -> str:
+        """The members and projects you currently follow."""
+        import subscriptions
+        return subscriptions.list_subscriptions(_caller())
+
+    @mcp.tool
+    def subscription_digest() -> str:
+        """A DELTA of everything that changed on the people/projects you FOLLOW since you last
+        looked — hypothesis/workflow status, contributions, belief revisions, contradictions, and
+        exploratory findings — grouped by target and attributed. A compact preview also appears in
+        your warm start (warm_start); this is the full view."""
+        import subscriptions
+        return subscriptions.digest(_caller())
+
 
 if __name__ == "__main__":
     # Local per-user: stdio (default). Shared lab deployment: MCP_TRANSPORT=http on a cluster
