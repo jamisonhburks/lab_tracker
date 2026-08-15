@@ -194,20 +194,26 @@ def _already_contributed(subj: str, pred: str, obj: str) -> bool:
 
 def graduation_candidates(min_sources: int = 3) -> str:
     """Curated/distilled edges (kg_writer) backed by >= min_sources INDEPENDENT sources that
-    aren't in the consensus pipeline yet — well-corroborated enough to PROPOSE to gated consensus."""
+    aren't in the consensus pipeline yet — well-corroborated enough to PROPOSE to gated consensus.
+    Independence groups PMIDs by last-author, so one group citing itself doesn't inflate the count."""
+    import deep_search
     cands = []
     for r in kg_writer._load():
-        n = len(_edge_sources(r))
-        if n >= min_sources and not _already_contributed(r["subject"], r["predicate"], r["object"]):
-            cands.append((r, n))
+        srcs = _edge_sources(r)                                  # cheap pre-filter: distinct sources
+        if len(srcs) < min_sources or _already_contributed(r["subject"], r["predicate"], r["object"]):
+            continue
+        indep = deep_search.independent_count(srcs)              # network, only on pre-filtered few
+        if indep >= min_sources:
+            cands.append((r, indep, len(srcs)))
     if not cands:
-        return (f"No graduation candidates (need >= {min_sources} independent sources and not "
-                "already contributed). Keep distilling literature; edges accrue evidence.")
+        return (f"No graduation candidates (need >= {min_sources} INDEPENDENT sources — grouped by "
+                "last-author — and not already contributed). Keep distilling; edges accrue evidence.")
     cands.sort(key=lambda x: -x[1])
-    out = [f"{len(cands)} edge(s) corroborated by >= {min_sources} sources — ready to PROPOSE to "
-           "consensus:"]
-    for r, n in cands[:15]:
-        out.append(f"  {r['subject']} —{r['predicate']}→ {r['object']}  ({n} independent sources)")
+    out = [f"{len(cands)} edge(s) corroborated by >= {min_sources} INDEPENDENT sources — ready to "
+           "PROPOSE to consensus:"]
+    for r, indep, total in cands[:15]:
+        out.append(f"  {r['subject']} —{r['predicate']}→ {r['object']}  "
+                   f"({indep} independent of {total} sources)")
     out.append("Graduate one with graduate(subject, predicate, object, critic_verdict='accept') — "
                "it routes through the critic gate (novel → peer review; corroborating → auto-merge).")
     return "\n".join(out)
@@ -216,13 +222,15 @@ def graduation_candidates(min_sources: int = 3) -> str:
 def graduate(subject: str, predicate: str, object: str, critic_verdict=None,
              contributor=None) -> str:
     """Graduate a well-corroborated distilled edge from the literature-EVIDENCE layer into GATED
-    consensus — routes it through contribute() with the accumulated corroboration as its source."""
+    consensus — routes it through contribute() with the INDEPENDENT corroboration as its source."""
+    import deep_search
     recs = [r for r in kg_writer.query(subject, object)
             if r["predicate"].lower() == predicate.lower()]
     if not recs:
         return f"No curated edge {subject} —{predicate}→ {object} to graduate."
-    n = len(_edge_sources(recs[0]))
+    srcs = _edge_sources(recs[0])
+    indep = deep_search.independent_count(srcs)
     return contribute(subject, predicate, object,
-                      source=f"distilled evidence: {n} independent source(s)",
+                      source=f"distilled evidence: {indep} independent source(s) (of {len(srcs)})",
                       source_kind="literature", critic_verdict=critic_verdict,
                       contributor=contributor)
