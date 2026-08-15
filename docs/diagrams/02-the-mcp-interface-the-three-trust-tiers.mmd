@@ -1,6 +1,9 @@
 flowchart LR
-  T["Thinker (Claude / member)"] -->|MCP| API{{MCP server}}
-  API --> P["PERSONAL<br/>your episodic + semantic memory,<br/>session journal — private, ungated"]
-  API --> WIP["SHARED WIP<br/>hypotheses · experiments · validity ·<br/>tool ledgers — visible, provisional"]
-  API --> CON["CONSENSUS<br/>curated findings with confidence —<br/>the only CRITIC-GATED tier"]
-  P -->|"promote (earns its way)"| WIP -->|"contribute() + critic"| CON
+  T["Thinker"] --> API{{MCP}}
+  API --> P["Personal<br/>private"]:::p
+  API --> WIP["Shared WIP<br/>visible"]:::w
+  API --> CON["Consensus<br/>gated ✓"]:::c
+  P ==>|"earns its way"| WIP ==>|"+ critic"| CON
+  classDef p fill:#eef,stroke:#55a;
+  classDef w fill:#fff0e6,stroke:#e73;
+  classDef c fill:#e6f4ea,stroke:#2a7;

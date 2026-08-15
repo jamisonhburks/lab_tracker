@@ -1,5 +1,8 @@
 flowchart LR
-  PROF["lab profile<br/>scope (modality×task×paradigm)<br/>+ publications = COVERED"] --> COV["coverage map<br/>scope − covered"]
-  COV --> FRO["OPEN FRONTIER<br/>no method exists → a contribution"]
-  COV --> ADO["ADOPTABLE<br/>a method exists → go use it"]
-  DEAD["dead-end store<br/>refuted · abandoned · overturned · invalid"] -->|"checked at intake"| INTK["idea assessment"]
+  PROF["lab profile<br/>what we've done"] --> COV["coverage map"]
+  COV --> FRO["Open frontier<br/>→ contribute"]:::f
+  COV --> ADO["Adoptable<br/>→ reuse"]:::a
+  DEAD["Dead-ends<br/>what failed"]:::d -->|"at intake"| INTK["new idea"]
+  classDef f fill:#fde8e8,stroke:#c33;
+  classDef a fill:#e6f4ea,stroke:#2a7;
+  classDef d fill:#eee,stroke:#999;

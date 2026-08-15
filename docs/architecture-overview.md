@@ -15,33 +15,26 @@ pastes into most slide tools; each maps to real modules so you can drill from a 
 
 ```mermaid
 flowchart TB
-  subgraph TH["THINKERS — swappable, frozen (no LLM lives inside the brain)"]
+  TH["Thinkers<br/>Claude · lab member"]:::t
+  MCP{{"MCP · 3 trust tiers"}}:::api
+  subgraph BRAIN["The Lab Brain — shared"]
     direction LR
-    CL["Claude session"]:::t
-    LM["Lab member"]:::t
+    K["① Knowledge"]:::k
+    E["② Honesty"]:::e
+    G["③ Growth"]:::g
+    S["④ Self-awareness"]:::s
   end
+  M["⑤ Memory tiers"]:::m
+  W["⑥ Workflow"]:::w
+  X["⑦ Experience"]:::x
 
-  MCP{{"MCP server — one API, 3 trust tiers · stdio (local) / HTTP (shared cluster)"}}:::api
-
-  subgraph BRAIN["THE LAB BRAIN — shared substrate"]
-    direction TB
-    K["① KNOWLEDGE<br/>grounding KGs · ML-method KG · the lab's curated KG"]:::k
-    E["② EPISTEMICS &amp; HONESTY<br/>confidence · belief lifecycle · calibration · novelty · validity · critic"]:::e
-    G["③ GROWTH / INGESTION<br/>deep-search → distill → curated KG · ML ingest · normalization"]:::g
-    S["④ SELF-AWARENESS<br/>dead-ends · lab profile · coverage map"]:::s
-    M["⑤ MEMORY TIERS<br/>personal → shared-WIP → consensus (earns its way up)"]:::m
-  end
-
-  W["⑥ RESEARCH WORKFLOW — idea → hypothesis → method → experiment → evaluate → contribute"]:::w
-  X["⑦ EXPERIENCE — warm-start · serendipity · research-story · follow"]:::x
-
-  TH -->|"query · ground · check · contribute"| MCP
+  TH --> MCP
   MCP --> BRAIN
-  BRAIN <--> W
+  BRAIN --- M
+  MCP --> W
   MCP --> X
-  X -.->|"pulls from"| BRAIN
 
-  classDef t fill:#e8eefc,stroke:#3a5,stroke-width:1px;
+  classDef t fill:#e8eefc,stroke:#3a5;
   classDef api fill:#fff3cd,stroke:#d90;
   classDef k fill:#e6f4ea,stroke:#2a7;
   classDef e fill:#fde8e8,stroke:#c33;
@@ -67,11 +60,14 @@ it; the **experience** ⑦ layer is why they come back.
 
 ```mermaid
 flowchart LR
-  T["Thinker (Claude / member)"] -->|MCP| API{{MCP server}}
-  API --> P["PERSONAL<br/>your episodic + semantic memory,<br/>session journal — private, ungated"]
-  API --> WIP["SHARED WIP<br/>hypotheses · experiments · validity ·<br/>tool ledgers — visible, provisional"]
-  API --> CON["CONSENSUS<br/>curated findings with confidence —<br/>the only CRITIC-GATED tier"]
-  P -->|"promote (earns its way)"| WIP -->|"contribute() + critic"| CON
+  T["Thinker"] --> API{{MCP}}
+  API --> P["Personal<br/>private"]:::p
+  API --> WIP["Shared WIP<br/>visible"]:::w
+  API --> CON["Consensus<br/>gated ✓"]:::c
+  P ==>|"earns its way"| WIP ==>|"+ critic"| CON
+  classDef p fill:#eef,stroke:#55a;
+  classDef w fill:#fff0e6,stroke:#e73;
+  classDef c fill:#e6f4ea,stroke:#2a7;
 ```
 
 - **What:** `mcp_server.py` exposes tools in three tiers selected by `SUBSTRATE_SCOPE`
@@ -85,13 +81,15 @@ flowchart LR
 ### 2.2 · Knowledge — three graphs, one grammar
 ```mermaid
 flowchart TB
-  subgraph G["Knowledge graphs"]
-    GK["Grounding KGs<br/>Hetionet + Monarch = combined<br/>+MeSH↔HPO — READ-ONLY truth"]
-    MK["ML-method KG<br/>modality —suited_to→ method —used_for→ task<br/>—trained_with→ loss —evaluated_by→ metric"]
-    CK["Curated KG<br/>the lab's OWN edges, with evidence"]
-  end
-  N["Normalization<br/>genes→Entrez · diseases→MONDO · drugs→CHEBI"] --> GK & CK
-  SCH["Reified schema<br/>edge = claim + evidence + provenance + epistemic type"] --- GK & MK & CK
+  GK["Grounding KGs<br/>trusted · read-only"]:::a
+  MK["ML-method KG<br/>modality → method → task"]:::a
+  CK["Curated KG<br/>the lab's own"]:::a
+  SCH["One grammar: every edge =<br/>claim + evidence + provenance"]:::b
+  SCH --- GK
+  SCH --- MK
+  SCH --- CK
+  classDef a fill:#e6f4ea,stroke:#2a7;
+  classDef b fill:#fff3cd,stroke:#d90;
 ```
 
 - **What:** `kg_memory.py` (grounding), `ml_schema.py`/`method_select.py` (methods),
@@ -108,13 +106,15 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-  CLAIM["a claim: A —rel→ C"] --> GRD["grounding<br/>grounded / weak / novel / off-graph"]
-  CLAIM --> CALp["calibration<br/>vs degree-preserving null"]
-  CLAIM --> NOVc["novelty<br/>PubMed co-mention"]
-  GRD & CALp & NOVc --> CONF["confidence()<br/>power-weighted evidence<br/>(underpowered null ≠ refutation)"]
-  CONF --> BEL["belief lifecycle<br/>persist · revise · trajectory · contradiction ledger"]
-  BEL --> AUD["calibration audit<br/>of edges I called 0.9, how many held?"]
-  CRIT["critic gate"] -.->|guards the write| BEL
+  CLAIM["a claim"] --> CHK["ground ·<br/>calibrate · novelty"]:::x
+  CHK --> CONF["confidence<br/>power-weighted"]:::y
+  CONF --> BEL["belief<br/>living · updates"]:::y
+  BEL --> AUD["calibration audit<br/>did 0.9 hold?"]:::z
+  CRIT["critic gate"]:::g -.-> BEL
+  classDef x fill:#e8f0fe,stroke:#36c;
+  classDef y fill:#fde8e8,stroke:#c33;
+  classDef z fill:#f3e8fd,stroke:#93c;
+  classDef g fill:#fff3cd,stroke:#d90;
 ```
 
 - **What:** `confidence.py` (power-weighted evidence → status), `beliefs.py` (belief as **living
@@ -128,10 +128,13 @@ flowchart LR
 ### 2.4 · Self-awareness — what the lab does NOT know
 ```mermaid
 flowchart LR
-  PROF["lab profile<br/>scope (modality×task×paradigm)<br/>+ publications = COVERED"] --> COV["coverage map<br/>scope − covered"]
-  COV --> FRO["OPEN FRONTIER<br/>no method exists → a contribution"]
-  COV --> ADO["ADOPTABLE<br/>a method exists → go use it"]
-  DEAD["dead-end store<br/>refuted · abandoned · overturned · invalid"] -->|"checked at intake"| INTK["idea assessment"]
+  PROF["lab profile<br/>what we've done"] --> COV["coverage map"]
+  COV --> FRO["Open frontier<br/>→ contribute"]:::f
+  COV --> ADO["Adoptable<br/>→ reuse"]:::a
+  DEAD["Dead-ends<br/>what failed"]:::d -->|"at intake"| INTK["new idea"]
+  classDef f fill:#fde8e8,stroke:#c33;
+  classDef a fill:#e6f4ea,stroke:#2a7;
+  classDef d fill:#eee,stroke:#999;
 ```
 
 - **What:** `lab_profile.py` (the modular, per-lab frontier baseline), `coverage.py` (the gap map,
@@ -143,12 +146,14 @@ flowchart LR
 
 ### 2.5 · Memory tiers & the exploratory lane
 ```mermaid
-flowchart TB
-  J["session journal<br/>live personal notes + checkpoints"] --> PROM["promotion review"]
-  EP["episodic memory<br/>past runs + conclusions"] & SEM["semantic memory<br/>distilled notes (embedded)"] --> PROM
-  PROM --> WIP2["shared WIP"]
-  MISC["exploratory lane<br/>misc findings → match KG → group → formalize"] --> WIP2
-  WIP2 -->|"tested + critic"| CONS2["consensus"]
+flowchart LR
+  PERS["Personal work<br/>journal · notes · runs"]:::p --> PROM["promote"]
+  MISC["Ad-hoc findings"]:::p --> PROM
+  PROM --> WIP2["Shared WIP"]:::w
+  WIP2 ==>|"tested + critic"| CONS2["Consensus"]:::c
+  classDef p fill:#eef,stroke:#55a;
+  classDef w fill:#fff0e6,stroke:#e73;
+  classDef c fill:#e6f4ea,stroke:#2a7;
 ```
 
 - **What:** `memory.py` (episodic), `semantic_memory.py` (embeddings), `session_journal.py` (keeps
@@ -160,10 +165,11 @@ flowchart TB
 ### 2.6 · The experience layer (why people actually use it)
 ```mermaid
 flowchart LR
-  OPEN["you open a session"] --> WS["warm start<br/>where you left off · what's new · one next step"]
-  WS --> SER["serendipity<br/>a colleague's work meets yours"]
-  WS --> FOL["follow<br/>digest of people/projects you track"]
-  DONE["a project matures"] --> RS["research story<br/>honest arc: wins + caveats + how to solidify"]
+  OPEN["open a session"] --> WS["warm start"]:::x
+  WS --> SER["serendipity"]:::x
+  WS --> FOL["follow"]:::x
+  MAT["project matures"] --> RS["honest story<br/>wins + caveats"]:::x
+  classDef x fill:#eafaf1,stroke:#3a7;
 ```
 
 - **What:** `briefing.py`, `serendipity.py`, `subscriptions.py`, `research_story.py`. ADRs 0049–0051, 0055.
@@ -176,17 +182,17 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-  participant R as Researcher (+ Claude)
-  participant B as Lab brain (MCP)
-  R->>B: warm_start() — what changed, what's waiting
-  R->>B: assess an idea (ground · calibrate · novelty · dead-end check)
-  B-->>R: verdict + proposed workflow (+ ⛔ if a prior dead end)
-  R->>B: coverage_map() — is this a frontier or adoptable?
-  R->>B: recommend_methods() — KG-grounded method choice
-  R->>R: run experiment (scaffold → run.py → validity gates → results)
-  R->>B: contribute(finding) — critic-gated
-  B-->>B: belief updates · trajectory recorded · (contradiction? → ledger)
-  R->>B: research_story() — honest arc for the paper's discussion
+  participant R as Researcher + Claude
+  participant B as Lab brain
+  R->>B: warm start
+  R->>B: assess idea (+ dead-end check)
+  B-->>R: verdict + workflow
+  R->>B: coverage — frontier or adoptable?
+  R->>B: recommend methods
+  R->>R: run experiment
+  R->>B: contribute (gated)
+  B-->>B: belief updates
+  R->>B: honest research story
 ```
 
 Two entry points, same brain: a **hypothesis-driven** run (idea → … → contribute) and an
@@ -204,17 +210,11 @@ better*.
 ### 4.1 · The growth flywheel
 ```mermaid
 flowchart LR
-  Q["a question / gap"] --> SRCH["deep_fetch<br/>broad multi-query PubMed pull"]
-  SRCH --> DIST["thinker distills<br/>abstracts → structured associations"]
-  DIST --> NORM["normalize entities<br/>→ canonical IDs"]
-  NORM --> REIFY["reify edges<br/>+ evidence + PMID provenance"]
-  REIFY --> CK["curated KG grows"]
-  DIST --> EMB["embed notes<br/>semantic memory"]
-  SRCH --> CACHE["cache the topic<br/>(don't search it again)"]
-  CK --> GRAD["graduation<br/>≥N INDEPENDENT sources → propose to consensus"]
-  GRAD --> CRITIC["critic gate"] --> CONS["consensus + confidence"]
-  CONS --> COVERAGE["coverage map re-computes"]
-  COVERAGE -->|"points at the next gap"| Q
+  Q(["gap"]):::hi --> SRCH["search"] --> DIST["distill"] --> EDGES["new edges"]
+  EDGES --> KG["curated KG"] --> GATE["critic gate"] --> CONS["consensus"]
+  CONS --> COV["coverage"]
+  COV -->|"finds the next gap"| Q
+  classDef hi fill:#fff3cd,stroke:#d90,stroke-width:2px;
 ```
 
 The loop closes: **coverage** identifies a gap → a **deep search** fills it → distillation writes
@@ -236,13 +236,14 @@ frontier.**
 ### 4.3 · How a paper becomes nodes & edges
 ```mermaid
 flowchart LR
-  ABS["abstract (PMID)"] --> EXTR["thinker extracts<br/>A —rel→ C claims"]
-  EXTR --> NRM["normalize A, C<br/>→ Entrez / MONDO / CHEBI / HPO"]
-  NRM --> DEDUP{"edge exists?"}
-  DEDUP -->|yes| MERGE["append evidence<br/>(edge SHARPENS, no new node)"]
-  DEDUP -->|no| NEW["new reified edge<br/>+ evidence + provenance"]
-  MERGE & NEW --> CONF2["confidence recomputes<br/>from accumulated evidence"]
-  ABS --> VEC["embed → semantic memory<br/>(recall by meaning)"]
+  ABS["paper"] --> EXTR["extract<br/>claims"] --> NRM["normalize"]
+  NRM --> DEDUP{"edge<br/>exists?"}
+  DEDUP -->|yes| MERGE["merge evidence<br/>(sharpen)"]:::a
+  DEDUP -->|no| NEW["new edge"]:::a
+  MERGE --> CONF2["confidence<br/>updates"]:::b
+  NEW --> CONF2
+  classDef a fill:#e6f4ea,stroke:#2a7;
+  classDef b fill:#fde8e8,stroke:#c33;
 ```
 
 Three things make this **encoding** honest and compounding:
@@ -286,25 +287,23 @@ activity model in §4.5 — the point is the direction and the qualitative shift
 
 ```mermaid
 flowchart LR
-  subgraph D1["DAY 1 — empty scaffold on the fixed KGs"]
+  subgraph D1["Day 1"]
     direction TB
-    a1["curated KG: 0 lab edges"]
-    a2["coverage: every cell 'frontier' (fog)"]
-    a3["every literature sweep: fresh &amp; expensive"]
-    a4["no belief history · nothing to calibrate"]
+    a1["empty KG"]
+    a2["all 'frontier' — fog"]
+    a3["every search fresh"]
   end
-  subgraph Q1["END OF Q1 — ~200 sessions later"]
+  subgraph Q1["After 1 quarter"]
     direction TB
-    b1["~400 corroborated, de-duplicated edges"]
-    b2["frontier sharpened · some cells now adoptable"]
-    b3["~50 topics cached · most sweeps reused lab-wide"]
-    b4["living beliefs + an auditable calibration"]
+    b1["~400 corroborated edges"]
+    b2["sharp agenda"]
+    b3["searches reused"]
   end
-  D1 ==>|"the flywheel turns"| Q1
+  D1 ==>|"flywheel"| Q1
   classDef d fill:#fde8e8,stroke:#c33;
   classDef q fill:#e6f4ea,stroke:#2a7;
-  class a1,a2,a3,a4 d;
-  class b1,b2,b3,b4 q;
+  class a1,a2,a3 d;
+  class b1,b2,b3 q;
 ```
 
 | Signal | Day 1 | End of Q1 (~200 sessions) | Why it matters |

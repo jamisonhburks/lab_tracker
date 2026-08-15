@@ -1,20 +1,18 @@
 flowchart LR
-  subgraph D1["DAY 1 — empty scaffold on the fixed KGs"]
+  subgraph D1["Day 1"]
     direction TB
-    a1["curated KG: 0 lab edges"]
-    a2["coverage: every cell 'frontier' (fog)"]
-    a3["every literature sweep: fresh &amp; expensive"]
-    a4["no belief history · nothing to calibrate"]
+    a1["empty KG"]
+    a2["all 'frontier' — fog"]
+    a3["every search fresh"]
   end
-  subgraph Q1["END OF Q1 — ~200 sessions later"]
+  subgraph Q1["After 1 quarter"]
     direction TB
-    b1["~400 corroborated, de-duplicated edges"]
-    b2["frontier sharpened · some cells now adoptable"]
-    b3["~50 topics cached · most sweeps reused lab-wide"]
-    b4["living beliefs + an auditable calibration"]
+    b1["~400 corroborated edges"]
+    b2["sharp agenda"]
+    b3["searches reused"]
   end
-  D1 ==>|"the flywheel turns"| Q1
+  D1 ==>|"flywheel"| Q1
   classDef d fill:#fde8e8,stroke:#c33;
   classDef q fill:#e6f4ea,stroke:#2a7;
-  class a1,a2,a3,a4 d;
-  class b1,b2,b3,b4 q;
+  class a1,a2,a3 d;
+  class b1,b2,b3 q;

@@ -1,31 +1,24 @@
 flowchart TB
-  subgraph TH["THINKERS — swappable, frozen (no LLM lives inside the brain)"]
+  TH["Thinkers<br/>Claude · lab member"]:::t
+  MCP{{"MCP · 3 trust tiers"}}:::api
+  subgraph BRAIN["The Lab Brain — shared"]
     direction LR
-    CL["Claude session"]:::t
-    LM["Lab member"]:::t
+    K["① Knowledge"]:::k
+    E["② Honesty"]:::e
+    G["③ Growth"]:::g
+    S["④ Self-awareness"]:::s
   end
+  M["⑤ Memory tiers"]:::m
+  W["⑥ Workflow"]:::w
+  X["⑦ Experience"]:::x
 
-  MCP{{"MCP server — one API, 3 trust tiers · stdio (local) / HTTP (shared cluster)"}}:::api
-
-  subgraph BRAIN["THE LAB BRAIN — shared substrate"]
-    direction TB
-    K["① KNOWLEDGE<br/>grounding KGs · ML-method KG · the lab's curated KG"]:::k
-    E["② EPISTEMICS &amp; HONESTY<br/>confidence · belief lifecycle · calibration · novelty · validity · critic"]:::e
-    G["③ GROWTH / INGESTION<br/>deep-search → distill → curated KG · ML ingest · normalization"]:::g
-    S["④ SELF-AWARENESS<br/>dead-ends · lab profile · coverage map"]:::s
-    M["⑤ MEMORY TIERS<br/>personal → shared-WIP → consensus (earns its way up)"]:::m
-  end
-
-  W["⑥ RESEARCH WORKFLOW — idea → hypothesis → method → experiment → evaluate → contribute"]:::w
-  X["⑦ EXPERIENCE — warm-start · serendipity · research-story · follow"]:::x
-
-  TH -->|"query · ground · check · contribute"| MCP
+  TH --> MCP
   MCP --> BRAIN
-  BRAIN <--> W
+  BRAIN --- M
+  MCP --> W
   MCP --> X
-  X -.->|"pulls from"| BRAIN
 
-  classDef t fill:#e8eefc,stroke:#3a5,stroke-width:1px;
+  classDef t fill:#e8eefc,stroke:#3a5;
   classDef api fill:#fff3cd,stroke:#d90;
   classDef k fill:#e6f4ea,stroke:#2a7;
   classDef e fill:#fde8e8,stroke:#c33;

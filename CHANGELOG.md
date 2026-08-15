@@ -4,6 +4,9 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Simplify the slide diagrams** (docs-only) — reworked all 11 Mermaid diagrams to short, glanceable
+  labels (the prose carries the detail) so a viewer gets each in seconds; consistent colour coding
+  and cleaner flow. Regenerated `docs/diagrams/*.mmd` + `*.svg`.
 - **Architecture overview** (`docs/architecture-overview.md`, docs-only) — a presentation companion:
   a parent diagram of the whole system, a zoom-in per block (trust tiers, knowledge graphs,
   epistemics/honesty, self-awareness, memory tiers, experience), the intended "day in the life"

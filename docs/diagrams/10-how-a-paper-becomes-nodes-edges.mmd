@@ -1,8 +1,9 @@
 flowchart LR
-  ABS["abstract (PMID)"] --> EXTR["thinker extracts<br/>A —rel→ C claims"]
-  EXTR --> NRM["normalize A, C<br/>→ Entrez / MONDO / CHEBI / HPO"]
-  NRM --> DEDUP{"edge exists?"}
-  DEDUP -->|yes| MERGE["append evidence<br/>(edge SHARPENS, no new node)"]
-  DEDUP -->|no| NEW["new reified edge<br/>+ evidence + provenance"]
-  MERGE & NEW --> CONF2["confidence recomputes<br/>from accumulated evidence"]
-  ABS --> VEC["embed → semantic memory<br/>(recall by meaning)"]
+  ABS["paper"] --> EXTR["extract<br/>claims"] --> NRM["normalize"]
+  NRM --> DEDUP{"edge<br/>exists?"}
+  DEDUP -->|yes| MERGE["merge evidence<br/>(sharpen)"]:::a
+  DEDUP -->|no| NEW["new edge"]:::a
+  MERGE --> CONF2["confidence<br/>updates"]:::b
+  NEW --> CONF2
+  classDef a fill:#e6f4ea,stroke:#2a7;
+  classDef b fill:#fde8e8,stroke:#c33;

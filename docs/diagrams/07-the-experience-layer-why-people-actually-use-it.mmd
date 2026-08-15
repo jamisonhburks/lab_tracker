@@ -1,5 +1,6 @@
 flowchart LR
-  OPEN["you open a session"] --> WS["warm start<br/>where you left off · what's new · one next step"]
-  WS --> SER["serendipity<br/>a colleague's work meets yours"]
-  WS --> FOL["follow<br/>digest of people/projects you track"]
-  DONE["a project matures"] --> RS["research story<br/>honest arc: wins + caveats + how to solidify"]
+  OPEN["open a session"] --> WS["warm start"]:::x
+  WS --> SER["serendipity"]:::x
+  WS --> FOL["follow"]:::x
+  MAT["project matures"] --> RS["honest story<br/>wins + caveats"]:::x
+  classDef x fill:#eafaf1,stroke:#3a7;
