@@ -184,3 +184,95 @@ def mark_searched(topic: str, pmids=None, n_associations: int = 0,
     """Record that a topic was searched (the associations were written elsewhere — e.g. the local
     agent's curate_literature). Marks the shared cache so the sweep isn't repeated lab-wide."""
     _append_cache(topic, entities, contributor, len(set(pmids or [])), n_associations, pmids)
+
+
+def stale_topics(older_than_days: int = STALE_AFTER_DAYS) -> list:
+    """Topics whose MOST-RECENT cache entry is older than the threshold — candidates for a
+    scheduled refresh. Returns [{topic, age_days, ts, contributor}], oldest first."""
+    latest = {}
+    for e in _cache():
+        t = e.get("topic", "")
+        if t and (t not in latest or e.get("ts", "") > latest[t].get("ts", "")):
+            latest[t] = e
+    out = []
+    for t, e in latest.items():
+        age = _age_days(e.get("ts", ""))
+        if age is not None and age > older_than_days:
+            out.append({"topic": t, "age_days": age, "ts": e.get("ts", ""),
+                        "contributor": e.get("contributor", "?")})
+    return sorted(out, key=lambda x: -x["age_days"])
+
+
+# --------------------------------------------------------------------------- #
+# Source independence — group PMIDs by last-author so one group citing itself   #
+# doesn't count as N independent sources (used by graduation's rigor bar).      #
+# --------------------------------------------------------------------------- #
+_META_CACHE = ROOT / "memory" / "pmid_meta.json"
+
+
+def _pmids(sources) -> list:
+    out = []
+    for s in sources:
+        m = re.search(r"PMID:\s*(\d+)", str(s))
+        if m:
+            out.append(m.group(1))
+    return out
+
+
+def _fetch_pmid_meta(pmids: list) -> dict:
+    """{pmid: {journal, last_author}} from PubMed (no LLM). Best-effort; empty on failure."""
+    if not pmids:
+        return {}
+    try:
+        import xml.etree.ElementTree as ET
+        fu = f"{_EUTILS}/efetch.fcgi?" + urllib.parse.urlencode(
+            {"db": "pubmed", "id": ",".join(pmids), "retmode": "xml"})
+        root = ET.fromstring(net.fetch_bytes(fu, timeout=30))
+        out = {}
+        for art in root.findall(".//PubmedArticle"):
+            pmid = art.findtext(".//PMID") or ""
+            authors = art.findall(".//AuthorList/Author")
+            last = authors[-1].findtext("LastName") if authors else None
+            out[pmid] = {"journal": (art.findtext(".//Journal/Title") or "").strip(),
+                         "last_author": (last or "").strip()}
+        return out
+    except Exception:
+        return {}
+
+
+def _resolve_meta(pmids: list) -> dict:
+    """PMID metadata with a persisted cache — only uncached ids hit PubMed."""
+    cache = {}
+    if _META_CACHE.exists():
+        try:
+            cache = json.loads(_META_CACHE.read_text(encoding="utf-8"))
+        except Exception:
+            cache = {}
+    missing = [p for p in pmids if p not in cache]
+    if missing:
+        cache.update(_fetch_pmid_meta(missing))
+        _META_CACHE.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            _META_CACHE.write_text(json.dumps(cache), encoding="utf-8")
+        except Exception:
+            pass
+    return {p: cache.get(p, {}) for p in pmids}
+
+
+def independent_count(sources) -> int:
+    """Count INDEPENDENT sources: PMIDs grouped by last-author (same group → 1), plus each
+    distinct non-PMID source and each unresolvable PMID. Graceful: if no PMIDs, distinct count."""
+    srcs = [str(s) for s in sources if s]
+    pmids = _pmids(srcs)
+    non_pmid = {s for s in srcs if not re.search(r"PMID:\s*\d+", s)}
+    if not pmids:
+        return len(set(srcs))
+    meta = _resolve_meta(pmids)
+    groups, unresolved = set(), 0
+    for p in pmids:
+        la = (meta.get(p) or {}).get("last_author", "")
+        if la:
+            groups.add(la.lower())
+        else:
+            unresolved += 1                       # can't prove same group → count individually
+    return len(groups) + unresolved + len(non_pmid)

@@ -85,6 +85,18 @@ curated-KG read-modify-write, so parallel contributions can't interleave or clob
 shared writer.** If a member also runs `agent.py` locally against the *same* shared files, the
 lock still protects them, but keeping the shared service the sole writer is cleanest.
 
+## 4b. Scheduled cache refresh (cron)
+
+The deep-search cache ages (ADR-0047/0047). A weekly job re-distils stale topics so the primary KG
+stays current without waiting for someone to re-ask. It runs the **local model** (curate_literature
+distils), so run it on a host with the model (or `LLM_BACKEND=anthropic`), not necessarily the
+shared HTTP node:
+```cron
+0 3 * * 0  cd /srv/lab/toy-research-agent && /srv/lab/venv/bin/python refresh_stale.py --max 20
+```
+`refresh_stale.py --dry-run` lists what's stale; the MCP `stale_topics` tool surfaces the same to
+any session.
+
 ## 5. Git's role (audit + the consensus gate)
 
 On a shared FS you don't need git for real-time sharing, but use it as the audit + review layer:

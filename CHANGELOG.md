@@ -4,6 +4,14 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Scheduled refresh + source independence** — (1) `deep_search.stale_topics()` + `refresh_stale.py`
+  (cron): a scheduled job re-distils topics whose cache went stale (runs the local agent's
+  `curate_literature`), so the primary KG self-heals without waiting for a re-ask; MCP `stale_topics`
+  surfaces them. (2) `deep_search.independent_count()` groups PMIDs by LAST AUTHOR (same group → one
+  source, persisted meta cache), and graduation now requires ≥N **independent** sources (cheap
+  distinct-source pre-filter, network only on candidates) — so one group citing itself can't game
+  the bar. MCP shared +1 (`stale_topics` = 25). Verified: stale detection (latest-per-topic),
+  independence (3 PMIDs/2 authors → 2), anti-gaming graduation rejected at min=3 (PR #56 · ADR-0048).
 - **Deep-search cache maturation** — three follow-ups. (1) EXPIRY: `search_status` ages cache hits
   (`STALE_AFTER_DAYS`=180) → "COVERED BUT STALE, refresh" vs "covered, skip". (2) GRADUATION:
   `graduation_candidates(min_sources)` surfaces distilled edges backed by ≥N independent sources not

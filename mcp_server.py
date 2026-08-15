@@ -296,6 +296,17 @@ if _SHARED:
         return deep.deep_fetch(topic, extra_terms=variants, max_papers=max_papers)
 
     @mcp.tool
+    def stale_topics(older_than_days: int = 180) -> str:
+        """Deep-searched topics whose cache has gone STALE (literature moves) — candidates for a
+        refresh. A scheduled job (refresh_stale.py, cron) re-distils these; this tool surfaces them."""
+        stale = deep.stale_topics(older_than_days)
+        if not stale:
+            return f"No topics older than {older_than_days}d — the deep-search cache is fresh."
+        return f"{len(stale)} stale topic(s) (>{older_than_days}d):\n" + "\n".join(
+            f"  {s['age_days']}d  {s['topic']!r}  (last by {s['contributor']} on {s['ts'][:10]})"
+            for s in stale[:20])
+
+    @mcp.tool
     def record_distillation(topic: str, associations: list, pmids: list | None = None) -> str:
         """Write YOUR distilled associations (from a deep_fetch corpus) into the PRIMARY KG with
         provenance, and CACHE the topic so the lab doesn't repeat the search. Each association:
