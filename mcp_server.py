@@ -20,12 +20,16 @@ Design: NO generation inside — the thinker is the client's model; this only ex
 that thinker can't do itself. Tools emit associations / grounding / aggregates, never
 row-level patient data.
 
-Run:  SUBSTRATE_SCOPE=shared KG_BACKEND=combined python mcp_server.py
-Client (Claude Desktop) — add to claude_desktop_config.json:
-  {"mcpServers": {"lab-shared": {"command": "python",
-     "args": ["/ABS/PATH/mcp_server.py"], "env": {"SUBSTRATE_SCOPE":"shared","KG_BACKEND":"combined"}},
-                  "my-personal": {"command": "python",
-     "args": ["/ABS/PATH/mcp_server.py"], "env": {"SUBSTRATE_SCOPE":"personal"}}}}
+Transports (see docs/deployment.md):
+  - stdio (default): local, per-user  →  `python mcp_server.py`
+  - HTTP (shared lab deployment): one instance on a cluster node serves everyone  →
+      `MCP_TRANSPORT=http MCP_HOST=0.0.0.0 MCP_PORT=8443 SUBSTRATE_SCOPE=shared \
+       KG_BACKEND=combined python mcp_server.py`   (KG loaded once; per-request attribution
+      from the `X-Substrate-Contributor` header; writes serialized via store_lock).
+
+Client (Claude Desktop) — add to claude_desktop_config.json: a `lab-shared` HTTP entry
+(`"url": "https://lab-node:8443/mcp"`) + a local `my-personal` stdio entry
+(`{"command":"python","args":["/ABS/PATH/mcp_server.py"],"env":{"SUBSTRATE_SCOPE":"personal"}}`).
 """
 
 import glob
@@ -59,6 +63,19 @@ mcp = FastMCP(f"lab-substrate ({SCOPE})")
 
 def _read(path: Path, what: str) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else f"No {what} found."
+
+
+def _caller() -> str | None:
+    """Per-request contributor identity for the SHARED HTTP deployment: the `X-Substrate-
+    Contributor` header (set by the lab member's client, or a reverse proxy after auth), so
+    writes are attributed to the actual person — not the server's process user. Returns None
+    over stdio (single-user), where writes fall back to SUBSTRATE_CONTRIBUTOR/$USER."""
+    try:
+        from fastmcp.server.dependencies import get_http_headers
+        h = get_http_headers() or {}
+        return h.get("x-substrate-contributor") or h.get("x-forwarded-user") or None
+    except Exception:
+        return None
 
 
 # =========================================================================== #
@@ -185,7 +202,8 @@ if _SHARED:
                   "source_supported": critic_verdict.strip().lower() == "accept"}
         return contrib.contribute(subject, predicate, object, source=source,
                                   source_kind=source_kind, direction=direction,
-                                  abstract=abstract or None, critic_verdict=cv)
+                                  abstract=abstract or None, critic_verdict=cv,
+                                  contributor=_caller())
 
     @mcp.tool
     def refine_evidence(entity_a: str, entity_c: str, max_bridges: int = 4) -> str:
@@ -214,7 +232,8 @@ if _SHARED:
         else a heuristic runs."""
         return misc.log_misc(claim, subject=subject, object=object, method=method,
                              effect_size=effect_size, p_value=p_value, sample_size=sample_size,
-                             source=source, rigor_verdict=rigor_verdict.strip() or None)
+                             source=source, rigor_verdict=rigor_verdict.strip() or None,
+                             contributor=_caller())
 
     @mcp.tool
     def match_misc_finding(subject: str, object: str) -> str:
@@ -353,4 +372,12 @@ if _PERSONAL:
 
 
 if __name__ == "__main__":
-    mcp.run()   # stdio transport (default)
+    # Local per-user: stdio (default). Shared lab deployment: MCP_TRANSPORT=http on a cluster
+    # node, one instance serving everyone over streamable HTTP. See docs/deployment.md.
+    transport = os.environ.get("MCP_TRANSPORT", "stdio").lower()
+    if transport in ("http", "streamable-http"):
+        mcp.run(transport="http",
+                host=os.environ.get("MCP_HOST", "127.0.0.1"),
+                port=int(os.environ.get("MCP_PORT", "8000")))
+    else:
+        mcp.run()   # stdio transport (default)

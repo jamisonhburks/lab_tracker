@@ -36,6 +36,7 @@ import kg_memory as kg
 import kg_writer
 import confidence
 import critic
+import store_lock
 
 ROOT = Path(__file__).parent
 CONTRIB_LOG = ROOT / "memory" / "lab_contributions.jsonl"
@@ -100,14 +101,16 @@ def _consensus_status(subj: str, obj: str, predicate: str):
 def contribute(subject: str, predicate: str, object: str, source: str = "",
                direction: str = "supports", source_kind: str = "literature",
                sample_size=None, effect_size=None, p_value=None, risk_of_bias=None,
-               abstract=None, critic_verdict=None) -> str:
+               abstract=None, critic_verdict=None, contributor=None) -> str:
     """Contribute one finding to shared consensus (critic-gated, attributed, routed).
 
     `critic_verdict` lets the THINKER (the client's model — Claude) supply the literature
     critic judgment ('accept'/'reject' or a dict), so consensus is gated by Claude and the
     substrate stays LLM-free; if omitted, the local critic runs as fallback. The gate's
-    origin is recorded as `critic_by` (thinker | local | provenance) for audit."""
-    who = _contributor()
+    origin is recorded as `critic_by` (thinker | local | provenance) for audit.
+    `contributor` is the per-request identity (from the caller's auth over the shared HTTP
+    deployment); if omitted, falls back to SUBSTRATE_CONTRIBUTOR/$USER (fine for local stdio)."""
+    who = contributor or _contributor()
     s_norm, o_norm = kg.normalize_entity(subject), kg.normalize_entity(object)
     subj = s_norm["name"] if s_norm else subject.strip()
     obj = o_norm["name"] if o_norm else object.strip()
@@ -131,9 +134,7 @@ def contribute(subject: str, predicate: str, object: str, source: str = "",
              "source": source, "source_kind": source_kind, "sample_size": sample_size,
              "effect_size": effect_size, "p_value": p_value, "risk_of_bias": risk_of_bias,
              "critic": verdict.get("verdict"), "critic_by": critic_by, "status": status}
-    CONTRIB_LOG.parent.mkdir(parents=True, exist_ok=True)
-    with CONTRIB_LOG.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(entry) + "\n")
+    store_lock.append_jsonl(CONTRIB_LOG, entry)            # locked append (shared-safe)
 
     if status == "auto_merged":                            # merge into consensus + aggregate
         kg_writer.add_association(

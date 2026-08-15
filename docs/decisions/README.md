@@ -56,3 +56,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0042](0042-synthesize-on-compact.md) | Synthesize-before-clear/compact (Claude Code hooks) | 2026-08-14 | Accepted | #49 |
 | [0043](0043-exploratory-lane.md) | The exploratory lane — ad-hoc analyses, misc findings, match + group | 2026-08-14 | Accepted | #50 |
 | [0044](0044-semantic-grouping-formalize.md) | Semantic grouping (synonyms cluster) + one-step cluster→hypothesis | 2026-08-14 | Accepted | #51 |
+| [0045](0045-http-deployment.md) | Remote/HTTP MCP deployment — one shared substrate on the cluster | 2026-08-15 | Accepted | #53 |

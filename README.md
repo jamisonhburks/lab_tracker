@@ -50,6 +50,8 @@ python agent.py                                                               # 
   each choice was made, alternatives, and evidence. Start here.
 - **[`docs/related-work.md`](docs/related-work.md)** — verified prior-art map + honest
   novelty positioning (what's established vs. a contribution). Every citation fetched-and-checked.
+- **[`docs/deployment.md`](docs/deployment.md)** — run one shared substrate for the lab over
+  HTTP on your cluster (transport, per-user attribution, locking, TLS/auth, privacy).
 - **[`CHANGELOG.md`](CHANGELOG.md)** — reverse-chronological change summary.
 - **[`docs/agent-architecture.md`](docs/agent-architecture.md)** — the multi-agent
   target design and build plan.
