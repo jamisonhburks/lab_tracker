@@ -1,12 +1,6 @@
 flowchart LR
-  Q["a question / gap"] --> SRCH["deep_fetch<br/>broad multi-query PubMed pull"]
-  SRCH --> DIST["thinker distills<br/>abstracts → structured associations"]
-  DIST --> NORM["normalize entities<br/>→ canonical IDs"]
-  NORM --> REIFY["reify edges<br/>+ evidence + PMID provenance"]
-  REIFY --> CK["curated KG grows"]
-  DIST --> EMB["embed notes<br/>semantic memory"]
-  SRCH --> CACHE["cache the topic<br/>(don't search it again)"]
-  CK --> GRAD["graduation<br/>≥N INDEPENDENT sources → propose to consensus"]
-  GRAD --> CRITIC["critic gate"] --> CONS["consensus + confidence"]
-  CONS --> COVERAGE["coverage map re-computes"]
-  COVERAGE -->|"points at the next gap"| Q
+  Q(["gap"]):::hi --> SRCH["search"] --> DIST["distill"] --> EDGES["new edges"]
+  EDGES --> KG["curated KG"] --> GATE["critic gate"] --> CONS["consensus"]
+  CONS --> COV["coverage"]
+  COV -->|"finds the next gap"| Q
+  classDef hi fill:#fff3cd,stroke:#d90,stroke-width:2px;

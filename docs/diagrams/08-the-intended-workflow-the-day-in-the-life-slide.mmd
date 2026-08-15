@@ -1,12 +1,12 @@
 sequenceDiagram
-  participant R as Researcher (+ Claude)
-  participant B as Lab brain (MCP)
-  R->>B: warm_start() — what changed, what's waiting
-  R->>B: assess an idea (ground · calibrate · novelty · dead-end check)
-  B-->>R: verdict + proposed workflow (+ ⛔ if a prior dead end)
-  R->>B: coverage_map() — is this a frontier or adoptable?
-  R->>B: recommend_methods() — KG-grounded method choice
-  R->>R: run experiment (scaffold → run.py → validity gates → results)
-  R->>B: contribute(finding) — critic-gated
-  B-->>B: belief updates · trajectory recorded · (contradiction? → ledger)
-  R->>B: research_story() — honest arc for the paper's discussion
+  participant R as Researcher + Claude
+  participant B as Lab brain
+  R->>B: warm start
+  R->>B: assess idea (+ dead-end check)
+  B-->>R: verdict + workflow
+  R->>B: coverage — frontier or adoptable?
+  R->>B: recommend methods
+  R->>R: run experiment
+  R->>B: contribute (gated)
+  B-->>B: belief updates
+  R->>B: honest research story

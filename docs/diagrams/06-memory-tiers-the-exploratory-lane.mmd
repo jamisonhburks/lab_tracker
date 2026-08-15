@@ -1,6 +1,8 @@
-flowchart TB
-  J["session journal<br/>live personal notes + checkpoints"] --> PROM["promotion review"]
-  EP["episodic memory<br/>past runs + conclusions"] & SEM["semantic memory<br/>distilled notes (embedded)"] --> PROM
-  PROM --> WIP2["shared WIP"]
-  MISC["exploratory lane<br/>misc findings → match KG → group → formalize"] --> WIP2
-  WIP2 -->|"tested + critic"| CONS2["consensus"]
+flowchart LR
+  PERS["Personal work<br/>journal · notes · runs"]:::p --> PROM["promote"]
+  MISC["Ad-hoc findings"]:::p --> PROM
+  PROM --> WIP2["Shared WIP"]:::w
+  WIP2 ==>|"tested + critic"| CONS2["Consensus"]:::c
+  classDef p fill:#eef,stroke:#55a;
+  classDef w fill:#fff0e6,stroke:#e73;
+  classDef c fill:#e6f4ea,stroke:#2a7;
