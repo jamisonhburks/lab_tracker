@@ -155,6 +155,15 @@ if _SHARED:
         return idea.assess(entity_a, entity_c)
 
     @mcp.tool
+    def research_story(campaign: str = "") -> str:
+        """An HONEST narrative of a project's arc (a campaign, or all hypotheses) — NOT a highlight
+        reel. Each step interweaves what went well with the CAVEATS (validity gates, grounding/
+        novelty, power, synthetic-vs-real, the evaluator's own words) and concrete ways to SOLIDIFY
+        the finding, ending on the arc's weakest link. Great for morale AND the paper's discussion."""
+        import research_story as rs
+        return rs.story(campaign)
+
+    @mcp.tool
     def list_active_work() -> str:
         """SHARED WIP ('group semantics'): every tracked hypothesis/experiment/campaign with
         its STATUS — so you can see what's in-flight (mid-test, evaluated, proposed) and NOT
