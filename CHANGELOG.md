@@ -4,6 +4,20 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Calibration audit** (`calibration.py`, ADR-0054) — the substrate audits its OWN confidence
+  (Tier 2 of the lab-brain gap review). `confidence.py` says its number is "not a calibrated
+  probability"; this scores that number against realized outcomes the belief lifecycle already
+  generates — resolved contradictions (ADJUDICATED: upheld=1 / overturned=0) and belief reversals
+  (STABILITY: did a settled decisive belief hold as evidence accrued?). Reports a reliability
+  table (per-bin predicted vs. held-up rate), ECE, Brier, net over/under-confidence bias, and a
+  plain-English verdict pointing at the worst-calibrated band. Read-only; no new epistemics; it
+  MEASURES, it doesn't alter the scorer. Stays HUMBLE below a data floor (≥8 outcomes) rather than
+  reporting a misleading number, and every rendering states the outcomes are the substrate's own
+  proxies, not a gold standard — accountability as a rigor feature (ADR-0052). MCP shared tool
+  `calibration_audit(lens=all|adjudicated|stability)`. Verified: hermetic self-demo flags a
+  synthesized over-confident lab (0.9 band called ~0.94, only ~0.50 held → ECE 0.32, "over-
+  confident"); real empty logs return the humble floor message. Recalibration map left as a clean
+  follow-on seam (PR #62).
 - **The belief lifecycle** (`beliefs.py`, ADR-0053) — makes `confidence.py`'s stateless scorer
   into LIVING STATE so the substrate reads as a lab brain with updating knowledge. (1) belief is
   PERSISTED per edge (projected from accumulated `kg_writer` evidence + KG grounding — the same

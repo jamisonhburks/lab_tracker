@@ -46,6 +46,7 @@ import memory
 import kg_writer
 import confidence
 import beliefs
+import calibration
 import misc_research as misc
 import deep_search as deep
 import contribute as contrib
@@ -170,6 +171,15 @@ if _SHARED:
         genuinely stand — the edge is disputed). YOU, the thinker, judge; the substrate only
         records the tension and your verdict (append-only, attributed)."""
         return beliefs.resolve_conflict(conflict_id, resolution, by=_caller() or "", rationale=rationale)
+
+    @mcp.tool
+    def calibration_audit(lens: str = "all") -> str:
+        """Is the lab's confidence CALIBRATED? Scores the confidence numbers the substrate emits
+        against realized outcomes it already generates — resolved contradictions (adjudicated) and
+        belief reversals (stability) — into a reliability table, ECE, and an honest over/under-
+        confidence verdict. `lens`: all | adjudicated | stability. Stays HUMBLE below a data floor
+        rather than reporting a misleading number. The substrate auditing its OWN confidence."""
+        return calibration.render(lens)
 
     @mcp.tool
     def propose_experiment(entity_a: str, entity_c: str, hypothesis: str = "") -> str:
