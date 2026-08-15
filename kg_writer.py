@@ -16,6 +16,7 @@ import json
 from pathlib import Path
 
 import kg_schema
+import store_lock
 
 STORE = Path(__file__).parent / "memory" / "curated_kg.jsonl"
 
@@ -56,29 +57,29 @@ def add_association(subject: str, predicate: str, object: str, source: str = "",
     normalize to the same node ('ulcerative colitis (UC)' vs 'ulcerative colitis')
     merge into one association and their evidence accumulates.
     """
-    records = _load()
     key = (subject_id or subject.strip().lower(), predicate.strip().lower(),
            object_id or object.strip().lower())
     ev = {"source": source or None, "direction": direction, "power": power,
           "sample_size": sample_size, "effect_size": effect_size, "p_value": p_value,
           "risk_of_bias": risk_of_bias}
 
-    for r in records:
-        if _rec_key(r) == key:
-            r["evidence"].append(ev)          # accumulate independent evidence
-            _save(records)
-            return r
-
-    record = {
-        "subject": subject.strip(), "subject_id": subject_id,
-        "predicate": predicate.strip(),
-        "object": object.strip(), "object_id": object_id,
-        "epistemic_type": kg_schema.classify_epistemic(predicate).value,
-        "evidence": [ev],
-    }
-    records.append(record)
-    _save(records)
-    return record
+    with store_lock.critical(STORE):              # lock the whole load→modify→save (shared-safe)
+        records = _load()
+        for r in records:
+            if _rec_key(r) == key:
+                r["evidence"].append(ev)          # accumulate independent evidence
+                _save(records)
+                return r
+        record = {
+            "subject": subject.strip(), "subject_id": subject_id,
+            "predicate": predicate.strip(),
+            "object": object.strip(), "object_id": object_id,
+            "epistemic_type": kg_schema.classify_epistemic(predicate).value,
+            "evidence": [ev],
+        }
+        records.append(record)
+        _save(records)
+        return record
 
 
 def to_association(record: dict) -> "kg_schema.Association":

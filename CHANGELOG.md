@@ -3,6 +3,17 @@
 Reverse-chronological summary of substantive changes. Each entry links a PR to the
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
+## 2026-08-15
+- **Remote/HTTP MCP deployment** — one shared substrate for the whole lab. `MCP_TRANSPORT=http`
+  (host/port) runs the FastMCP streamable-HTTP transport (default stays stdio, so nothing breaks);
+  one instance on a cluster node loads the reference KG ONCE and serves everyone. Per-request
+  attribution via `_caller()` (reads `X-Substrate-Contributor` from a reverse proxy after auth) →
+  new `contributor=` on `contribute()`/`log_misc()` so writes are attributed to the real person.
+  New `store_lock` (POSIX flock) serializes the append-only logs + the curated-KG read-modify-write
+  for safe concurrent contributions. `docs/deployment.md` (systemd/container, TLS+auth proxy,
+  client config, git role, privacy). Verified: locked append, off-HTTP attribution fallback,
+  explicit-contributor attribution, HTTP boot (uvicorn up, /mcp 406s a plain GET) (PR #53 · ADR-0045).
+
 ## 2026-08-14
 - **`docs/related-work.md`** — verified prior-art map + honest novelty positioning. A multi-agent
   literature/GitHub sweep followed by a VERIFICATION pass (each source fetched from an independent

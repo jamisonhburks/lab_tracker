@@ -25,6 +25,7 @@ from pathlib import Path
 
 import kg_memory as kg
 import kg_writer
+import store_lock
 
 ROOT = Path(__file__).parent
 MISC_LOG = ROOT / "memory" / "misc_findings.jsonl"
@@ -103,10 +104,10 @@ def match_misc(subject: str, object: str, claim: str = "") -> dict:
 # --------------------------------------------------------------------------- #
 def log_misc(claim: str, subject: str = "", object: str = "", method: str = "",
              data: str = "", effect_size=None, p_value=None, sample_size=None,
-             source: str = "", rigor_verdict=None) -> str:
+             source: str = "", rigor_verdict=None, contributor=None) -> str:
     """Log one miscellaneous (un-hypothesized) finding — rigor-gated, then matched against the
     lab KG. Not consensus: it lives in the exploratory pool until it matches or is grouped +
-    formalized."""
+    formalized. `contributor` is the per-request caller identity (shared HTTP deployment)."""
     s_norm = kg.normalize_entity(subject) if subject else None
     o_norm = kg.normalize_entity(object) if object else None
     subj = s_norm["name"] if s_norm else subject.strip()
@@ -116,7 +117,8 @@ def log_misc(claim: str, subject: str = "", object: str = "", method: str = "",
     rigor = _rigor(claim, method, has_ev, supplied=rigor_verdict)
     match = match_misc(subj, obj, claim) if (subj and obj) else {"verdict": "unmatchable"}
 
-    entry = {"ts": datetime.now().isoformat(timespec="seconds"), "contributor": _contributor(),
+    entry = {"ts": datetime.now().isoformat(timespec="seconds"),
+             "contributor": contributor or _contributor(),
              "claim": claim.strip(), "subject": subj, "object": obj, "method": method.strip(),
              "data": data.strip(), "effect_size": effect_size, "p_value": p_value,
              "sample_size": sample_size, "source": source.strip(),
@@ -124,9 +126,7 @@ def log_misc(claim: str, subject: str = "", object: str = "", method: str = "",
              "match": match["verdict"]}
     if rigor["verdict"] == "reject":
         return f"misc finding REJECTED (not logged): {rigor['reason']}"
-    MISC_LOG.parent.mkdir(parents=True, exist_ok=True)
-    with MISC_LOG.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(entry) + "\n")
+    store_lock.append_jsonl(MISC_LOG, entry)               # locked append (shared-safe)
     out = [f"logged misc finding [{rigor['verdict']} by {rigor['by']}]: {claim[:80]}"]
     if rigor["verdict"] == "flag":
         out.append(f"  ⚠ rigor: {rigor['reason']}")
