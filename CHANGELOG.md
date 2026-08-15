@@ -4,6 +4,22 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **The belief lifecycle** (`beliefs.py`, ADR-0053) — makes `confidence.py`'s stateless scorer
+  into LIVING STATE so the substrate reads as a lab brain with updating knowledge. (1) belief is
+  PERSISTED per edge (projected from accumulated `kg_writer` evidence + KG grounding — the same
+  projection `query_curated_findings` shows); (2) every corroborating contribution RE-SCORES the
+  edge and records the DELTA (`0.95 → 0.97, +0.02`), hooked into `contribute()`'s auto-merge;
+  (3) an append-only belief TRAJECTORY (`memory/belief_log.jsonl`) — both the "updating knowledge"
+  trail and the provenance of the confidence itself; (4) a CONTRADICTION LEDGER
+  (`memory/contradictions.jsonl`) — a claim that OPPOSES an established belief (refutes a supported
+  edge / supports a refuted one) is kept as a first-class, thinker-resolvable conflict instead of
+  being silently gated away; corroborating evidence held for review opens no conflict. No new
+  epistemics (reuses the scorer), event-sourced + `store_lock`-guarded (contribution-log ethos),
+  substrate-records-thinker-judges (ADR-0040). MCP shared tools `belief`, `belief_history`,
+  `contradictions`, `resolve_contradiction`; `query_curated_findings` gains a live trend arrow.
+  Verified: hermetic self-demo (0.54→0.89→0.95 as sources accrue) + integration test through the
+  real `contribute()` path (auto-merge revision, contradiction on refutation, no spurious conflict
+  on corroboration, clean resolution). Tier 1 of the lab-brain gap review (PR #61).
 - **Design principle — assistant, not twin** (ADR-0052, docs-only) — recorded the decision to
   DECLINE persona/preference memory. The system personalizes to the WORK (entities, pending items,
   WIP, project arc — the warm start / serendipity / research story) but NOT to the PERSON (voice,

@@ -45,6 +45,7 @@ import novelty
 import memory
 import kg_writer
 import confidence
+import beliefs
 import misc_research as misc
 import deep_search as deep
 import contribute as contrib
@@ -133,10 +134,42 @@ if _SHARED:
             g = kg.check_connection(r["subject"], r["object"])
             res = confidence.score_association(kg_writer.to_association(r),
                                                prior=confidence.grounding_prior(g))
+            b = beliefs.current(r["subject"], r["predicate"], r["object"])
+            trend = f" {beliefs._arrow(b['delta'])}{b['delta']:+.2f}" if b and b.get("delta") \
+                is not None else ""      # how belief last moved (the "living" signal)
             out.append(f"{r['subject']} —{r['predicate']}→ {r['object']}  "
-                       f"[{res.status}, conf {res.confidence:.2f}, "
+                       f"[{res.status}, conf {res.confidence:.2f}{trend}, "
                        f"{len(r['evidence'])} evidence, KG:{g}]")
         return "\n".join(out)
+
+    @mcp.tool
+    def belief(subject: str, predicate: str, object: str) -> str:
+        """The lab's CURRENT belief in one consensus edge — confidence, status, and how it LAST
+        MOVED (the delta + who moved it). Belief is live state that updates as evidence accrues,
+        not a static label. Use belief_history for the full trajectory."""
+        return beliefs.render_current(subject, predicate, object)
+
+    @mcp.tool
+    def belief_history(subject: str, predicate: str, object: str) -> str:
+        """The belief TRAJECTORY for an edge — the sequence of evidence that moved the lab's
+        confidence over time (0.48→0.55→0.61 …), each step attributed. This is the provenance
+        of the confidence itself: *why* the lab believes it as strongly as it does."""
+        return beliefs.render_history(subject, predicate, object)
+
+    @mcp.tool
+    def contradictions() -> str:
+        """The open CONTRADICTION LEDGER: consensus edges where a new claim OPPOSES an
+        established belief, kept side-by-side and unresolved. Where the lab's knowledge is
+        genuinely in tension — surfaced, not silently overwritten."""
+        return beliefs.render_conflicts()
+
+    @mcp.tool
+    def resolve_contradiction(conflict_id: str, resolution: str, rationale: str = "") -> str:
+        """Adjudicate an open contradiction (see contradictions()). `resolution`: upheld
+        (established belief stands) | overturned (the incoming claim wins) | contested (both
+        genuinely stand — the edge is disputed). YOU, the thinker, judge; the substrate only
+        records the tension and your verdict (append-only, attributed)."""
+        return beliefs.resolve_conflict(conflict_id, resolution, by=_caller() or "", rationale=rationale)
 
     @mcp.tool
     def propose_experiment(entity_a: str, entity_c: str, hypothesis: str = "") -> str:

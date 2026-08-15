@@ -35,6 +35,7 @@ from pathlib import Path
 import kg_memory as kg
 import kg_writer
 import confidence
+import beliefs
 import critic
 import store_lock
 
@@ -136,22 +137,41 @@ def contribute(subject: str, predicate: str, object: str, source: str = "",
              "critic": verdict.get("verdict"), "critic_by": critic_by, "status": status}
     store_lock.append_jsonl(CONTRIB_LOG, entry)            # locked append (shared-safe)
 
+    belief_change = conflict = None
     if status == "auto_merged":                            # merge into consensus + aggregate
+        prev = beliefs.snapshot(subj, predicate, obj)      # belief BEFORE this evidence lands
         kg_writer.add_association(
             subj, predicate, obj, source=source, direction=direction,
             sample_size=sample_size, effect_size=effect_size, p_value=p_value,
             risk_of_bias=risk_of_bias,
             subject_id=s_norm["id"] if s_norm else None,
             object_id=o_norm["id"] if o_norm else None)
+        belief_change = beliefs.revise(                    # re-score the edge + record the delta
+            subj, predicate, obj, prev=prev,
+            trigger={"contributor": who, "source": source, "kind": source_kind,
+                     "contribution_status": status})
+    elif status == "pending_review" and cur is not None:   # a claim that OPPOSES an established
+        conflict = beliefs.register_contradiction(         # belief → first-class ledger entry
+            subj, predicate, obj, incoming_direction=direction, current_status=cur,
+            incoming={"contributor": who, "source": source, "effect_size": effect_size,
+                      "p_value": p_value, "sample_size": sample_size})
 
     msg = (f"contribution by {who}: {subj} —{predicate}→ {obj}  "
            f"[{status}, critic={verdict.get('verdict')} by {critic_by}]")
     if status == "pending_review":
         msg += "\n  novel/contradictory → held for peer review (shared WIP, not yet consensus)"
+        if conflict is not None:
+            msg += (f"\n  ⚠ contradicts an established belief → conflict {conflict['id']} opened "
+                    "in the ledger (resolve_conflict to adjudicate)")
     elif status == "rejected":
         msg += f"\n  rejected: {str(verdict.get('reason', ''))[:90]}"
     elif status == "auto_merged":
-        msg += "\n  corroborates a supported edge → merged into consensus; confidence updated"
+        note = "confidence updated"
+        if belief_change is not None and belief_change.get("delta") is not None:
+            note = (f"belief {belief_change['prev_confidence']:.2f} → "
+                    f"{belief_change['confidence']:.2f} "
+                    f"({belief_change['delta']:+.2f}, {belief_change['status']})")
+        msg += f"\n  corroborates a supported edge → merged into consensus; {note}"
     return msg
 
 
