@@ -99,6 +99,17 @@ def briefing(contributor=None, mark: bool = True) -> str:
     if not (new_consensus or touch_mine):
         out.append("    (quiet since you were last here)")
 
+    # 2b) what's new on people/projects you follow (subscriptions; preview, doesn't mark seen)
+    follow = []
+    try:
+        import subscriptions
+        follow = subscriptions.briefing_lines(contributor, mark=False)
+    except Exception:
+        pass
+    if follow:
+        out.append("\n• What's new on people/projects you follow:")
+        out += follow
+
     # 3) waiting on you (fast: no network)
     pending = [c for c in contribs if c.get("status") == "pending_review"]
     stale_n = 0
@@ -146,6 +157,8 @@ def briefing(contributor=None, mark: bool = True) -> str:
         step = "formalize your ad-hoc session (formalize_retroactively) — or log it as misc."
     elif touch_mine:
         step = f"take a look — a colleague just added {_edge(touch_mine[0])} on one of your entities."
+    elif follow:
+        step = "open your following digest (subscription_digest) — updates on people/projects you track."
     elif stale_n:
         step = "refresh a stale search topic (stale_topics / refresh_stale.py)."
     elif nudges:
