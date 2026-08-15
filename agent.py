@@ -986,6 +986,11 @@ if __name__ == "__main__":
         # this session — no ~20s reload per run. Same for the Ollama model.
         print("Warming up the knowledge graph (loaded once, reused across questions)...")
         kg._graph()
+        import briefing                          # warm start — reads the PREVIOUS session + the lab
+        try:
+            print("\n" + briefing.briefing())
+        except Exception as err:
+            print(f"[briefing unavailable: {err}]")
         import session_journal
         journal = session_journal.SessionJournal()
         journal.start(interval=int(os.environ.get("JOURNAL_INTERVAL", "3600")))   # hourly
