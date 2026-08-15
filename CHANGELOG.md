@@ -4,6 +4,14 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Research story** (`research_story.py`) — an HONEST narrative of a project's arc, NOT a highlight
+  reel. Per step it weaves what went well + the evaluator's verdict with CAVEATS (failed validity
+  gates, weak/novel grounding, already-published core, min_runs, SYNTHETIC-vs-real data, and the
+  evaluator's own limitation sentences) and concrete ways to SOLIDIFY (power up, replicate, confirm
+  on real data, widen the panel, get independent corroboration), closing on the arc's WEAKEST link.
+  MCP shared `research_story(campaign)` + CLI. Verified on the real T2D–AD arc: H001 flagged
+  synthetic-data (→ confirm on real data), H002 flagged its data_scale anomaly + "underpowered" +
+  "binding limitation is power" and named the weakest link. Shared MCP = 26 tools (PR #59 · ADR-0051).
 - **Serendipity nudges** (`serendipity.py`) — surprising, RELEVANT connections you didn't go
   looking for, deduped per user so they delight not spam. Types: CLUSTER (your finding shares an
   entity with a colleague's), RESURFACING (your entity gained a new neighbor in someone's edge),
