@@ -225,6 +225,18 @@ if _SHARED:
         return lp.render(member=member or None)
 
     @mcp.tool
+    def coverage_map(member: str = "", deep: bool = False) -> str:
+        """The knowledge-gap / COVERAGE MAP at the method-capability grain (modality × task ×
+        learning-paradigm), disease-agnostic. Diffs the lab's SCOPE against what its publications
+        COVERED, then classifies each gap: OPEN FRONTIER (no established method → candidate
+        contribution) vs ADOPTABLE (a method exists in the ML KG/literature — go use it), plus
+        DEEPEN (covered cells missing an in-scope paradigm) and a META note on KG sparsity. KG-only
+        + offline by default; `deep=True` adds a best-effort PubMed check per gap. Pass `member`
+        for a researcher's view. Read lab_profile first for the in-context grounding."""
+        import coverage
+        return coverage.render(member=member or None, deep=deep)
+
+    @mcp.tool
     def check_dead_ends(subject: str, object: str = "", approach: str = "") -> str:
         """BEFORE committing to a line of work: has it already been tried and RULED OUT? Checks the
         lab's negative-knowledge store — refuted links, abandoned hypotheses, overturned beliefs,

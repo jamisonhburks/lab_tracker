@@ -4,6 +4,21 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-15
+- **Coverage / knowledge-gap map** (`coverage.py`, ADR-0058) — the capstone of the coverage work:
+  `scope − covered` over the ML methods KG at the method-capability grain (modality × task ×
+  learning-paradigm), disease-agnostic. Each gap cell is classified OPEN FRONTIER (no established
+  method → candidate contribution — the class this lab cares about) vs ADOPTABLE (a method exists
+  in the ML KG / literature — go use it), plus DEEPEN (covered cells missing an in-scope paradigm)
+  and a META note on how much of the lab's own axes the KG even resolves (if low, "frontier" partly
+  means "not in OUR KG" → distill literature in). Two honesty safeguards: concept-form resolution
+  (not token overlap — fixed `OCT-longitudinal` wrongly matching `longitudinal EHR`), and a
+  CONSERVATIVE clinical→ML task crosswalk (trajectory-simulation / disentanglement are deliberately
+  NOT aliased — they stay frontier rather than being mislabelled adoptable). Offline-first (KG
+  traversal); `deep=True` adds a best-effort PubMed pass that degrades to "literature unchecked"
+  rather than over-claiming. Substrate-side/LLM-free; the thinker consumes lab_profile() context to
+  prioritise. Shared MCP tool `coverage_map(member, deep)`. Pairs with the dead-end store (ADR-0056):
+  dead ends mark closed avenues, coverage marks unopened ones. Verified hermetically (adoptable vs
+  frontier split correct; KG resolution reported) (PR #66).
 - **Modular lab/researcher prior-work profile** (`lab_profile.py` + `profiles/<id>.yaml`, ADR-0057)
   — the baseline that makes a coverage/knowledge-gap map meaningful for a SPECIFIC lab. Reframes the
   gap grain from biomedical entity-pairs to the **method-capability level: (modality × task ×

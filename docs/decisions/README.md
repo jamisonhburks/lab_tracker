@@ -69,3 +69,4 @@ New substantive changes should add an ADR alongside their PR.
 | [0055](0055-project-subscriptions.md) | Follow members and projects — a change digest since you last looked | 2026-08-15 | Accepted | #63 |
 | [0056](0056-negative-knowledge-deadends.md) | Negative-knowledge store — remember dead ends, check them at intake | 2026-08-15 | Accepted | #64 |
 | [0057](0057-lab-profile.md) | Modular lab/researcher prior-work profile — coverage relative to a real frontier | 2026-08-15 | Accepted | #65 |
+| [0058](0058-coverage-map.md) | Coverage map — scope − covered, adoptable vs open frontier | 2026-08-15 | Accepted | #66 |
