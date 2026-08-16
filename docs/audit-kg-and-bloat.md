@@ -26,11 +26,24 @@ serendipity_seen / briefing_seen           ← ALL MISSING (never created)
 Findings are grouped: **A** = how a claim earns confidence, **B** = how literature gets in,
 **C** = bloat/structural. Each carries an effort tag (S ≤ half-day · M ≈ 1–3 days · L ≈ week+).
 
+## Status — updated 2026-08-16 (PR #71)
+
+**Shipped:** B1, B4, A7, A1, A2, A5 — the confidence/ingestion correctness core — plus the first
+automated tests toward C2 (55 hermetic). Marked ✅ on each item below.
+
+**Deferred by design:** A3/A4 (CI/effect/power) wait on **B2** full-text — without it those fields
+stay null. A6 (calibration recalibration loop) is self-contained but won't fire until ≥8 adjudicated
+outcomes exist. B3, B5–B7 and C1/C3–C5 remain open.
+
+**Also shipped alongside** (beyond this audit's scope): the ignition S-tier and a full per-hypothesis
+active-work loop (`worklog.py` — run ledger, status dashboard, evidence bridge, sanity-check,
+pre-registration guardrail, decision log). See `docs/ignition-spec.md` and `CHANGELOG.md`.
+
 ---
 
 ## A · Edge confidence — how a claim earns its number
 
-### A1 · Source independence is ignored in the confidence *number* (only gates graduation) — **M**
+### A1 · Source independence is ignored in the confidence *number* (only gates graduation) — **M** · ✅ SHIPPED (PR #71)
 **Verified:** `score_association` sums `e.informativeness()` over supporting/refuting evidence
 with no author/lab/dataset de-duplication (`confidence.py:90–92`). The independence machinery
 (`independent_count`, last-author grouping) exists but is called **only** at the graduation gate
@@ -46,7 +59,7 @@ additional same-group study (e.g. contribution `= informativeness · 1/√(rank_
 capped per-group total). The last-author data is already fetchable via
 `deep_search._resolve_meta`. Depends on A7 to have the field populated.
 
-### A2 · Confidence is an ad-hoc sigmoid with no uncertainty band — **M**
+### A2 · Confidence is an ad-hoc sigmoid with no uncertainty band — **M** · ✅ SHIPPED (PR #71)
 **Verified:** confidence is `_sigmoid(net)` where `net = support − refute` and
 `_sigmoid(x)=1/(1+e^{-1.2x})` (`confidence.py:44–45, 102–108`), plus a hard-coded 0.45–0.55 pin in
 the under-investigated branch (`confidence.py:99`).
@@ -90,7 +103,7 @@ Two mediocre studies then outrank one excellent study purely on count.
 `sample_size` + `effect_size` via a normal-approx power calc rather than defaulting; (c) lower the
 no-information default for a refuting null below 0.5 so an uninformative null can't quietly refute.
 
-### A5 · The curated KG never feeds its own grounding prior — **M**
+### A5 · The curated KG never feeds its own grounding prior — **M** · ✅ SHIPPED (PR #71)
 **Verified:** the grounding prior comes from `kg.check_connection` over the read-only Hetionet/demo
 index (`contribute.py:97`, `confidence.grounding_prior`), while accumulated evidence lives in a
 *separate* `curated_kg.jsonl`. A claim the lab has corroborated many times still gets prior **0.0**
@@ -118,7 +131,7 @@ contradictions + belief reversals) — see the ignition spec for how to reach it
 it as a post-hoc transform in `score_association`; keep the raw number for audit. Stay diagnostic
 below the floor.
 
-### A7 · `research_group` — the schema's designated independence signal — is never populated — **S**
+### A7 · `research_group` — the schema's designated independence signal — is never populated — **S** · ✅ SHIPPED (PR #71)
 **Verified:** `research_group` appears exactly once in the codebase: the dataclass field
 (`kg_schema.py:131`). Nothing writes it. Independence is instead reconstructed post-hoc by
 re-fetching last-authors at gate time, which needs the network and only works for `PMID:` sources.
@@ -131,7 +144,7 @@ rather than a network round-trip at the gate.
 
 ## B · Literature ingestion — robustness of the paper → edge path
 
-### B1 · The distillation path skips entity normalization → the graph fragments — **S**
+### B1 · The distillation path skips entity normalization → the graph fragments — **S** · ✅ SHIPPED (PR #71)
 **Verified:** `record_distillation` (the thinker-facing ingestion path) writes **raw strings** with
 no `normalize_entity` and no canonical ids (`deep_search.py:166–170`), while `curate_literature`
 *does* normalize (`agent.py:166`). Dedup then falls back to `subject.strip().lower()`
@@ -166,7 +179,7 @@ ever seen. The gate protects *consensus*, but the evidence layer is unguarded.
 **Fix:** either run a lightweight structural+source check inline before writing, or mark edges
 `unverified` until criticized and have `query_curated_kg` label/segregate them.
 
-### B4 · `rigor_verdict="accept"` bypasses even the junk filter — **S**
+### B4 · `rigor_verdict="accept"` bypasses even the junk filter — **S** · ✅ SHIPPED (PR #71)
 **Verified:** `if rigor_verdict != "accept" and not _ok(a): skip` (`deep_search.py:163`) — an
 `accept` verdict skips `_ok`, which is the only guard against bare accessions / malformed triples.
 
