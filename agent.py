@@ -1033,6 +1033,15 @@ if __name__ == "__main__":
                     except Exception as err:
                         print(f"[status failed: {err}]")
                     continue
+                if question.split(" ", 1)[0].lower() in (":onboard", "/onboard"):   # onboarding checklist
+                    try:
+                        import onboarding
+                        print(onboarding.render())
+                    except Exception as err:
+                        print(f"[onboard failed: {err}]")
+                    print("(a guided intake runs when you ask your assistant to 'onboard me' — "
+                          "see lab-standard/onboarding.md)")
+                    continue
                 journal.note(f"query: {question}", kind="query")
                 findings = run_agent(question)
                 for f in (findings or []):

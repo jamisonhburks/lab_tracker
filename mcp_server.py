@@ -222,6 +222,13 @@ if _SHARED:
                                      paradigms=paradigms, ref=ref, by=_caller())
 
     @mcp.tool
+    def add_member(name: str) -> str:
+        """Add a member to the lab roster (profiles/<lab>.yaml). Onboarding's first step — makes a
+        colleague discoverable/followable before they've contributed anything. Idempotent."""
+        import lab_profile as lp
+        return lp.add_member(name)
+
+    @mcp.tool
     def covered_capabilities(member: str = "") -> str:
         """A structured summary of what the lab has covered vs the scope it works in — the baseline
         the coverage map subtracts to find gaps (modality×task pairs and full cells)."""
@@ -620,6 +627,15 @@ if _PERSONAL:
         import contribute as contrib
         return contrib.contribute_result(hypothesis, subject, predicate, object,
                                          direction=direction, contributor=_caller())
+
+    @mcp.tool
+    def onboarding_status() -> str:
+        """What's already set up for YOU vs still missing (roster, papers, follows, pre-warmed
+        topics), with the single next step. Call this FIRST when onboarding a member so you ask
+        only for what's missing — never re-interrogate — and so onboarding can finish across
+        sessions. The intake itself is in lab-standard/onboarding.md: run it LIGHTLY."""
+        import onboarding
+        return onboarding.render(_caller())
 
     @mcp.tool
     def warm_start() -> str:

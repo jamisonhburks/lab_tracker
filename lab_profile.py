@@ -129,6 +129,31 @@ def roster(profile_id: str = None) -> list:
     return [str(m).strip() for m in (d.get("members") or []) if str(m).strip()]
 
 
+def add_member(name: str, profile_id: str = None) -> str:
+    """Add a member to the lab roster (profiles/<id>.yaml `members:`). Idempotent. Edits the
+    flow-style `members: [...]` line in place (preserving the file's comments); if there's no such
+    line, appends one. The onboarding intake's first, one-tool step."""
+    import re
+    name = (name or "").strip()
+    pid = profile_id or _default_id()
+    f = PROFILES / f"{pid}.yaml"
+    if not name:
+        return "no member name given."
+    if not f.exists():
+        return f"no profile '{pid}' (profiles/{pid}.yaml) to add a member to."
+    if name in roster(pid):
+        return f"{name} is already on the {pid} roster."
+    text = f.read_text(encoding="utf-8")
+    m = re.search(r"(?m)^members:[ \t]*\[(.*?)\][ \t]*$", text)
+    if m:
+        inner = m.group(1).strip()
+        text = text[:m.start(1)] + (f"{inner}, {name}" if inner else name) + text[m.end(1):]
+    else:
+        text = text.rstrip("\n") + f"\nmembers: [{name}]\n"
+    f.write_text(text, encoding="utf-8")
+    return f"added {name} to the {pid} roster."
+
+
 def _pub_path(pid: str) -> Path:
     return PROFILES / f"{pid}.publications.jsonl"
 

@@ -11,6 +11,10 @@ session — and the shared lab — can pick up.
 Route by intent, then follow the playbook. **Do not start scaffolding from memory —
 read the playbook file first; it is the source of truth.**
 
+- **"I'm new here / help me get set up / onboard me"**
+  → read [`lab-standard/onboarding.md`](lab-standard/onboarding.md) and run the intake — **lightly**
+    (call `onboarding_status` first; one short question at a time; never overwhelm the member).
+
 - **"I'm making a new project about ___"**
   → read [`lab-standard/new-project.md`](lab-standard/new-project.md) and execute it.
 
