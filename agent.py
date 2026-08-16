@@ -1,4 +1,4 @@
-"""A toy research agent running fully locally on a Qwen3-14B model via Ollama.
+"""lab_tracker — a research agent running fully locally on a Qwen3-14B model via Ollama.
 
 The agent loop is model-agnostic: call the model -> if it asked for a tool, run
 the tool and feed the result back -> repeat until it stops asking for tools.
