@@ -152,30 +152,62 @@ def _ok(a: dict) -> bool:
     return bool(s and p and o and a.get("source")) and not (_JUNK.match(s) or _JUNK.match(o))
 
 
+def _normalize(name: str):
+    """Resolve a surface form to a canonical KG node {id, name, ...}, or None on a miss.
+
+    Lazy import so this module stays importable without the (heavy) grounding-KG deps, and so a
+    missing/absent KG degrades to 'keep the raw string' (closed-world) instead of crashing.
+    """
+    try:
+        import kg_memory
+        return kg_memory.normalize_entity(name)
+    except Exception:
+        return None
+
+
 def record_distillation(topic: str, associations: list, pmids=None,
                         contributor=None, rigor_verdict=None) -> str:
     """Write the thinker's distilled associations into the PRIMARY KG (kg_writer) with provenance,
-    and CACHE the topic so future queries corroborate instead of re-searching. Each association
-    needs subject/predicate/object + a source (PMID); malformed ones are skipped. This is the
-    literature-evidence layer (queryable immediately), not the gated consensus tier."""
-    added, skipped = 0, 0
-    for a in associations or []:
-        if rigor_verdict != "accept" and not _ok(a):
+    and CACHE the topic so future queries corroborate instead of re-searching.
+
+    Entities are NORMALIZED to canonical KG nodes (like curate_literature) so surface variants
+    ('T2DM' vs 'type 2 diabetes') merge into ONE edge instead of fragmenting the evidence. Each
+    source's last-author is resolved once and stored as the edge's independence signal
+    (research_group). `rigor_verdict` may only TIGHTEN filtering — 'reject' drops the batch — it can
+    no longer bypass the structural junk guard (_ok). Literature-evidence layer (queryable
+    immediately), not the gated consensus tier."""
+    assocs = associations or []
+    meta = _resolve_meta(_pmids([a.get("source", "") for a in assocs]))   # last-author per PMID (cached)
+    added, skipped, normed = 0, 0, 0
+    for a in assocs:
+        if rigor_verdict == "reject" or not _ok(a):   # thinker veto OR malformed → skip ('accept' no longer bypasses _ok)
             skipped += 1
             continue
+        subj_raw, obj_raw = a["subject"].strip(), a["object"].strip()
+        s_norm, o_norm = _normalize(subj_raw), _normalize(obj_raw)
+        normed += bool(s_norm) + bool(o_norm)
+        src = str(a.get("source", ""))
+        pm = _pmids([src])
+        rgroup = ((meta.get(pm[0]) or {}).get("last_author") or None) if pm else None
         kg_writer.add_association(
-            a["subject"].strip(), a.get("predicate", "associated_with").strip(), a["object"].strip(),
-            source=str(a.get("source", "")), direction=a.get("direction", "supports"),
+            s_norm["name"] if s_norm else subj_raw,
+            a.get("predicate", "associated_with").strip(),
+            o_norm["name"] if o_norm else obj_raw,
+            source=src, direction=a.get("direction", "supports"),
             sample_size=a.get("sample_size"), effect_size=a.get("effect_size"),
-            p_value=a.get("p_value"), risk_of_bias=a.get("risk_of_bias"))
+            p_value=a.get("p_value"), risk_of_bias=a.get("risk_of_bias"),
+            research_group=rgroup,
+            subject_id=s_norm["id"] if s_norm else None,
+            object_id=o_norm["id"] if o_norm else None)
         added += 1
-    entities = ({a.get("subject", "") for a in (associations or [])} |
-                {a.get("object", "") for a in (associations or [])}) - {""}
-    n_papers = len(set(pmids or [a.get("source") for a in (associations or [])]))
+    entities = ({a.get("subject", "") for a in assocs} |
+                {a.get("object", "") for a in assocs}) - {""}
+    n_papers = len(set(pmids or [a.get("source") for a in assocs]))
     _append_cache(topic, entities, contributor, n_papers, added, pmids)
     return (f"Distilled {added} association(s) into the primary KG from topic {topic!r}"
-            + (f" ({skipped} skipped: malformed/no-source)" if skipped else "")
-            + f". Cached — future queries on this topic corroborate against the KG "
+            + (f", {normed} entities normalized to KG nodes" if normed else "")
+            + (f" ({skipped} skipped: malformed/no-source/vetoed)" if skipped else "")
+            + ". Cached — future queries on this topic corroborate against the KG "
             "(no repeat online search needed).")
 
 

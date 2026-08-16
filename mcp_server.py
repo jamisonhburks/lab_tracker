@@ -579,6 +579,14 @@ if _PERSONAL:
         return subscriptions.unsubscribe(_caller(), target)
 
     @mcp.tool
+    def list_members() -> str:
+        """The lab ROSTER — who you can follow. Drawn from the lab profile's `members:` plus anyone
+        with attributed work, so colleagues are discoverable on day 1 (before they've contributed).
+        Then follow('member:<name>') to get their changes in your digest + warm start."""
+        import subscriptions
+        return subscriptions.list_members(_caller())
+
+    @mcp.tool
     def my_subscriptions() -> str:
         """The members and projects you currently follow."""
         import subscriptions

@@ -117,8 +117,11 @@ def _fetch_articles(query: str, n: int) -> list:
         pmid = art.findtext(".//PMID")
         title = art.findtext(".//ArticleTitle") or ""
         abstract = " ".join(t.text or "" for t in art.findall(".//AbstractText")).strip()
+        authors = art.findall(".//AuthorList/Author")               # last-author = independence signal
+        last_author = (authors[-1].findtext("LastName") if authors else None) or None
         if pmid and abstract:
-            articles.append({"pmid": pmid, "title": title, "abstract": abstract})
+            articles.append({"pmid": pmid, "title": title, "abstract": abstract,
+                             "last_author": last_author})
     return articles
 
 
@@ -172,6 +175,7 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
                 direction=a.get("direction", "supports"),
                 sample_size=a.get("sample_size"), effect_size=a.get("effect_size"),
                 p_value=a.get("p_value"), risk_of_bias=a.get("risk_of_bias"),
+                research_group=paper.get("last_author"),
                 subject_id=s_norm["id"] if s_norm else None,
                 object_id=o_norm["id"] if o_norm else None)
             n_assoc += 1
@@ -994,7 +998,8 @@ if __name__ == "__main__":
         import session_journal
         journal = session_journal.SessionJournal()
         journal.start(interval=int(os.environ.get("JOURNAL_INTERVAL", "3600")))   # hourly
-        print(f"Ready. Ask a research question — empty line or 'quit' to exit.\n"
+        print(f"Ready. Ask a research question — or ':jot <hunch>' to capture a quick finding; "
+              f"empty line or 'quit' to exit.\n"
               f"(session journal: {journal.notes} — checkpoints hourly)")
         try:
             while True:
@@ -1004,6 +1009,19 @@ if __name__ == "__main__":
                     break
                 if not question or question.lower() in ("quit", "exit"):
                     break
+                if question.split(" ", 1)[0].lower() in (":jot", "/jot"):   # 10-second quick capture
+                    parts = question.split(None, 1)
+                    note = parts[1].strip() if len(parts) > 1 else ""
+                    if not note:
+                        print("usage: :jot <a quick finding or hunch to capture>")
+                        continue
+                    try:
+                        import misc_research
+                        print(misc_research.log_misc(note))
+                    except Exception as err:
+                        print(f"[jot failed: {err}]")
+                    journal.note(note, kind="misc")
+                    continue
                 journal.note(f"query: {question}", kind="query")
                 findings = run_agent(question)
                 for f in (findings or []):

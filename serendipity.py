@@ -138,18 +138,51 @@ def _bridge_nudges(who, my_ents):
     return out
 
 
+def _cold_start_nudges(who):
+    """For a user with no history yet: surface what's in flight (active hypotheses) + one open
+    frontier cell, so day 1 delights instead of showing nothing. Cheap (hypothesis + profile reads)."""
+    import re
+    out = []
+    for f in (sorted(HYP.glob("*.y*ml")) if HYP.exists() else [])[:3]:
+        title, hid = "", f.stem.split("_")[0]
+        try:
+            for line in f.read_text(encoding="utf-8").splitlines():
+                m = re.match(r"\s*title\s*:\s*(.+)", line)
+                if m:
+                    title = m.group(1).strip().strip('"\''); break
+        except Exception:
+            pass
+        out.append((f"active:{f.stem}",
+                    f"In flight — hypothesis {hid}" + (f': "{title[:56]}"' if title else "")
+                    + ". See what the lab's working on. (list_active_work)"))
+    try:                                          # one open-frontier cell as a latent nudge
+        import lab_profile
+        sc, cov = lab_profile.scope(), lab_profile.covered()
+        covered_pairs = set(cov.get("pairs", []))
+        for m, t in [(m, t) for m in sc["modalities"] for t in sc["tasks"]
+                     if (m, t) not in covered_pairs][:1]:
+            out.append((f"frontier:{m}:{t}",
+                        f"Open frontier — the lab works on {m} and {t} but hasn't joined them. "
+                        "An unopened cell worth a look. (coverage_map)"))
+    except Exception:
+        pass
+    return out
+
+
 def nudges(contributor=None, max_nudges: int = 3, deep: bool = False, mark: bool = True) -> list:
     """Up to `max_nudges` fresh serendipity nudges for a researcher (deduped vs already-shown).
-    `deep=True` adds KG-bridge nudges (traverses the graph). Returns a list of one-line strings."""
+    `deep=True` adds KG-bridge nudges (traverses the graph). A brand-new user with no history yet
+    is seeded from active work + the lab frontier, so day 1 isn't blank. One-line strings."""
     who = _who(contributor)
     my_ents = _my_entities(who)
     if not my_ents:
-        return []
+        cands = _cold_start_nudges(who)
+    else:
+        cands = (_cluster_nudges(who, my_ents) + _resurfacing_nudges(who, my_ents)
+                 + _collaborator_nudges(who, my_ents))
+        if deep:
+            cands += _bridge_nudges(who, my_ents)
     seen = _seen(who)
-    cands = (_cluster_nudges(who, my_ents) + _resurfacing_nudges(who, my_ents)
-             + _collaborator_nudges(who, my_ents))
-    if deep:
-        cands += _bridge_nudges(who, my_ents)
     picked, out, keys = set(), [], []
     for k, t in cands:
         if k in seen or k in picked:

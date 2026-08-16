@@ -13,6 +13,13 @@ hypothesis. A link that only *looks* negative because the negatives were poorly
 powered is flagged `promising_but_poorly_tested` with a re-test recommendation —
 not buried as `refuted`. (Absence of evidence != evidence of absence.)
 
+Independence weighting: studies sharing a `research_group` (last author) are correlated,
+so evidence is grouped and only the strongest in each group counts fully — each additional
+same-group study adds a diminishing `1/sqrt(rank)`. Studies with no known group are treated
+as independent (we don't assume correlation), so three papers from one lab move belief less
+than three papers from three labs. This is inert until `research_group` is populated, then it
+engages automatically.
+
 Heuristic and interpretable, not a calibrated probability — true calibration
 would need a labeled outcome set. Thresholds below are tunable.
 """
@@ -80,6 +87,26 @@ _EXPLAIN = {
 }
 
 
+def _weighted_mass(evidence: list) -> float:
+    """Independence-weighted sum of study informativeness.
+
+    Studies sharing a `research_group` are correlated: within a group the strongest counts fully
+    and each additional same-group study contributes a diminishing `1/sqrt(rank)`, so N papers
+    from one lab don't count as N independent corroborations. Evidence with no known group is
+    treated as its OWN group (we don't assume unknown sources are correlated) — so this equals a
+    plain sum until the independence signal is populated, then it discounts automatically.
+    """
+    groups: dict = {}
+    for i, e in enumerate(evidence):
+        key = e.research_group or f"__indep_{i}"      # unknown group => independent (own group)
+        groups.setdefault(key, []).append(e.informativeness())
+    total = 0.0
+    for infs in groups.values():
+        for rank, inf in enumerate(sorted(infs, reverse=True), start=1):
+            total += inf / math.sqrt(rank)
+    return total
+
+
 def score_association(assoc: Association, prior: float = 0.0) -> ConfidenceResult:
     """Aggregate evidence into a confidence + status. `prior` is an optional
     structural belief (e.g. the KG realism score) that a mechanism plausibly exists."""
@@ -87,9 +114,9 @@ def score_association(assoc: Association, prior: float = 0.0) -> ConfidenceResul
         return ConfidenceResult(1.0, "definitional", 1.0, 0.0, 1.0, False,
                                 _EXPLAIN["definitional"])
 
-    support = prior + sum(e.informativeness() for e in assoc.supporting())
-    refute = sum(e.informativeness() for e in assoc.refuting())   # underpowered ~ 0
-    investigation = sum(e.informativeness() for e in assoc.evidence)
+    support = prior + _weighted_mass(assoc.supporting())
+    refute = _weighted_mass(assoc.refuting())     # underpowered ~ 0; same-group correlated ~ discounted
+    investigation = _weighted_mass(assoc.evidence)
     net = support - refute
 
     if investigation < INVEST_FLOOR:

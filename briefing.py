@@ -57,6 +57,32 @@ def _edge(c):
     return f"{c.get('subject','?')} —{c.get('predicate','?')}→ {c.get('object','?')}"
 
 
+def _cold_start_lines():
+    """Orient a brand-new user from the lab profile when they have no personal history yet — so the
+    warm start shows the lab's focus + open frontier instead of a blank 'clear runway'. Fast:
+    profile file reads only, no network. Returns (lines, suggested_step)."""
+    try:
+        import lab_profile
+        d = lab_profile.load()
+        if not d:
+            return [], None
+        sc, cov = lab_profile.scope(), lab_profile.covered()
+        covered_pairs = set(cov.get("pairs", []))
+        gaps = [(m, t) for m in sc["modalities"] for t in sc["tasks"]
+                if (m, t) not in covered_pairs][:3]
+        focus = str(d.get("focus", "")).strip().split("\n")[0][:140]
+        lines = ["\n• Getting started — the lab works on: " + focus if focus
+                 else "\n• Getting started:"]
+        if gaps:
+            lines.append("    open frontier (in scope, not yet covered): "
+                         + ", ".join(f"{m}×{t}" for m, t in gaps))
+        step = (f"explore an open cell — assess_idea on {gaps[0][0]}×{gaps[0][1]}, or coverage_map "
+                "for the full agenda." if gaps else "browse coverage_map to see the lab's frontier.")
+        return lines, step
+    except Exception:
+        return [], None
+
+
 def briefing(contributor=None, mark: bool = True) -> str:
     who = _who(contributor)
     now = datetime.now().isoformat(timespec="seconds")
@@ -148,6 +174,12 @@ def briefing(contributor=None, mark: bool = True) -> str:
         out.append("\n✨ Serendipity:")
         out += [f"    {n}" for n in nudges]
 
+    # 3c) cold start — a brand-new user (no history): orient from the lab profile, never blank
+    cold_step = None
+    if not (sess or my_ents or new_consensus or touch_mine or pending or follow or nudges):
+        cold_lines, cold_step = _cold_start_lines()
+        out += cold_lines
+
     # 4) one suggested next step
     if pending:
         step = f"review the {len(pending)} pending contribution(s) — review_queue()."
@@ -164,7 +196,8 @@ def briefing(contributor=None, mark: bool = True) -> str:
     elif nudges:
         step = "chase a ✨ serendipity nudge above — those connections found you."
     else:
-        step = "pick something fun — assess_idea on a new angle, or browse group_misc_findings for a latent theme."
+        step = cold_step or ("pick something fun — assess_idea on a new angle, or browse "
+                             "group_misc_findings for a latent theme.")
     out.append(f"\n→ Suggested next: {step}")
 
     if mark:

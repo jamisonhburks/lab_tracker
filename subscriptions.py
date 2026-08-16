@@ -115,6 +115,41 @@ def list_subscriptions(subscriber) -> str:
     return "You follow:\n" + "\n".join(f"  • {kind}:{val}" for kind, val in subs)
 
 
+def known_members() -> list:
+    """All lab members: the profile ROSTER unioned with anyone who has attributed work or a
+    subscription. The roster is what makes colleagues followable on day 1 (before attribution
+    exists); the union keeps late-joiners and non-roster contributors discoverable too."""
+    names = set()
+    try:
+        import lab_profile
+        names.update(lab_profile.roster())
+    except Exception:
+        pass
+    for r in _jsonl(CONTRIB) + _jsonl(MISC):
+        if r.get("contributor"):
+            names.add(r["contributor"])
+    for e in _jsonl(SUBS):
+        if e.get("subscriber"):
+            names.add(e["subscriber"])
+    return sorted(names)
+
+
+def list_members(subscriber=None) -> str:
+    """The lab roster — who you can follow — marking yourself and anyone you already follow."""
+    who = _who(subscriber)
+    members = known_members()
+    if not members:
+        return ("No lab members known yet — add a `members:` roster to profiles/<lab>.yaml so "
+                "colleagues are followable before they've contributed.")
+    following = {val for kind, val in subscriptions_of(subscriber) if kind == "member"}
+    lines = [f"Lab members ({len(members)}):"]
+    for m in members:
+        tag = "  ← you" if m == who else "  (following)" if m in following else ""
+        lines.append(f"  • {m}{tag}")
+    lines.append("Follow one with follow('member:<name>').")
+    return "\n".join(lines)
+
+
 # --------------------------------------------------------------------------- #
 # The delta: what changed on a followed target since `since`.                  #
 # --------------------------------------------------------------------------- #

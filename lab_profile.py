@@ -121,6 +121,14 @@ def load(profile_id: str = None) -> dict:
         return {}
 
 
+def roster(profile_id: str = None) -> list:
+    """The declared lab members (from profiles/<id>.yaml `members:`). This is the day-1 roster
+    that makes colleagues discoverable/followable BEFORE they've contributed anything — the fix
+    for a cold-start lab where membership can't yet be inferred from attribution."""
+    d = load(profile_id)
+    return [str(m).strip() for m in (d.get("members") or []) if str(m).strip()]
+
+
 def _pub_path(pid: str) -> Path:
     return PROFILES / f"{pid}.publications.jsonl"
 

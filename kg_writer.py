@@ -50,6 +50,7 @@ def add_association(subject: str, predicate: str, object: str, source: str = "",
                     direction: str = "supports", power: float | None = None,
                     sample_size: int | None = None, effect_size: float | None = None,
                     p_value: float | None = None, risk_of_bias: str | None = None,
+                    research_group: str | None = None,
                     subject_id: str | None = None, object_id: str | None = None) -> dict:
     """Record an association, or MERGE evidence into an existing one. Returns it.
 
@@ -61,7 +62,7 @@ def add_association(subject: str, predicate: str, object: str, source: str = "",
            object_id or object.strip().lower())
     ev = {"source": source or None, "direction": direction, "power": power,
           "sample_size": sample_size, "effect_size": effect_size, "p_value": p_value,
-          "risk_of_bias": risk_of_bias}
+          "risk_of_bias": risk_of_bias, "research_group": research_group}
 
     with store_lock.critical(STORE):              # lock the whole load→modify→save (shared-safe)
         records = _load()
@@ -89,7 +90,7 @@ def to_association(record: dict) -> "kg_schema.Association":
         d = e.get("direction", "supports")
         rob = e.get("risk_of_bias")
         evidence.append(kg_schema.Evidence(
-            source=e.get("source"),
+            source=e.get("source"), research_group=e.get("research_group"),
             direction=kg_schema.Direction(d if d in ("supports", "refutes") else "supports"),
             power=e.get("power"), sample_size=e.get("sample_size"),
             effect_size=e.get("effect_size"), p_value=e.get("p_value"),
