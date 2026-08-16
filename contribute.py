@@ -243,6 +243,24 @@ def graduation_candidates(min_sources: int = 3) -> str:
     return "\n".join(out)
 
 
+def contribute_result(hyp: str, subject: str, predicate: str, object: str,
+                      direction=None, contributor=None) -> str:
+    """Bridge a COMPLETED, passing experiment into a gated contribution: pull the aggregate
+    effect/p/n + validity from the hypothesis worklog and route through contribute() as
+    experiment-verified evidence. The thinker supplies the finding's subject/predicate/object (the
+    worklog tracks the numbers, not the semantic triple)."""
+    import worklog
+    hid = worklog._hyp_id(hyp)
+    b = worklog.evidence_bundle(hyp)
+    if not b["ready"]:
+        return f"{hid} not ready to contribute — {b['reason']}."
+    return contribute(subject, predicate, object,
+                      source=f"experiment:{hid}", direction=direction or b["direction"],
+                      source_kind="experiment", effect_size=b.get("effect_size"),
+                      p_value=b.get("p_value"), sample_size=b.get("sample_size"),
+                      contributor=contributor)
+
+
 def graduate(subject: str, predicate: str, object: str, critic_verdict=None,
              contributor=None) -> str:
     """Graduate a well-corroborated distilled edge from the literature-EVIDENCE layer into GATED

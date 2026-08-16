@@ -577,6 +577,51 @@ if _PERSONAL:
         return worklog.note(hypothesis, text, contributor=_caller())
 
     @mcp.tool
+    def log_decision(hypothesis: str, decision: str, rationale: str = "") -> str:
+        """Record an analysis DECISION/assumption while you work (dropped a cohort, chose a
+        normalization, fixed a seed policy) — the reproducibility + methods-section trail, captured
+        as you make the call."""
+        import worklog
+        return worklog.log_decision(hypothesis, decision, rationale, contributor=_caller())
+
+    @mcp.tool
+    def preregistration(hypothesis: str) -> str:
+        """The PRE-REGISTERED success_metric/min_runs (snapshotted when runs began) vs the current
+        spec — flags DRIFT (moving the goalposts post-hoc). The anti-p-hacking guardrail."""
+        import worklog
+        p = worklog.preregistration(hypothesis)
+        rec = p["recorded"]
+        if not rec:
+            return (f"No pre-registration snapshot for {worklog._hyp_id(hypothesis)} yet "
+                    "(recorded automatically on the first log_run).")
+        drift = (("\n  ⚠ DRIFT — success_metric changed since runs began:"
+                  f"\n      was: {str(rec.get('success_metric'))[:120]}"
+                  f"\n      now: {str(p['current_success_metric'])[:120]}") if p["drift"]
+                 else "\n  ✓ success_metric unchanged since runs began.")
+        return (f"Pre-registration for {worklog._hyp_id(hypothesis)} "
+                f"(recorded {str(rec.get('recorded', '?'))[:10]}):"
+                f"\n  success_metric: {str(rec.get('success_metric'))[:160]}"
+                f"\n  min_runs: {rec.get('min_runs')}" + drift)
+
+    @mcp.tool
+    def sanity_check(claim: str = "", subject: str = "", object: str = "") -> str:
+        """A fast gut-check on a mid-analysis observation — WITHOUT the full assess_idea ceremony:
+        does the lab's KG/consensus corroborate it, does it hit a known DEAD-END, and is it novel
+        vs the literature. Read-only; for 'is this worth pursuing / did we already try this'."""
+        import misc_research
+        return misc_research.sanity_check(claim, subject, object)
+
+    @mcp.tool
+    def contribute_result(hypothesis: str, subject: str, predicate: str, object: str,
+                          direction: str | None = None) -> str:
+        """Bridge a COMPLETED, passing experiment into a gated contribution: pulls the aggregate
+        effect/p/n + validity from the hypothesis worklog and routes through the critic gate as
+        experiment-verified evidence. You supply the finding's subject/predicate/object."""
+        import contribute as contrib
+        return contrib.contribute_result(hypothesis, subject, predicate, object,
+                                         direction=direction, contributor=_caller())
+
+    @mcp.tool
     def warm_start() -> str:
         """Your WARM START — call it when you open a session: where you left off, what changed in
         the lab since you were last here, what's waiting on you, and one suggested next step.

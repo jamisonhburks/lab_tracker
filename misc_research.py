@@ -80,6 +80,36 @@ def _active_hypotheses(*entities) -> list:
     return sorted(set(hits))
 
 
+def sanity_check(claim: str = "", subject: str = "", object: str = "") -> str:
+    """A fast, mid-analysis gut-check on an observation — WITHOUT the full assess_idea ceremony.
+    Composes three read-only signals: does the lab's KG/consensus corroborate it (match_misc),
+    does it hit a known DEAD-END (a closed avenue — don't re-walk it), and is it novel vs the
+    published literature. For 'is this worth pursuing / did we already try this' moments."""
+    head = (claim.strip() or f"{subject} – {object}".strip(" –")) or "(observation)"
+    lines = [f"Sanity check — {head[:90]}"]
+    if subject and object:
+        try:
+            m = match_misc(subject, object, claim)
+            lines.append(f"  • vs lab knowledge: {m['verdict']}"
+                         + (f" (grounding: {m.get('grounding')})" if m.get("grounding") else ""))
+        except Exception as err:
+            lines.append(f"  • vs lab knowledge: unavailable ({err})")
+    try:
+        import deadends
+        de = deadends.render_check(subject, object, "")
+        lines.append(f"  • dead-ends: {de}" if de else "  • dead-ends: none recorded on this line")
+    except Exception:
+        pass
+    if subject and object:
+        try:
+            import novelty
+            lines.append(f"  • novelty: {novelty.check_novelty(subject, object)}")
+        except Exception:
+            pass
+    lines.append("  (quick check — not a substitute for assess_idea / formal review)")
+    return "\n".join(lines)
+
+
 def match_misc(subject: str, object: str, claim: str = "") -> dict:
     """Match a misc finding against the lab's coherent knowledge — no LLM."""
     if not (subject and object):

@@ -80,6 +80,7 @@ def log_run(hyp: str, metrics: dict = None, seed=None, passed: bool = None,
     entry = {"ts": _now(), "by": _who(contributor), "seed": seed,
              "metrics": metrics or {}, "passed": passed, "valid": valid, "note": (note or "").strip()}
     _exp_dir(hyp).mkdir(parents=True, exist_ok=True)
+    _snapshot_prereg(hyp)                       # freeze the success_metric on the first run (anti-drift)
     store_lock.append_jsonl(_runs_path(hyp), entry)
     n = len(runs(hyp))
     minr = load_hypothesis(hyp).get("min_runs")
@@ -106,6 +107,99 @@ def stability(hyp: str) -> dict:
         sd = (sum((v - mean) ** 2 for v in vals) / n) ** 0.5
         out[k] = {"n": n, "mean": mean, "sd": sd, "min": min(vals), "max": max(vals)}
     return out
+
+
+# --------------------------------------------------------------------------- #
+# Pre-registration guardrail (#5), decision log (#6), evidence bridge (#3).     #
+# --------------------------------------------------------------------------- #
+def _prereg_path(hyp: str) -> Path:
+    return _exp_dir(hyp) / "prereg.json"
+
+
+def _snapshot_prereg(hyp: str) -> None:
+    """Record the pre-registered success_metric/validity/min_runs the FIRST time a run is logged,
+    so a later post-hoc change to the success_metric (moving the goalposts) becomes detectable."""
+    p = _prereg_path(hyp)
+    if p.exists():
+        return
+    spec = load_hypothesis(hyp)
+    if not spec.get("success_metric"):
+        return
+    p.write_text(json.dumps({"recorded": _now(), "success_metric": spec.get("success_metric"),
+                             "null_hypothesis": spec.get("null_hypothesis"),
+                             "min_runs": spec.get("min_runs"),
+                             "validity_gates": spec.get("validity_gates")}, indent=2),
+                 encoding="utf-8")
+
+
+def preregistration(hyp: str) -> dict:
+    """The pre-registered commitments (snapshotted when runs began) vs the CURRENT spec — surfacing
+    DRIFT (a post-hoc change to the success_metric): the anti-p-hacking guardrail."""
+    p = _prereg_path(hyp)
+    recorded = {}
+    if p.exists():
+        try:
+            recorded = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            recorded = {}
+    current = load_hypothesis(hyp).get("success_metric")
+    drift = bool(recorded.get("success_metric") and recorded["success_metric"] != current)
+    return {"recorded": recorded, "current_success_metric": current, "drift": drift}
+
+
+def _decisions_path(hyp: str) -> Path:
+    return _exp_dir(hyp) / "decisions.jsonl"
+
+
+def log_decision(hyp: str, decision: str, rationale: str = "", contributor=None) -> str:
+    """Record an analysis DECISION/assumption (dropped a cohort, chose a normalization, fixed a
+    seed policy) — the reproducibility + methods-section trail, captured as you make the call."""
+    _exp_dir(hyp).mkdir(parents=True, exist_ok=True)
+    store_lock.append_jsonl(_decisions_path(hyp),
+                            {"ts": _now(), "by": _who(contributor),
+                             "decision": (decision or "").strip(), "rationale": (rationale or "").strip()})
+    return f"decision logged for {_hyp_id(hyp)}."
+
+
+def decisions(hyp: str) -> list:
+    p = _decisions_path(hyp)
+    return [json.loads(l) for l in p.open(encoding="utf-8") if l.strip()] if p.exists() else []
+
+
+def evidence_bundle(hyp: str) -> dict:
+    """Is this hypothesis's experiment READY to contribute, plus the aggregate evidence if so.
+    Ready = approved/running/complete status, min_runs met by VALID runs that PASS the bar, and a
+    provenance.md present (experiment-verified). Aggregates the stability means as effect/p/n."""
+    spec, rs = load_hypothesis(hyp), runs(hyp)
+    valid_runs = [r for r in rs if r.get("valid") is not False]
+    minr = spec.get("min_runs") or 1
+    n_pass = sum(1 for r in valid_runs if r.get("passed") is True)
+    prov = (_exp_dir(hyp) / "provenance.md").exists()
+    st = stability(hyp)
+
+    def pick(*names):
+        for k in names:
+            if k in st:
+                return round(st[k]["mean"], 4)
+        return None
+
+    ok_status = spec.get("status") in ("approved", "running", "complete")
+    if not spec:
+        ready, reason = False, "no hypothesis spec found"
+    elif not ok_status:
+        ready, reason = False, f"status is '{spec.get('status')}' (need approved/running/complete)"
+    elif n_pass < minr:
+        ready, reason = False, f"{n_pass}/{minr} valid runs pass the bar (need >= min_runs)"
+    elif not prov:
+        ready, reason = False, "no provenance.md — generate it (python provenance.py) first"
+    else:
+        ready, reason = True, "ready"
+    return {"ready": ready, "reason": reason,
+            "direction": "supports" if n_pass >= minr else "refutes",
+            "n_pass": n_pass, "min_runs": minr, "provenance": prov,
+            "effect_size": pick("effect_size", "cohens_d", "mean_d", "min_d", "n_planted_pass_both"),
+            "p_value": pick("p_value", "p_bh", "mean_p_bh"),
+            "sample_size": pick("sample_size", "n")}
 
 
 # --------------------------------------------------------------------------- #
@@ -192,6 +286,11 @@ def status(hyp: str) -> str:
         out.append(f"  {str(spec['title']).strip()[:100]}")
     if spec.get("success_metric"):
         out.append(f"  success metric: {str(spec['success_metric']).strip()[:160]}")
+    preg = preregistration(hyp)
+    if preg["drift"]:
+        out.append("  ⚠ PRE-REGISTRATION DRIFT — the success_metric changed after runs began:")
+        out.append(f"      was: {str(preg['recorded'].get('success_metric'))[:100]}")
+        out.append(f"      now: {str(preg['current_success_metric'])[:100]}")
 
     out.append(f"\n  runs logged: {(f'{n}/{minr}' if minr else n)}"
                + (f" · {n_pass} met the bar" if scored else "")
@@ -210,6 +309,10 @@ def status(hyp: str) -> str:
         for k, s in st.items():
             out.append(f"    {k}: mean {s['mean']:.4g} ± {s['sd']:.3g}  "
                        f"(n={s['n']}, range {s['min']:.4g}–{s['max']:.4g})")
+
+    decs = decisions(hyp)
+    if decs:
+        out.append(f"\n  decisions logged: {len(decs)} — latest: {decs[-1]['decision'][:70]}")
 
     vpath = _exp_dir(hyp) / "validity.json"
     if vpath.exists():
