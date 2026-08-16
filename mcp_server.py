@@ -133,14 +133,18 @@ if _SHARED:
         out = []
         for r in recs[:15]:
             g = kg.check_connection(r["subject"], r["object"])
-            res = confidence.score_association(kg_writer.to_association(r),
-                                               prior=confidence.grounding_prior(g))
+            internal = kg_writer.internally_grounded(r["subject"], r["object"],
+                                                     r.get("subject_id"), r.get("object_id"))
+            res = confidence.score_association(
+                kg_writer.to_association(r), prior=confidence.combined_grounding_prior(g, internal))
             b = beliefs.current(r["subject"], r["predicate"], r["object"])
             trend = f" {beliefs._arrow(b['delta'])}{b['delta']:+.2f}" if b and b.get("delta") \
                 is not None else ""      # how belief last moved (the "living" signal)
+            # mark when the lab's OWN curated KG (not the trusted reference) supplied the grounding
+            kg_tag = f"{g}+lab" if internal and confidence.grounding_prior(g) < confidence.INTERNAL_GROUNDING_PRIOR else g
             out.append(f"{r['subject']} —{r['predicate']}→ {r['object']}  "
                        f"[{res.status}, conf {res.confidence:.2f}{trend}, "
-                       f"{len(r['evidence'])} evidence, KG:{g}]")
+                       f"{len(r['evidence'])} evidence, KG:{kg_tag}]")
         return "\n".join(out)
 
     @mcp.tool

@@ -94,8 +94,10 @@ def snapshot(subject: str, predicate: str, object: str) -> BeliefSnapshot | None
     if rec is None:
         return None
     g = kg.check_connection(rec["subject"], rec["object"])
+    internal = kg_writer.internally_grounded(rec["subject"], rec["object"],
+                                             rec.get("subject_id"), rec.get("object_id"))
     res = confidence.score_association(kg_writer.to_association(rec),
-                                       prior=confidence.grounding_prior(g))
+                                       prior=confidence.combined_grounding_prior(g, internal))
     return BeliefSnapshot(rec["subject"], rec["predicate"], rec["object"],
                           res.confidence, res.status, res.support, res.refute,
                           res.investigation, len(rec.get("evidence", [])), g)

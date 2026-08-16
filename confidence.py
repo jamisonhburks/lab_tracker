@@ -50,6 +50,19 @@ def grounding_prior(status: str) -> float:
     return GROUNDING_PRIOR.get(status, 0.0)
 
 
+INTERNAL_GROUNDING_PRIOR = 0.2   # the lab's OWN curated-KG corroboration; capped below external 'grounded' (0.5)
+
+
+def combined_grounding_prior(external_status: str, internal: bool = False) -> float:
+    """Grounding prior from the trusted-KG status, raised to a modest floor when the lab's OWN
+    curated KG also connects the pair (`internal`, from kg_writer.internally_grounded). External
+    reference dominates; internal only lifts an otherwise-ungrounded pair and never above 'weakly
+    grounded' — so the lab's compounding graph starts feeding its own priors (closing the flywheel)
+    without overriding trusted knowledge or double-counting the edge's own evidence."""
+    ext = grounding_prior(external_status)
+    return max(ext, INTERNAL_GROUNDING_PRIOR) if internal else ext
+
+
 try:                                              # exact Beta credible interval when SciPy is present
     from scipy.stats import beta as _scipy_beta
 except Exception:                                 # pragma: no cover - SciPy optional

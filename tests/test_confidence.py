@@ -91,3 +91,24 @@ def test_untested_grounded_edge_is_wide_and_uncertain():
     assert r.status in ("promising_but_poorly_tested", "under_investigated")
     assert r.recommend_retest is True
     assert (r.ci_high - r.ci_low) > 0.4
+
+
+# ---- A5: curated KG feeds its own grounding prior ----------------------------------------- #
+def test_combined_prior_external_dominates_internal_lifts():
+    # External 'grounded' (0.5) dominates whether or not the lab's KG also corroborates.
+    assert confidence.combined_grounding_prior("grounded", internal=True) == 0.5
+    assert confidence.combined_grounding_prior("grounded", internal=False) == 0.5
+    # Off-graph in the trusted KG (0.0): internal corroboration lifts it to the modest floor...
+    assert confidence.combined_grounding_prior("off_graph", internal=False) == 0.0
+    assert confidence.combined_grounding_prior("off_graph", internal=True) == confidence.INTERNAL_GROUNDING_PRIOR
+    # ...but never above 'weakly grounded' — external reference still outranks the lab's own graph.
+    assert confidence.INTERNAL_GROUNDING_PRIOR < confidence.grounding_prior("grounded")
+
+
+def test_internal_grounding_lifts_confidence_for_ungrounded_edge():
+    ev = [_ev(0.5)]      # one modest supporting study, off-graph in the trusted KG
+    plain = confidence.score_association(_assoc(ev),
+                                         prior=confidence.combined_grounding_prior("off_graph", False))
+    lifted = confidence.score_association(_assoc(ev),
+                                          prior=confidence.combined_grounding_prior("off_graph", True))
+    assert lifted.confidence > plain.confidence

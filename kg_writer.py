@@ -111,3 +111,31 @@ def query(subject: str | None = None, object: str | None = None) -> list:
             continue
         out.append(r)
     return out
+
+
+def _adjacency(records: list | None = None) -> dict:
+    """Undirected adjacency over curated edges, keyed by canonical id (falling back to lowered name)."""
+    adj: dict = {}
+    for r in (records if records is not None else _load()):
+        a = r.get("subject_id") or r["subject"].strip().lower()
+        b = r.get("object_id") or r["object"].strip().lower()
+        if a and b and a != b:
+            adj.setdefault(a, set()).add(b)
+            adj.setdefault(b, set()).add(a)
+    return adj
+
+
+def internally_grounded(subject: str, object: str,
+                        subject_id: str | None = None, object_id: str | None = None) -> bool:
+    """True when the lab's OWN curated KG connects subject↔object through an intermediate node — a
+    length-2 path (subject—X—object). This is corroboration from OTHER curated edges, never the
+    direct edge, so it can feed a grounding prior WITHOUT double-counting the edge's own evidence.
+    Mirrors the trusted-KG path grounding (kg_memory.check_connection) over the lab's compounding
+    graph, so accumulated knowledge starts raising its own priors (closing the flywheel)."""
+    a = subject_id or (subject or "").strip().lower()
+    b = object_id or (object or "").strip().lower()
+    if not (a and b) or a == b:
+        return False
+    adj = _adjacency()
+    na = adj.get(a, set()) - {a, b}         # neighbors of a, excluding a and the direct target b
+    return bool(na & adj.get(b, set()))     # some X adjacent to both => a—X—b path

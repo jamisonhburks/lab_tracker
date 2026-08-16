@@ -45,3 +45,28 @@ def test_legacy_record_without_research_group_still_lifts(tmp_path, monkeypatch)
               "evidence": [{"source": "PMID:9", "direction": "supports"}]}
     assoc = kg_writer.to_association(legacy)
     assert assoc.evidence[0].research_group is None
+
+
+# ---- A5: internal grounding from the lab's own curated KG (length-2 paths) ----------------- #
+def test_internally_grounded_via_length2_path(tmp_path, monkeypatch):
+    _isolate(tmp_path, monkeypatch)
+    kg_writer.add_association("A", "associates", "X", source="PMID:1")
+    kg_writer.add_association("X", "associates", "B", source="PMID:2")
+    assert kg_writer.internally_grounded("A", "B") is True      # A—X—B
+    assert kg_writer.internally_grounded("A", "Z") is False     # Z is not in the graph
+
+
+def test_internally_grounded_excludes_the_direct_edge(tmp_path, monkeypatch):
+    # Only the direct A—B edge exists: no intermediate, so it must NOT self-ground (no double count).
+    _isolate(tmp_path, monkeypatch)
+    kg_writer.add_association("A", "associates", "B", source="PMID:1")
+    assert kg_writer.internally_grounded("A", "B") is False
+
+
+def test_internally_grounded_uses_canonical_ids(tmp_path, monkeypatch):
+    _isolate(tmp_path, monkeypatch)
+    kg_writer.add_association("alpha", "associates", "mid", source="PMID:1",
+                              subject_id="D:1", object_id="D:9")
+    kg_writer.add_association("mid", "associates", "beta", source="PMID:2",
+                              subject_id="D:9", object_id="D:2")
+    assert kg_writer.internally_grounded("alpha", "beta", "D:1", "D:2") is True

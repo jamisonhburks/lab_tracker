@@ -94,9 +94,13 @@ def _consensus_status(subj: str, obj: str, predicate: str):
             if r["predicate"].lower() == predicate.lower()]
     if not recs:
         return None
-    g = kg.check_connection(recs[0]["subject"], recs[0]["object"])
+    r0 = recs[0]
+    g = kg.check_connection(r0["subject"], r0["object"])
+    internal = kg_writer.internally_grounded(r0["subject"], r0["object"],
+                                             r0.get("subject_id"), r0.get("object_id"))
     return confidence.score_association(
-        kg_writer.to_association(recs[0]), prior=confidence.grounding_prior(g)).status
+        kg_writer.to_association(r0),
+        prior=confidence.combined_grounding_prior(g, internal)).status
 
 
 def contribute(subject: str, predicate: str, object: str, source: str = "",
