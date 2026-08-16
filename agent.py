@@ -998,8 +998,8 @@ if __name__ == "__main__":
         import session_journal
         journal = session_journal.SessionJournal()
         journal.start(interval=int(os.environ.get("JOURNAL_INTERVAL", "3600")))   # hourly
-        print(f"Ready. Ask a research question — or ':jot <hunch>' to capture a quick finding; "
-              f"empty line or 'quit' to exit.\n"
+        print(f"Ready. Ask a research question — ':jot <hunch>' to capture a finding, "
+              f"':status <H001>' for a hypothesis dashboard; empty line or 'quit' to exit.\n"
               f"(session journal: {journal.notes} — checkpoints hourly)")
         try:
             while True:
@@ -1021,6 +1021,17 @@ if __name__ == "__main__":
                     except Exception as err:
                         print(f"[jot failed: {err}]")
                     journal.note(note, kind="misc")
+                    continue
+                if question.split(" ", 1)[0].lower() in (":status", "/status"):   # active-work dashboard
+                    parts = question.split(None, 1)
+                    if len(parts) < 2:
+                        print("usage: :status <hypothesis id, e.g. H001>")
+                        continue
+                    try:
+                        import worklog
+                        print(worklog.status(parts[1].strip()))
+                    except Exception as err:
+                        print(f"[status failed: {err}]")
                     continue
                 journal.note(f"query: {question}", kind="query")
                 findings = run_agent(question)

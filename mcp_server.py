@@ -549,6 +549,33 @@ if _PERSONAL:
         method). A DRAFT to review/complete, then save to hypotheses/H00N_*.yaml (shared WIP)."""
         return _journal().formalize_retroactively()
 
+    # --- active work: the per-hypothesis run ledger + worklog + status (the "messy middle") --- #
+    @mcp.tool
+    def log_run(hypothesis: str, metrics: dict | None = None, seed: int | None = None,
+                passed: bool | None = None, valid: bool | None = None, note: str = "") -> str:
+        """Record ONE experiment run against a hypothesis while you work: its `metrics` (dict),
+        `seed`, whether it met the pre-registered success_metric (`passed`), and validity
+        (`valid=False` = a halt gate failed). Builds the run ledger the min_runs discipline needs —
+        personal tier, not consensus; runs that clear the bar feed contribute later."""
+        import worklog
+        return worklog.log_run(hypothesis, metrics=metrics, seed=seed, passed=passed,
+                               valid=valid, note=note, contributor=_caller())
+
+    @mcp.tool
+    def hypothesis_status(hypothesis: str) -> str:
+        """WHERE AM I on this hypothesis — the active-work dashboard: spec + success_metric, runs
+        logged vs min_runs, per-run results, stability across seeds, latest validity gates, and a
+        suggested next step. Call it to solidify a hypothesis against the system while you iterate."""
+        import worklog
+        return worklog.status(hypothesis)
+
+    @mcp.tool
+    def worklog_note(hypothesis: str, text: str) -> str:
+        """Jot a working note to a hypothesis's PERSISTENT worklog (what you tried / open questions),
+        surviving across sessions — distinct from the per-session journal."""
+        import worklog
+        return worklog.note(hypothesis, text, contributor=_caller())
+
     @mcp.tool
     def warm_start() -> str:
         """Your WARM START — call it when you open a session: where you left off, what changed in
