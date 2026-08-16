@@ -187,6 +187,17 @@ def briefing(contributor=None, mark: bool = True) -> str:
         out.append("\n✨ Serendipity:")
         out += [f"    {n}" for n in nudges]
 
+    # 3d) lab retro — a step-back coach preview (top item per bucket; full report via lab_retro)
+    retro = []
+    try:
+        import lab_retro
+        retro = lab_retro.retro_lines(who)
+    except Exception:
+        pass
+    if retro:
+        out.append("\n• Lab retro (workflow coach — run lab_retro for the full picture):")
+        out += [f"    {r}" for r in retro]
+
     # 3c) cold start — a brand-new user (no history): orient from the lab profile, never blank
     cold_step = None
     if not (sess or my_ents or new_consensus or touch_mine or pending or follow or nudges or active):

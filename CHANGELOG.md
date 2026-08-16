@@ -4,6 +4,19 @@ Reverse-chronological summary of substantive changes. Each entry links a PR to t
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
 ## 2026-08-16
+- **Lab-workflow retrospective — a coach, not a scoreboard** (`lab_retro.py`, `calibration.py`,
+  `mcp_server.py`, `briefing.py`) — a read-only step-back across everyone that composes the
+  substrate's OWN process signals (cleared-bar findings, seeds burned on a losing design, runs
+  killed by HALT gates, stalled hypotheses, re-hit dead ends, calibration bias, ADOPTABLE unused
+  method gaps, promotion backlog, duplicated effort) into **WORKING / NEEDS ATTENTION / OPTIMIZE**.
+  **Coaching, not surveillance, enforced in code:** the lab view aggregates and de-identifies
+  attention items (names hypotheses + counts, never a person; a test asserts the run author never
+  appears); pointed feedback needs `member=<name>` and is framed as that person's own private view;
+  no member ranking. Adds **per-member calibration attribution** — `calibration` tags each realized
+  `Outcome` with the member whose confident call it scores (stability lens via first-revision
+  contributor, adjudicated lens via `_edge_owner()`), with `audit_member()` / `audit_by_member()`
+  staying humble below `MIN_OUTCOMES`. Surfaced via the `lab_retro` MCP tool + a warm-start preview.
+  10 hermetic tests (`tests/test_lab_retro.py`, `tests/test_calibration_attribution.py`). (ADR-0059).
 - **Verified audit + ignition spec** (`docs/audit-kg-and-bloat.md`, `docs/ignition-spec.md`, docs-only)
   — a from-the-code assessment (every finding cited file:line and checked against disk state, not the
   docs): edge-confidence gaps, literature-ingestion robustness, and a proportionality read (~1,550 LOC

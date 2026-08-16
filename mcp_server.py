@@ -286,6 +286,21 @@ if _SHARED:
         return rs.story(campaign)
 
     @mcp.tool
+    def lab_retro(member: str = "") -> str:
+        """A LAB-WORKFLOW RETROSPECTIVE — "how is the lab actually working?" — coaching, not grading.
+        Steps back across everyone and composes the substrate's OWN process signals (cleared-bar
+        findings ready to promote, seeds being burned on a design that won't pass, runs killed by
+        validity gates, re-hit dead ends, calibration bias, ADOPTABLE unused method gaps, promotion
+        backlog, duplicated effort) into three lists: WORKING (keep + propagate), NEEDS ATTENTION
+        (where time is being lost), OPTIMIZE (cheap wins now). No `member` → the LAB view (attention
+        items AGGREGATED / de-identified — it names hypotheses and counts, never grades a person).
+        Pass `member` for that person's OWN private coaching view. There is deliberately no ranking
+        of members. LLM-free signals — read the report, then narrate the WORKING/NOT-WORKING/OPTIMIZE
+        story for the lab."""
+        import lab_retro
+        return lab_retro.render(member=member or None)
+
+    @mcp.tool
     def list_active_work() -> str:
         """SHARED WIP ('group semantics'): every tracked hypothesis/experiment/campaign with
         its STATUS — so you can see what's in-flight (mid-test, evaluated, proposed) and NOT
