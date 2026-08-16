@@ -20,8 +20,10 @@ as independent (we don't assume correlation), so three papers from one lab move 
 than three papers from three labs. This is inert until `research_group` is populated, then it
 engages automatically.
 
-Heuristic and interpretable, not a calibrated probability — true calibration
-would need a labeled outcome set. Thresholds below are tunable.
+Confidence is the mean of a Beta posterior over supporting vs refuting evidence
+mass, and it carries a credible interval (how *settled* that number is). Still
+interpretable, not a calibrated probability — the evidence pseudo-counts are
+heuristic and calibration.py audits calibration separately. Thresholds tunable.
 """
 
 import math
@@ -48,8 +50,30 @@ def grounding_prior(status: str) -> float:
     return GROUNDING_PRIOR.get(status, 0.0)
 
 
-def _sigmoid(x: float) -> float:
-    return 1.0 / (1.0 + math.exp(-1.2 * x))
+try:                                              # exact Beta credible interval when SciPy is present
+    from scipy.stats import beta as _scipy_beta
+except Exception:                                 # pragma: no cover - SciPy optional
+    _scipy_beta = None
+
+PRIOR = 0.5   # Jeffreys Beta(0.5,0.5) prior: an untested edge stays honestly uncertain, evidence dominates
+
+
+def _posterior(support: float, refute: float) -> tuple:
+    """Beta(alpha, beta) over 'the association holds', from independence-weighted evidence mass
+    (support/refute act as pseudo-counts) plus the weak Jeffreys prior."""
+    return PRIOR + max(0.0, support), PRIOR + max(0.0, refute)
+
+
+def _credible_interval(alpha: float, beta: float, cred: float = 0.90) -> tuple:
+    """A `cred` credible interval for Beta(alpha, beta) — how *settled* the confidence is. Exact via
+    SciPy; else a clipped normal approximation (rough at the extremes, but conveys the width)."""
+    tail = (1.0 - cred) / 2.0
+    if _scipy_beta is not None:
+        return (float(_scipy_beta.ppf(tail, alpha, beta)),
+                float(_scipy_beta.ppf(1.0 - tail, alpha, beta)))
+    mean = alpha / (alpha + beta)
+    sd = math.sqrt(alpha * beta / ((alpha + beta) ** 2 * (alpha + beta + 1.0)))
+    return max(0.0, mean - 1.645 * sd), min(1.0, mean + 1.645 * sd)
 
 
 @dataclass
@@ -61,13 +85,16 @@ class ConfidenceResult:
     investigation: float
     recommend_retest: bool
     explanation: str
+    ci_low: float = 0.0
+    ci_high: float = 1.0
 
     def render(self) -> str:
         retest = "yes" if self.recommend_retest else "no"
         return "\n".join([
-            f"Confidence {self.confidence:.2f} ({self.status}) — re-test: {retest}",
+            f"Confidence {self.confidence:.2f} [{self.ci_low:.2f}–{self.ci_high:.2f} CI] "
+            f"({self.status}) — re-test: {retest}",
             f"  support {self.support:.2f} | refute {self.refute:.2f} "
-            f"(power-weighted) | investigation {self.investigation:.2f}",
+            f"(independence-weighted) | investigation {self.investigation:.2f}",
             f"  {self.explanation}",
         ])
 
@@ -108,35 +135,42 @@ def _weighted_mass(evidence: list) -> float:
 
 
 def score_association(assoc: Association, prior: float = 0.0) -> ConfidenceResult:
-    """Aggregate evidence into a confidence + status. `prior` is an optional
-    structural belief (e.g. the KG realism score) that a mechanism plausibly exists."""
+    """Aggregate evidence into a confidence + status + credible interval. `prior` is an optional
+    structural belief (e.g. the KG grounding/realism score) that a mechanism plausibly exists.
+
+    Confidence is the MEAN of a Beta posterior over independence-weighted supporting vs refuting
+    evidence mass; the [ci_low, ci_high] interval reports how *settled* that number is — two weak
+    studies read as a wide interval, many strong ones as a tight one. Status still comes from the
+    evidence mass (the qualitative distinctions the raw number can't carry)."""
     if assoc.is_definitional:
         return ConfidenceResult(1.0, "definitional", 1.0, 0.0, 1.0, False,
-                                _EXPLAIN["definitional"])
+                                _EXPLAIN["definitional"], 1.0, 1.0)
 
     support = prior + _weighted_mass(assoc.supporting())
     refute = _weighted_mass(assoc.refuting())     # underpowered ~ 0; same-group correlated ~ discounted
     investigation = _weighted_mass(assoc.evidence)
-    net = support - refute
+
+    alpha, beta = _posterior(support, refute)
+    confidence = alpha / (alpha + beta)           # posterior mean
+    ci_low, ci_high = _credible_interval(alpha, beta)
 
     if investigation < INVEST_FLOOR:
-        # barely tested — uncertainty dominates; don't let thin negatives "refute"
+        # barely tested — the interval is wide; don't let thin negatives "refute"
         status = ("promising_but_poorly_tested" if support >= BELIEF_FLOOR
                   else "under_investigated")
-        confidence = 0.45 + 0.10 * min(support, 1.0)   # ~0.45–0.55, high uncertainty
         recommend = True
-    elif refute >= INVEST_FLOOR and net <= -0.5:
-        status, confidence, recommend = "refuted", _sigmoid(net), False
+    elif refute >= INVEST_FLOOR and confidence <= 0.4:
+        status, recommend = "refuted", False
     elif support >= INVEST_FLOOR and refute >= INVEST_FLOOR:
-        status, confidence, recommend = "contested", _sigmoid(net), True
-    elif net >= 0.5:
-        status, confidence, recommend = "supported", _sigmoid(net), False
+        status, recommend = "contested", True
+    elif confidence >= 0.6:
+        status, recommend = "supported", False
     else:
-        status, confidence, recommend = "under_investigated", _sigmoid(net), True
+        status, recommend = "under_investigated", True
 
     return ConfidenceResult(round(confidence, 3), status, round(support, 3),
                             round(refute, 3), round(investigation, 3), recommend,
-                            _EXPLAIN[status])
+                            _EXPLAIN[status], round(ci_low, 3), round(ci_high, 3))
 
 
 if __name__ == "__main__":   # three regimes, same net-negative-looking inputs differ
