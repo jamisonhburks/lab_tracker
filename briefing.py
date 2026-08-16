@@ -108,6 +108,19 @@ def briefing(contributor=None, mark: bool = True) -> str:
         except Exception:
             pass
 
+    # 1b) your experiments in flight — where to resume your OWN work (active-work next steps)
+    active = []
+    try:
+        import worklog
+        active = worklog.active_hypotheses()
+    except Exception:
+        pass
+    if active:
+        out.append("\n• Your experiments in flight:")
+        for a in active[:3]:
+            prog = f"{a['n_runs']}/{a['min_runs']}" if a.get("min_runs") else f"{a['n_runs']} run(s)"
+            out.append(f"    • {a['id']} [{prog} runs] — {a['next']}")
+
     # 2) what's new in the lab since you were last here (shared)
     def _newer(rows):
         return [r for r in rows if not since or r.get("ts", "") > since]
@@ -176,7 +189,7 @@ def briefing(contributor=None, mark: bool = True) -> str:
 
     # 3c) cold start — a brand-new user (no history): orient from the lab profile, never blank
     cold_step = None
-    if not (sess or my_ents or new_consensus or touch_mine or pending or follow or nudges):
+    if not (sess or my_ents or new_consensus or touch_mine or pending or follow or nudges or active):
         cold_lines, cold_step = _cold_start_lines()
         out += cold_lines
 
@@ -185,6 +198,9 @@ def briefing(contributor=None, mark: bool = True) -> str:
         step = f"review the {len(pending)} pending contribution(s) — review_queue()."
     elif promo:
         step = "promote your ready components to shared WIP (see promotion_review)."
+    elif active:
+        a = active[0]
+        step = f"on {a['id']}: {a['next']}  (:status {a['id']})"
     elif left == "adhoc_series":
         step = "formalize your ad-hoc session (formalize_retroactively) — or log it as misc."
     elif touch_mine:

@@ -79,3 +79,19 @@ def test_nudges_falls_back_to_cold_start_when_no_history(tmp_path, monkeypatch):
     monkeypatch.setattr(serendipity, "_cold_start_nudges",
                         lambda who: [("k1", "Nudge one"), ("k2", "Nudge two")])
     assert serendipity.nudges("newuser", max_nudges=2) == ["Nudge one", "Nudge two"]
+
+
+# ---- warm start surfaces the researcher's active experiments (#2) -------------------------- #
+def test_briefing_shows_active_experiments(tmp_path, monkeypatch):
+    import worklog
+    monkeypatch.setattr(worklog, "active_hypotheses", lambda: [
+        {"id": "H001", "title": "t", "status": "approved", "n_runs": 2, "min_runs": 3,
+         "n_pass": 2, "n_invalid": 0, "next": "2/3 runs — run again with a NEW seed"}])
+    # quiet the other (real-file) briefing sources so the assertion is about the new section
+    monkeypatch.setattr(briefing, "CONTRIB", tmp_path / "c.jsonl")
+    monkeypatch.setattr(briefing, "MISC", tmp_path / "m.jsonl")
+    monkeypatch.setattr(briefing, "SESSIONS", tmp_path / "sessions")
+    monkeypatch.setattr(briefing, "SEEN", tmp_path / "seen.json")
+    out = briefing.briefing("newuser", mark=False)
+    assert "Your experiments in flight" in out
+    assert "H001" in out and "run again with a NEW seed" in out

@@ -80,3 +80,28 @@ def test_note_appends_to_persistent_worklog(tmp_path, monkeypatch):
     assert p.exists()
     body = p.read_text(encoding="utf-8")
     assert "# Worklog — H001" in body and "Welch" in body
+
+
+# ---- active-work summary for the warm start (#2) ------------------------------------------ #
+def test_summary_reports_progress_and_next(tmp_path, monkeypatch):
+    _isolate(tmp_path, monkeypatch)
+    worklog.log_run("H001", metrics={"n_sig": 4}, seed=1, passed=True, valid=True)
+    s = worklog.summary("H001")
+    assert s["id"] == "H001" and s["n_runs"] == 1 and s["min_runs"] == 3
+    assert "run again" in s["next"]
+
+
+def test_active_hypotheses_filters_by_status(tmp_path, monkeypatch):
+    _isolate(tmp_path, monkeypatch)                     # H001 is approved
+    (tmp_path / "hypotheses" / "H099_draft.yaml").write_text(
+        'id: H099\ntitle: "Draft idea"\nstatus: draft\nmin_runs: 3\n', encoding="utf-8")
+    ids = [s["id"] for s in worklog.active_hypotheses()]
+    assert "H001" in ids and "H099" not in ids
+
+
+def test_active_hypotheses_sorted_most_worked_first(tmp_path, monkeypatch):
+    _isolate(tmp_path, monkeypatch)
+    (tmp_path / "hypotheses" / "H002_more.yaml").write_text(
+        'id: H002\ntitle: "Second"\nstatus: approved\nmin_runs: 3\n', encoding="utf-8")
+    worklog.log_run("H002", metrics={"x": 1}, seed=1)   # H002 has a run, H001 has none
+    assert worklog.active_hypotheses()[0]["id"] == "H002"

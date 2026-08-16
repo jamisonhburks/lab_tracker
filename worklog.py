@@ -145,6 +145,34 @@ def _next_step(spec: dict, n: int, minr, n_pass: int, n_invalid: int) -> str:
     return "log runs as you iterate (log_run), and jot open questions to the worklog (worklog_note)."
 
 
+def summary(hyp: str) -> dict:
+    """Compact active-work summary for one hypothesis — id/title/status, run counts, and the
+    next-step heuristic. Feeds the warm start's 'your experiments in flight' section."""
+    spec, rs = load_hypothesis(hyp), runs(hyp)
+    minr = spec.get("min_runs")
+    n = len(rs)
+    n_pass = sum(1 for r in rs if r.get("passed") is True)
+    n_invalid = sum(1 for r in rs if r.get("valid") is False)
+    return {"id": _hyp_id(hyp), "title": spec.get("title", ""), "status": spec.get("status"),
+            "n_runs": n, "min_runs": minr, "n_pass": n_pass, "n_invalid": n_invalid,
+            "next": _next_step(spec, n, minr, n_pass, n_invalid)}
+
+
+def active_hypotheses(statuses=("approved", "running")) -> list:
+    """Summaries for in-flight hypotheses (status in `statuses`), most-worked first — so the warm
+    start can point a researcher back to where they should resume their own experiments."""
+    out = []
+    for f in (sorted(HYP.glob("*.y*ml")) if HYP.exists() else []):
+        try:
+            import yaml
+            spec = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+        except Exception:
+            continue
+        if spec.get("status") in statuses:
+            out.append(summary(f.stem.split("_")[0]))
+    return sorted(out, key=lambda s: (-s["n_runs"], s["id"]))
+
+
 def status(hyp: str) -> str:
     """The active-work dashboard: spec + success_metric, runs vs min_runs, per-run results,
     stability across seeds, latest validity gates, and a suggested next step."""
