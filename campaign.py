@@ -10,7 +10,6 @@ So "update the longer experiment plan" = APPEND a new atomic experiment to the p
 never mutate a running one — which keeps every experiment reproducible and each
 plan-change auditable (the DAG records why H002 followed H001, etc.).
 
-    python campaign.py seed            # build the t2d-ad demo campaign from H001+H002
     python campaign.py show  <name>    # render the lineage
     python campaign.py plan  <name>    # propose the next atomic experiment
 """
@@ -162,28 +161,11 @@ def _synthesize(question: str, last_exp: str, verdict: str, recs: str, dead_bran
                 + "\n".join("    " + ln for ln in recs.splitlines()[:12]))
 
 
-def _seed_t2d_ad() -> Campaign:
-    """Build the demo campaign from the completed H001 + H002 experiments."""
-    c = Campaign("t2d-ad-shared-genes",
-                 "Do the T2D–AD knowledge-graph shared genes show replicable "
-                 "differential expression in Alzheimer's brain tissue?")
-    c.add("H001", "H001", parent=None,
-          because="validate the analysis loop + statistics on synthetic data with known "
-                  "ground truth before touching real biology")
-    c.add("H002", "H002", parent="H001",
-          because="machinery validated (H001) → apply the same panel to real public GEO "
-                  "brain expression with covariate adjustment + replication")
-    return c
-
-
 if __name__ == "__main__":
     args = sys.argv[1:]
-    if args and args[0] == "seed":
-        c = _seed_t2d_ad(); p = c.save()
-        print(f"Seeded campaign → {p}\n"); print(c.render())
-    elif len(args) == 2 and args[0] == "show":
+    if len(args) == 2 and args[0] == "show":
         print(Campaign.load(args[1]).render())
     elif len(args) == 2 and args[0] == "plan":
         print(Campaign.load(args[1]).next_step())
     else:
-        print("usage: python campaign.py [seed | show <name> | plan <name>]")
+        print("usage: python campaign.py [show <name> | plan <name>]")

@@ -1,4 +1,0 @@
-gene,primary_coef,replication_coef,replication_pval,same_sign,rep_nominal_sig,replicated,replication_reason
-PPARGC1A,0.22475113124867496,-0.6096336241021563,0.0022001685697731577,False,True,False,wrong_sign
-SOD1,0.14261656593300528,-0.29019124241056604,0.14803789632283298,False,False,False,wrong_sign
-APP,0.1939631912513634,-0.47542682919531687,0.11678115632171564,False,False,False,wrong_sign
