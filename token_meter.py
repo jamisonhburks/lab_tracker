@@ -348,7 +348,8 @@ def flush(path: str | Path | None = None) -> Path | None:
         path = LEDGER_DIR / f"spend-{datetime.now().strftime('%Y%m%d')}.jsonl"
     path = Path(path)
     try:
-        with path.open("a", encoding="utf-8") as f:
+        import store_lock                        # locked so concurrent sessions don't interleave lines
+        with store_lock.critical(path), path.open("a", encoding="utf-8") as f:
             for ev in new:
                 f.write(json.dumps(asdict(ev)) + "\n")
         _flushed = len(_meter.events)

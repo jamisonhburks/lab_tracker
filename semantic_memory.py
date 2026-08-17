@@ -23,6 +23,8 @@ from pathlib import Path
 import numpy as np
 import ollama
 
+import store_lock
+
 STORE = Path(__file__).parent / "memory" / "semantic.jsonl"
 EMBED_MODEL = "nomic-embed-text"
 
@@ -57,8 +59,7 @@ def add_fact(claim: str, sources: list) -> dict | None:
     if any(r["text"] == claim for r in _load()):
         return None  # already known — consolidation shouldn't duplicate
     record = {"text": claim, "sources": sources, "vector": _embed(claim)}
-    with STORE.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(record) + "\n")
+    store_lock.append_jsonl(STORE, record)     # locked append — safe across concurrent sessions
     return record
 
 
