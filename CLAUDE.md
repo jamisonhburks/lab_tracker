@@ -15,14 +15,16 @@ and the shared lab — can pick it up.
 3. **Before scaffolding, organizing, or conforming a project**, read [`AGENTS.md`](AGENTS.md) — it
    routes by intent to the right playbook. Don't scaffold from memory.
 
-## Two substrates are wired for you (see `.mcp.json`)
-- **`lab-shared`** — the lab's consensus KG + contribution log (shared tier; the only writer runs on
-  the cluster). Query it freely; contribute **deliberately** per
-  [`lab-standard/promotion.md`](lab-standard/promotion.md).
-- **`my-personal`** — your private tier (episodic memory + session journal). Never shared.
+## Your substrate tools come over MCP (see `.mcp.json`)
+- **Solo (default):** one local `lab` server serves everything — the shared KG/findings **and** your
+  personal tier — with no shared node or token. This is what a fresh clone gives you.
+- **Shared lab:** two servers — **`lab-shared`** (the lab's consensus KG + contribution log; the only
+  writer runs on the cluster) and **`my-personal`** (your private tier — episodic memory + journal,
+  never shared).
 
-Attribution is automatic (your cluster identity / the lab proxy), so just do the work. Knowledge
-moves WIP → consensus by a deliberate act, never silently.
+Either way: query freely; contribute to the shared tier **deliberately** per
+[`lab-standard/promotion.md`](lab-standard/promotion.md). Attribution is automatic (your identity /
+the lab proxy), so just do the work. Knowledge moves WIP → consensus by a deliberate act, never silently.
 
 ## Alpha mode — file tickets when things break
 This is an **alpha**. When something errors, is confusing, behaves wrong, or a tool is missing,

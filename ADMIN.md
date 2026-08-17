@@ -26,8 +26,11 @@ they point at it.
    unauthenticated path — the proxy owns it. This is what attributes shared contributions to the
    real person.
 5. **Mint a `LAB_SUBSTRATE_TOKEN`** per person (including yourself).
-6. **Set the real URL** in [`.mcp.json`](.mcp.json) → `lab-shared.url`
-   (e.g. `https://your-node:8443/mcp`), then commit & push. Every member's clone inherits it.
+6. **Publish the shared client config.** The repo ships with the **solo** `.mcp.json` by default, so
+   switch it to the shared template and point it at your node:
+   `cp examples/mcp.shared.json .mcp.json`, set `lab-shared.url` (e.g. `https://your-node:8443/mcp`),
+   then commit & push. Members' clones then inherit the shared config. (Members can still run solo by
+   copying `examples/mcp.solo.json` back over it.)
 7. **Smoke-check the host** (deployment.md "Quick check"): Uvicorn is up; `GET /mcp` in a plain
    browser returns 406 (expected — MCP needs proper headers).
 

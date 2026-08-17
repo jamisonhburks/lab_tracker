@@ -26,10 +26,12 @@ fi
 
 cat <<'EOF'
 
-Done. Next:
-  1) export LAB_SUBSTRATE_TOKEN=<your token>     # from the lab admin; add to ~/.bashrc
-  2) open this folder in VS Code:  code .
+Done. Solo test (the default — no token, no shared node):
+  1) open this folder in VS Code (or Reload Window if it's already open)
+  2) approve the "lab" MCP server when Claude Code prompts
   3) in the Claude Code chat, say:  onboard me
 
-If Claude Code prompts to approve MCP servers (lab-shared, my-personal), approve both.
+Joining a shared lab instead? (see QUICKSTART.md)
+  cp examples/mcp.shared.json .mcp.json      # two servers: lab-shared + my-personal
+  export LAB_SUBSTRATE_TOKEN=<token>         # from the lab admin; add to ~/.bashrc
 EOF
