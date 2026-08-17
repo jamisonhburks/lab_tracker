@@ -162,3 +162,50 @@ def test_safe_relocate_refuses_paths_outside_project(tmp_path):
     _make_project(tmp_path)
     with pytest.raises(conform.ConformError):
         conform.safe_relocate(tmp_path, "analysis.py", "../escape.py", prefer_git=False)
+
+
+# --------------------------------------------------------------------------- #
+# P1 — plan surfaces the copy-vs-move / byte-volume / relative-path hazards     #
+# --------------------------------------------------------------------------- #
+def test_plan_annotates_copy_and_bytes_for_untracked(tmp_path):
+    _make_project(tmp_path)                          # not a git repo → all untracked → COPY
+    obj = conform.plan(tmp_path)
+    s = obj["summary"]
+    assert s["will_copy"] > 0 and s["will_gitmv"] == 0 and s["copy_bytes"] > 0
+    moves = [r for r in obj["artifacts"] if r["action"] == "move"]
+    assert moves and all(r.get("method") == "copy" and "bytes" in r for r in moves)
+    assert "will COPY" in (tmp_path / "notes" / "00_conformance_audit.md").read_text()
+
+
+def test_plan_downgrades_code_with_parent_paths_to_review(tmp_path):
+    _make_project(tmp_path)
+    (tmp_path / "analysis.py").write_text("import pandas as pd\ndf = pd.read_csv('../Data/x.csv')\n")
+    obj = conform.plan(tmp_path)
+    a = next(r for r in obj["artifacts"] if r["path"] == "analysis.py")
+    assert a["action"] == "review" and "../" in a["reason"] and a["dest"] is None
+    assert obj["summary"]["relpath_flagged"] >= 1
+    # and it is therefore NOT relocated by apply
+    res = conform.apply(tmp_path, force_method="copy")
+    assert not any("analysis.py" in e["src"] for e in res["moved"])
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git not available")
+def test_plan_marks_tracked_as_git_mv(tmp_path):
+    _make_project(tmp_path)
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "config", "user.email", "t@t.t")
+    _git(tmp_path, "config", "user.name", "t")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-qm", "x")
+    obj = conform.plan(tmp_path)
+    moves = [r for r in obj["artifacts"] if r["action"] == "move"]
+    assert moves and all(r["method"] == "git-mv" for r in moves)
+    assert obj["summary"]["will_copy"] == 0 and obj["summary"]["copy_bytes"] == 0
+
+
+def test_big_copy_flag_warns(tmp_path, monkeypatch):
+    monkeypatch.setattr(conform, "_BIG_COPY", 5)     # 5-byte threshold → any copy trips it
+    _make_project(tmp_path)
+    obj = conform.plan(tmp_path)
+    assert obj["summary"]["big_copy"] is True
+    assert "duplicates data on disk" in (tmp_path / "notes" / "00_conformance_audit.md").read_text()
