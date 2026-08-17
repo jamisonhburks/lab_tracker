@@ -47,6 +47,7 @@ import method_select
 
 MAX_STEPS = 10      # safety cap so a misbehaving loop can't run forever
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+_REDUNDANT_MARKER = "[lab-known:all]"   # a retrieval tool appends this when every hit is already known
 
 
 # --------------------------------------------------------------------------- #
@@ -65,7 +66,16 @@ def search_pubmed(query: str, max_results: int = 5) -> str:
     fetch_url = f"{EUTILS}/efetch.fcgi?" + urllib.parse.urlencode(
         {"db": "pubmed", "id": ",".join(ids), "rettype": "abstract", "retmode": "text"}
     )
-    return net.fetch_text(fetch_url, timeout=30)[:12000]
+    text = net.fetch_text(fetch_url, timeout=30)[:12000]
+    # redundancy signal: if EVERY hit is already ingested by the lab, this retrieval added nothing —
+    # flag it (informs the model + lets the loop tag the next turn's tokens `redundant`, ADR-0060).
+    try:
+        if all(biblio.seen(i, min_access="abstract") for i in ids):
+            text += (f"\n\n{_REDUNDANT_MARKER} all {len(ids)} result(s) are already ingested by the "
+                     "lab — no new papers; corroborate from the KG rather than re-reading.")
+    except Exception:
+        pass
+    return text
 
 
 def read_file(path: str) -> str:
@@ -925,8 +935,13 @@ def run_agent(question: str) -> list:
     token_meter.enable_autoflush()                      # persist spend even if we exit early
     spend_start = len(token_meter.meter().events)
 
+    redundant_next = False    # a retrieval last turn returned ONLY lab-known results
     for _ in range(MAX_STEPS):
-        with token_meter.activity("planning"):          # the orchestrator turn: deciding next action
+        # if the previous turn's retrieval added nothing new, the tokens this turn spends chewing
+        # over it are rework — tag the orchestrator turn `redundant` so the audit sees it.
+        plan_outcome = "redundant" if redundant_next else "productive"
+        redundant_next = False
+        with token_meter.activity("planning", outcome=plan_outcome):   # orchestrator turn
             resp = llm.chat(messages, tools=TOOLS)
 
         if resp.text:
@@ -952,6 +967,8 @@ def run_agent(question: str) -> list:
             # Any tool output can carry provenance — a fresh PubMed hit, or a PMID
             # recalled from memory — so scan them all and let grounding carry forward.
             seen.update(f"PMID:{m}" for m in re.findall(r"PMID:\s*(\d+)", output))
+            if _REDUNDANT_MARKER in output:      # a retrieval returned only already-known results
+                redundant_next = True
             if name == "read_file":
                 seen.add(f"file:{args.get('path', '')}")
             if name in ("query_graph", "find_paths"):   # KG edges cite databases

@@ -59,14 +59,20 @@ sources is a stronger candidate; adopt the good ones into `TOOL_ACTIVITY`.
   `--discover` candidate labels. `memory/token_ledgers/` is the durable source; the per-run copy in
   each tool ledger (`spend`) is co-location convenience and is not double-counted by the audit.
 - Telemetry is best-effort and must never break a run (observer/flush exceptions are swallowed).
-- Waste signals wired so far: `retry` (bad-parse re-asks in `llm.parse`); `redundant`
-  (`curate_literature` extraction when `deep_search.search_status` says the topic was already
-  covered); `dead_end` (`refine_hypothesis` verification of a pair `deadends.check` flags as an
-  *evidenced* dead end). Nested tags respect precedence via `current_outcome()` — a `dead_end`
-  block is never downgraded to `redundant`.
+- Waste signals wired so far:
+  - `retry` — bad-parse re-asks in `llm.parse`.
+  - `redundant` — `curate_literature` extraction when the topic was already covered
+    (`deep_search.search_status`); and `search_pubmed` when every hit is already ingested
+    (`biblio.seen`) → the marker `[lab-known:all]` tags the *next* orchestrator turn (which reasons
+    over the all-known result) redundant.
+  - `dead_end` — `refine_hypothesis` verifying a pair `deadends.check` flags as an *evidenced* dead
+    end; and `campaign._synthesize` when replanning a branch whose frontier was `abandon`ed.
+  Nested tags respect precedence via `current_outcome()` — a `dead_end` block is never downgraded to
+  `redundant`.
 - Honesty caveats: outcome still defaults to `productive`, so measured waste is a *lower bound* —
-  only the paths above are instrumented; other redundant/dead-end work reads as productive until
-  its module tags it. Dollar figures are estimates — **token counts are the load-bearing signal**.
+  only the paths above are instrumented. The `search_pubmed`→next-turn and campaign-replan
+  attributions are deliberately conservative approximations (a genuine pivot after abandonment is
+  tagged too). Dollar figures are estimates — **token counts are the load-bearing signal**.
 - Experiments opt in by calling `token_meter.enable_autoflush()`; without it their local (cost-free)
   spend is captured in-memory but not persisted.
 

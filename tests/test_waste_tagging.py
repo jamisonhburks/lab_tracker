@@ -106,3 +106,63 @@ def test_curate_skips_already_ingested_paper(monkeypatch, tmp_path):
     assert biblio.seen("2")                             # paper 2 now ingested
     # only the new paper's tokens were spent (dedup saved the rest)
     assert len(token_meter.meter().events) == 1
+
+
+# --------------------------------------------------------------------------- #
+# Hook 1: search_pubmed all-known → next planning turn tagged redundant         #
+# --------------------------------------------------------------------------- #
+def test_search_pubmed_flags_all_known(monkeypatch, tmp_path):
+    import agent
+    import biblio
+    monkeypatch.setattr(biblio, "STORE", tmp_path / "works.jsonl")
+    biblio.register({"pmid": "1"}, access="abstract", lab_query="q")   # already ingested
+    biblio.register({"pmid": "2"}, access="abstract", lab_query="q")
+    monkeypatch.setattr(agent.net, "fetch_bytes",
+                        lambda *a, **k: b'{"esearchresult":{"idlist":["1","2"]}}')
+    monkeypatch.setattr(agent.net, "fetch_text", lambda *a, **k: "abstracts...")
+    out = agent.search_pubmed("q")
+    assert agent._REDUNDANT_MARKER in out                # all hits already known → flagged
+
+    # a NEW pmid in the results → not all known → no marker
+    monkeypatch.setattr(agent.net, "fetch_bytes",
+                        lambda *a, **k: b'{"esearchresult":{"idlist":["1","99"]}}')
+    assert agent._REDUNDANT_MARKER not in agent.search_pubmed("q")
+
+
+# --------------------------------------------------------------------------- #
+# Hook 2: campaign abandoned branch → dead_end synthesis                        #
+# --------------------------------------------------------------------------- #
+class _NextStep:
+    def model_dump(self):
+        return {"title": "t", "question": "q", "key_change": "k", "rationale": "r"}
+
+
+def test_synthesize_tags_dead_end_on_abandoned_branch(monkeypatch):
+    import campaign
+    import llm
+    calls = []
+
+    def fake_parse(messages, schema, cls):
+        calls.append(1)
+        token_meter.on_llm_call("ollama", "qwen3:14b", 100, 50)
+        return _NextStep()
+    monkeypatch.setattr(llm, "parse", fake_parse)
+
+    campaign._synthesize("Q", "H001", "verdict", "- try a bigger cohort", dead_branch=True)
+    assert calls and token_meter.meter().events[-1].outcome == "dead_end"
+
+    token_meter.reset()
+    campaign._synthesize("Q", "H001", "verdict", "- try a bigger cohort", dead_branch=False)
+    assert token_meter.meter().events[-1].outcome == "productive"
+
+
+def test_campaign_abandon_marks_node_and_flags_frontier(monkeypatch, tmp_path):
+    import campaign
+    monkeypatch.setattr(campaign, "CAMP_DIR", tmp_path)
+    c = campaign.Campaign("t", "Q")
+    c.add("H001", "H001", status="complete")
+    c.add("H002", "H002", parent="H001", status="complete")
+    assert not c._frontier_abandoned()
+    assert c.abandon("H002", "did not pan out")
+    assert c.nodes[-1]["status"] == "abandoned" and c._frontier_abandoned()
+    assert not c.abandon("H999")                         # unknown id → no-op
