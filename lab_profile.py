@@ -177,19 +177,21 @@ def add_member(name: str, member_id: str = None, profile_id: str = None) -> str:
     if not f.exists():
         return f"no profile '{pid}' (profiles/{pid}.yaml) to add a member to."
     label = name or mid
-    if mid in roster(pid):
-        _set_alias(pid, mid, name)                        # let onboarding update the display name
-        return f"{label} is already on the {pid} roster."
-    text = f.read_text(encoding="utf-8")
-    m = re.search(r"(?m)^members:[ \t]*\[(.*?)\][ \t]*$", text)
-    if m:
-        inner = m.group(1).strip()
-        text = text[:m.start(1)] + (f"{inner}, {mid}" if inner else mid) + text[m.end(1):]
-    else:
-        text = text.rstrip("\n") + f"\nmembers: [{mid}]\n"
-    f.write_text(text, encoding="utf-8")
-    _set_alias(pid, mid, name)
-    return f"added {label} to the {pid} roster."
+    # atomic read-modify-write of the roster, so concurrent onboarding sessions can't drop a member
+    with store_lock.critical(f):
+        already = mid in roster(pid)
+        if not already:
+            text = f.read_text(encoding="utf-8")
+            m = re.search(r"(?m)^members:[ \t]*\[(.*?)\][ \t]*$", text)
+            if m:
+                inner = m.group(1).strip()
+                text = text[:m.start(1)] + (f"{inner}, {mid}" if inner else mid) + text[m.end(1):]
+            else:
+                text = text.rstrip("\n") + f"\nmembers: [{mid}]\n"
+            f.write_text(text, encoding="utf-8")
+    _set_alias(pid, mid, name)                            # separate store (member_names.json), own lock
+    return (f"{label} is already on the {pid} roster." if already
+            else f"added {label} to the {pid} roster.")
 
 
 def _pub_path(pid: str) -> Path:

@@ -14,6 +14,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+import store_lock
+
 STORE = Path(__file__).parent / "memory" / "episodic.jsonl"
 
 HALF_LIFE_DAYS = 30.0   # a run's relevance halves every 30 days (recency decay)
@@ -40,8 +42,7 @@ def record_run(question: str, tool_calls: list, findings: list) -> dict:
         "tools_called": tool_calls,
         "findings": findings,  # each claim carries its own provenance
     }
-    with STORE.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(entry) + "\n")
+    store_lock.append_jsonl(STORE, entry)      # locked append — safe across concurrent sessions
     return entry
 
 
