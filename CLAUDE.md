@@ -23,3 +23,10 @@ and the shared lab — can pick it up.
 
 Attribution is automatic (your cluster identity / the lab proxy), so just do the work. Knowledge
 moves WIP → consensus by a deliberate act, never silently.
+
+## Alpha mode — file tickets when things break
+This is an **alpha**. When something errors, is confusing, behaves wrong, or a tool is missing,
+**call `file_ticket`** (one per issue) — title + what happened, steps, expected vs actual, and any
+error/ids in `context`; set `severity` (low|medium|high|blocker) and an `area` tag. It goes to the
+admin's tracker; you're attributed automatically. Don't just work around a bug silently — a
+ten-second ticket is how the alpha improves. (Admin triages with `list_tickets` / `tickets.py`.)

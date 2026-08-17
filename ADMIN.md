@@ -51,6 +51,22 @@ They self-register on "onboard me" (`add_member` is idempotent), so you don't pr
 If you'd rather seed the roster up front, edit `profiles/<lab>.yaml` `members:` or call `add_member`
 for each — either way it converges.
 
+## D. During the alpha — track tickets
+
+Members' sessions file bug/rough-edge reports with the `file_ticket` MCP tool (CLAUDE.md tells them
+to). They land in the **shared** tracker (`memory/tickets.jsonl` on your node — the cron snapshot in
+§5/deployment.md versions it). Triage from a session or the shell:
+
+```sh
+python tickets.py list          # or: list open | ack | closed   (blocker→low, oldest first)
+python tickets.py ack   T-0007
+python tickets.py close T-0007 "fixed in <commit>"
+python tickets.py stats
+```
+
+From a Claude session the same is `list_tickets` / `update_ticket`. Tickets are attributed to the
+reporter automatically (the proxy's `X-Substrate-Contributor`), so you can see who hit what.
+
 ---
 
 **Lighter beta option:** if standing up TLS + SLURM is too much for a first test, you can skip the

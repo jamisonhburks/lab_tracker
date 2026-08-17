@@ -401,6 +401,35 @@ if _SHARED:
                              source=source, rigor_verdict=rigor_verdict.strip() or None,
                              contributor=_caller())
 
+    # ---- alpha issue tracker: members file tickets here; the admin triages (tickets.py) ---------- #
+    @mcp.tool
+    def file_ticket(title: str, body: str = "", severity: str = "medium",
+                    area: str = "", context: str = "") -> str:
+        """Report an alpha bug / rough edge to the lab admin's tracker. Use it whenever something
+        breaks, is confusing, or behaves wrong — one ticket per issue. `severity`: low|medium|high|
+        blocker. `area`: a short tag (onboarding|mcp|kg|curate|experiment|…). `body`: what happened,
+        steps to reproduce, expected vs actual. `context`: the tool/error/ids involved. You're
+        attributed automatically — no need to include your name."""
+        import tickets
+        tid = tickets.file_ticket(title, body=body, severity=severity, area=area,
+                                  context=context, reporter=_caller() or "")
+        return f"Filed {tid} — thanks. The admin can see it (list_tickets)."
+
+    @mcp.tool
+    def list_tickets(status: str = "") -> str:
+        """Alpha tickets, worst/oldest first. Optional `status` filter: open | ack | closed."""
+        import tickets
+        return tickets.render(status=status.strip())
+
+    @mcp.tool
+    def update_ticket(ticket_id: str, status: str = "", note: str = "") -> str:
+        """Admin triage: set a ticket's `status` (ack | closed) and/or append a `note`
+        (a closing note becomes its resolution)."""
+        import tickets
+        t = tickets.update_ticket(ticket_id, status=status.strip() or None, note=note,
+                                  by=_caller() or "admin")
+        return f"{ticket_id} → {t['status']}" if t else f"no ticket {ticket_id}"
+
     @mcp.tool
     def match_misc_finding(subject: str, object: str) -> str:
         """Match a candidate finding against the coherent lab knowledge (KG grounding + curated
