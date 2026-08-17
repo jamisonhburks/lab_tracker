@@ -161,15 +161,17 @@ def _set_alias(pid: str, member_id: str, name: str) -> None:
 
 
 def add_member(name: str, member_id: str = None, profile_id: str = None) -> str:
-    """Add a member to the lab roster (profiles/<id>.yaml `members:`). The roster is keyed on the
-    member's IDENTITY (`member_id` — from the authenticated caller, else SUBSTRATE_CONTRIBUTOR/$USER),
-    so `onboarding_status` — which checks that identity — actually flips to ✓. A typed display `name`
-    is kept as an alias (member_names.json), so `list_members` still shows friendly names. Idempotent."""
+    """Add a member to the lab roster (profiles/<id>.yaml `members:`), keyed on IDENTITY.
+
+    `member_id` is the canonical roster key; the typed `name` is kept as a display alias
+    (member_names.json). When onboarding via MCP, the tool passes the CALLER's identity as
+    `member_id` (so `onboarding_status`, which checks that same identity, flips to ✓). A direct call
+    with no `member_id` (an admin adding a colleague by name) keys on the name. Idempotent."""
     import re
     name = (name or "").strip()
     pid = profile_id or _default_id()
     f = PROFILES / f"{pid}.yaml"
-    mid = (member_id or _identity() or name).strip()      # canonical key: identity, not display name
+    mid = (member_id or name).strip()                     # explicit identity, else the typed name
     if not mid:
         return "no member id or name given."
     if not f.exists():

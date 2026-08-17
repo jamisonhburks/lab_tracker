@@ -20,12 +20,20 @@ def test_add_member_keys_on_identity_keeps_name_as_alias(tmp_path, monkeypatch):
     assert lab_profile.display_name("jamison.burks", pid) == "Jamie Burks"
 
 
-def test_onboarding_status_flips_to_in_roster(tmp_path, monkeypatch):
+def test_onboarding_status_flips_when_added_by_identity(tmp_path, monkeypatch):
     _isolate(tmp_path, monkeypatch)
     monkeypatch.setenv("SUBSTRATE_CONTRIBUTOR", "jamison.burks")
     assert onboarding.status()["in_roster"] is False            # before
-    lab_profile.add_member("Jamie Burks")                        # member_id=None → identity (env)
+    # the MCP tool passes the caller identity as member_id (here: the env identity, as in solo mode)
+    lab_profile.add_member("Jamie Burks", member_id=lab_profile._identity())
     assert onboarding.status()["in_roster"] is True             # the ✓ the transcript never got
+
+
+def test_direct_add_keys_on_name_for_admin_adds_other(tmp_path, monkeypatch):
+    pid = _isolate(tmp_path, monkeypatch)
+    # a direct call with no member_id (admin registering a colleague) keys on the given name
+    lab_profile.add_member("priya")
+    assert lab_profile.roster(pid) == ["priya"]
 
 
 def test_add_member_idempotent_and_updates_alias(tmp_path, monkeypatch):
@@ -35,11 +43,3 @@ def test_add_member_idempotent_and_updates_alias(tmp_path, monkeypatch):
     assert "already on" in again
     assert lab_profile.roster(pid) == ["jamison.burks"]          # not duplicated
     assert lab_profile.display_name("jamison.burks", pid) == "Jamison Burks"   # alias refreshed
-
-
-def test_add_member_falls_back_to_env_identity(tmp_path, monkeypatch):
-    pid = _isolate(tmp_path, monkeypatch)
-    monkeypatch.delenv("SUBSTRATE_CONTRIBUTOR", raising=False)
-    monkeypatch.setenv("USER", "clusteruser")
-    lab_profile.add_member("Display Only")                       # no member_id → $USER
-    assert lab_profile.roster(pid) == ["clusteruser"]

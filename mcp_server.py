@@ -255,7 +255,7 @@ if _SHARED:
         roster is keyed on the member's identity (so onboarding_status flips to ✓); `name` is a
         display alias."""
         import lab_profile as lp
-        return lp.add_member(name, member_id=_caller())
+        return lp.add_member(name, member_id=_caller() or lp._identity() or None)
 
     @mcp.tool
     def covered_capabilities(member: str = "") -> str:
