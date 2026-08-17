@@ -17,6 +17,8 @@ external/
 # Experiment artifacts that are regenerable by re-running run.py (keep metrics.csv)
 experiments/*/results/figures/
 experiments/*/logs/
+experiments/*/results/_smoke/
+experiments/*/_judge/
 
 # runtime lab-profile publication logs (the seed profiles/*.yaml are tracked)
 profiles/*.publications.jsonl

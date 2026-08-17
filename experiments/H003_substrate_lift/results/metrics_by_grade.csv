@@ -1,0 +1,7 @@
+arm,grade,n,mean_conf,accuracy
+a,grounded,181,0.243,0.276
+a,weakly_grounded,336,0.247,0.854
+a,novel_unverified,23,0.252,1.0
+b,grounded,181,0.661,0.696
+b,weakly_grounded,336,0.275,0.833
+b,novel_unverified,23,0.2,1.0
