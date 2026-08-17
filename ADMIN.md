@@ -77,6 +77,37 @@ new tickets. So a burst of `[auto] … (x40)` means one bug hit forty times, not
 
 ---
 
+## Shared directory on ONE login node (no daemon) — simplest
+
+If **all your collaborators work from the same login node** (e.g. everyone VS Code–Remote-SSH'd to
+the same host), you don't need a running service at all — just **one shared clone** they all point
+at. Same-node file locks (`fcntl.flock`) are arbitrated by that node's kernel, so concurrent writes
+are safe. (Across *different* nodes this isn't reliable on Lustre — then use the HTTP node below.)
+
+**You (once) — create the shared clone, group-writable:**
+```sh
+git clone <repo-url> /shared/path/lab_tracker && cd /shared/path/lab_tracker
+./setup.sh
+chmod -R g+rwX . && find . -type d -exec chmod g+s {} +      # group can write; new files inherit the group
+mkdir -p memory
+# confirm the filesystem honors the lock store_lock uses (should print 'flock OK'):
+python3 -c "import fcntl; f=open('memory/.flocktest','a+'); fcntl.flock(f.fileno(), fcntl.LOCK_EX); fcntl.flock(f.fileno(), fcntl.LOCK_UN); print('flock OK on this filesystem')"
+```
+If that prints `flock OK`, you're set. (If it errors, put the shared clone on the login node's
+node-local scratch, or ask the sysadmin to enable `localflock`, or use the HTTP node below.)
+
+**Each collaborator (once):** they keep their **own** clone (for their private tier) but point the
+**shared** tier at your clone:
+```sh
+cp examples/mcp.shared-fs.json .mcp.json
+# edit .mcp.json: lab-shared.args → /shared/path/lab_tracker/mcp_personal.sh  (your shared clone)
+```
+`lab-shared` (scope=shared) writes to the **one** shared clone — roster, WIP registrations, tickets,
+contributions, curated KG — attributed by their `$USER`. `my-personal` (scope=personal) stays in
+their own clone. No service to keep running; tickets land centrally in the shared clone.
+
+Tickets/roster/WIP: `python tickets.py list` (etc.) **run from the shared clone** to see everyone's.
+
 ## Minimal shared node for a trusted alpha (no TLS, one command)
 
 If standing up TLS + SLURM (§A) is too much for a first test but you still want collaborators to

@@ -8,7 +8,16 @@ fresh clone works standalone with no edits. These templates let you switch:
 tickets). No shared node, no token — open the repo in VS Code, approve the `lab` server, and say
 **“onboard me.”** (Only needed if you previously switched away: `cp examples/mcp.solo.json .mcp.json`.)
 
-## Shared — trusted internal alpha (minimal node, no TLS)
+## Shared — one login node, no daemon (simplest)
+```sh
+cp examples/mcp.shared-fs.json .mcp.json
+```
+When everyone works from the **same login node**. Point `lab-shared.args` at ONE shared clone's
+`mcp_personal.sh` (absolute path); it writes the shared tier there, attributed by `$USER`.
+`my-personal` stays in your own clone. No running service — same-node file locks keep writes safe.
+See [`../ADMIN.md`](../ADMIN.md) → "Shared directory on ONE login node".
+
+## Shared — trusted internal alpha, HTTP node (across nodes / remote)
 ```sh
 cp examples/mcp.shared-dev.json .mcp.json
 ```

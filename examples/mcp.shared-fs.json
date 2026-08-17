@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "lab-shared": {
+      "command": "bash",
+      "args": ["/ABS/PATH/TO/SHARED/lab_tracker/mcp_personal.sh"],
+      "env": {
+        "SUBSTRATE_SCOPE": "shared"
+      }
+    },
+    "my-personal": {
+      "command": "bash",
+      "args": ["mcp_personal.sh"],
+      "env": {
+        "SUBSTRATE_SCOPE": "personal"
+      }
+    }
+  }
+}
