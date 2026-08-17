@@ -183,6 +183,7 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
             try:
                 biblio.register({"pmid": pmid}, title=paper.get("title", ""),
                                 access="abstract", lab_query=query)
+                biblio.enrich(pmid)          # best-effort: backfill DOI/PMCID + full-text availability
             except Exception:
                 pass
         for a in assocs:

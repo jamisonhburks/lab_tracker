@@ -53,6 +53,7 @@ class _Result:
 def _stub_curate(monkeypatch, covered: bool, tmp_path, articles=None):
     import agent
     monkeypatch.setattr(agent.biblio, "STORE", tmp_path / "works.jsonl")   # keep biblio hermetic
+    monkeypatch.setattr(agent.biblio, "resolve_europepmc", lambda **k: None)  # no network in tests
     status = "ALREADY DEEP-SEARCHED: metformin (COVERED)" if covered else "fresh topic"
     monkeypatch.setattr(agent.deep_search, "search_status", lambda q: status)
     arts = articles or [{"pmid": "1", "abstract": "Metformin treats T2D.", "last_author": "Smith"}]

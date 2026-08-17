@@ -109,3 +109,37 @@ def test_resolve_europepmc_is_offline_safe(monkeypatch):
         raise OSError("no network")
     monkeypatch.setattr(biblio.net, "fetch_text", boom)
     assert biblio.resolve_europepmc(pmid="777") is None
+
+
+# --------------------------------------------------------------------------- #
+# enrich — backfill crosswalk + full-text availability                         #
+# --------------------------------------------------------------------------- #
+def _fake_resolver(**expected):
+    def r(pmid="", doi=""):
+        return {"pmid": pmid, "pmcid": "PMC88", "doi": "10.7/enriched",
+                "title": "Resolved", "has_fulltext": True}
+    return r
+
+
+def test_enrich_backfills_doi_pmcid_and_fulltext_flag():
+    biblio.register({"pmid": "888"}, access="abstract", lab_query="q")
+    w = biblio.enrich("888", resolver=_fake_resolver())
+    assert "doi:10.7/enriched" in w["xrefs"] and "pmcid:PMC88" in w["xrefs"]
+    assert w["fulltext_available"] is True
+    assert biblio.get("10.7/enriched")["key"] == "pmid:888"   # still ONE work, found by DOI now
+    assert len(biblio._load()) == 1
+
+
+def test_enrich_is_noop_when_already_has_doi():
+    biblio.register({"pmid": "889", "doi": "10.1/known"}, lab_query="q")
+    called = []
+    w = biblio.enrich("889", resolver=lambda **k: called.append(1) or {"doi": "10.9/other"})
+    assert not called                                # resolver never consulted
+    assert "doi:10.9/other" not in w["xrefs"]
+
+
+def test_enrich_is_offline_safe():
+    biblio.register({"pmid": "890"}, lab_query="q")
+    w = biblio.enrich("890", resolver=lambda **k: None)   # resolver failed / offline
+    assert w["access"] == "abstract" and not any(t.startswith("doi:") for t in w["xrefs"])
+    assert biblio.enrich("does-not-exist", resolver=_fake_resolver()) is None

@@ -102,6 +102,18 @@ def _index(works: list) -> dict:
     return idx
 
 
+def _update_work(key: str, **fields) -> dict | None:
+    """Set fields on the Work with `key`, under lock. Returns the updated Work or None."""
+    with store_lock.critical(STORE):
+        works = _load()
+        for w in works:
+            if w["key"] == key:
+                w.update(fields)
+                _save(works)
+                return w
+    return None
+
+
 def _now() -> str:
     return datetime.now().isoformat(timespec="seconds")
 
@@ -219,6 +231,33 @@ def stats() -> dict:
 # Resolver — Europe PMC (best-effort, network; stubbed in tests)               #
 # --------------------------------------------------------------------------- #
 _EPMC = "https://www.ebi.ac.uk/europepmc/webservices/rest"
+
+
+def enrich(id_str: str, resolver=None) -> dict | None:
+    """Backfill a registered Work's crosswalk (DOI/PMCID) + full-text availability via a resolver.
+
+    Best-effort and idempotent: a no-op if the Work is unknown, already carries a DOI, or the
+    resolver returns nothing (offline-safe). `resolver` is injectable for testing; defaults to
+    Europe PMC. Sets `fulltext_available` (the full text EXISTS) — distinct from `access` (we've
+    READ it): knowing a full text exists is not the same as having ingested it."""
+    resolver = resolver or resolve_europepmc
+    w = get(id_str)
+    if w is None:
+        return None
+    if any(t.startswith("doi:") for t in w.get("xrefs", [])):
+        return w                                   # already has a DOI — nothing to backfill
+    key = w["key"]
+    pmid = next((t.split(":", 1)[1] for t in w["xrefs"] if t.startswith("pmid:")), "")
+    if not pmid:
+        return w
+    meta = resolver(pmid=pmid)
+    if not meta:
+        return w
+    register({"pmid": meta.get("pmid") or pmid, "doi": meta.get("doi"),
+              "pmcid": meta.get("pmcid")}, title=meta.get("title", ""))   # merges crosswalk in
+    if meta.get("has_fulltext"):
+        _update_work(key, fulltext_available=True)
+    return get(id_str)
 
 
 def resolve_europepmc(pmid: str = "", doi: str = "") -> dict | None:
