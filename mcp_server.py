@@ -39,6 +39,7 @@ from pathlib import Path
 
 from fastmcp import FastMCP
 
+import tickets
 import kg_memory as kg
 import hypothesis_tools as hyp
 import novelty
@@ -79,6 +80,32 @@ def _caller() -> str | None:
         return h.get("x-substrate-contributor") or h.get("x-forwarded-user") or None
     except Exception:
         return None
+
+
+# --------------------------------------------------------------------------- #
+# Auto-ticket: any UNHANDLED tool error files a ticket (dedup'd) and re-raises, #
+# so silent failures surface to the admin without the session having to notice. #
+# --------------------------------------------------------------------------- #
+try:
+    from fastmcp.server.middleware import Middleware
+
+    class _TicketOnError(Middleware):
+        async def on_call_tool(self, context, call_next):
+            try:
+                return await call_next(context)
+            except Exception as err:
+                try:
+                    msg = getattr(context, "message", None)
+                    tool = getattr(msg, "name", "") or ""
+                    args = getattr(msg, "arguments", {}) or {}
+                except Exception:
+                    tool, args = "", {}
+                tickets.auto_file(err, tool=tool, args=args, area="mcp", reporter=_caller() or "")
+                raise                                   # preserve normal MCP error behavior
+
+    mcp.add_middleware(_TicketOnError())
+except Exception:                                       # older fastmcp / API change → skip, never break
+    pass
 
 
 # =========================================================================== #

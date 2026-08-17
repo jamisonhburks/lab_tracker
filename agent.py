@@ -960,7 +960,12 @@ def run_agent(question: str) -> list:
             # to the tool's research activity; unknown tools go PROVISIONAL with a hint for discovery.
             act, prov, hint = token_meter.resolve_activity(name)
             with token_meter.activity(act, provisional=prov, hint=hint):
-                output = DISPATCH[name](**args)
+                try:
+                    output = DISPATCH[name](**args)
+                except Exception as err:               # a crashing tool auto-files a ticket, loop survives
+                    import tickets
+                    filed = tickets.auto_file(err, tool=name, args=args, area="agent-tool")
+                    output = f"[tool {name} errored: {type(err).__name__}: {err}] ({filed})"
 
             tool_log.append({"name": name, "args": args})
             ledger.record(name, args, layer="orchestrator")   # actual, in order

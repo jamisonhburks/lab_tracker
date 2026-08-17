@@ -62,3 +62,43 @@ def test_render_and_empty():
     tickets.file_ticket("something broke", severity="blocker", area="mcp", reporter="dave")
     out = tickets.render(status="open")
     assert "T-0001" in out and "blocker" in out and "dave" in out
+
+
+# --------------------------------------------------------------------------- #
+# auto_file — unhandled-error tickets, deduplicated, never raising              #
+# --------------------------------------------------------------------------- #
+def test_auto_file_creates_high_severity_auto_ticket():
+    msg = tickets.auto_file(ValueError("boom on line 3"), tool="curate_literature",
+                            args={"query": "x"}, area="mcp", reporter="alice")
+    assert msg == "filed T-0001"
+    t = tickets.list_tickets()[0]
+    assert t["severity"] == "high" and t["auto"] is True and t["reporter"] == "alice"
+    assert "ValueError" in t["title"] and "curate_literature" in t["body"]
+
+
+def test_auto_file_dedups_recurring_error_while_open():
+    tickets.auto_file(KeyError("k"), tool="query_kg", reporter="bob")
+    again = tickets.auto_file(KeyError("k"), tool="query_kg", reporter="bob")
+    assert "recurred x2" in again
+    assert len(tickets._load()) == 1                       # one ticket, occurrence bumped
+    assert tickets.list_tickets()[0]["occurrences"] == 2
+    # a DIFFERENT error signature files a fresh ticket
+    tickets.auto_file(TypeError("t"), tool="query_kg", reporter="bob")
+    assert len(tickets._load()) == 2
+    # once closed, the same error files anew (it may have regressed)
+    tickets.update_ticket("T-0001", status="closed")
+    tickets.auto_file(KeyError("k"), tool="query_kg", reporter="bob")
+    assert len(tickets._load()) == 3
+
+
+def test_auto_file_never_raises(monkeypatch):
+    # even if the store write blows up, auto_file must swallow it (don't compound the failure)
+    monkeypatch.setattr(tickets, "_save", lambda rows: (_ for _ in ()).throw(OSError("disk full")))
+    assert tickets.auto_file(RuntimeError("x"), tool="t") == "(auto-ticket failed)"
+
+
+def test_auto_file_reporter_falls_back_to_env(monkeypatch):
+    monkeypatch.delenv("SUBSTRATE_CONTRIBUTOR", raising=False)
+    monkeypatch.setenv("USER", "clusteruser")
+    tickets.auto_file(ValueError("x"), tool="t")
+    assert tickets.list_tickets()[0]["reporter"] == "clusteruser"

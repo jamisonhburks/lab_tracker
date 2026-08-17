@@ -14,6 +14,7 @@ Store: memory/tickets.jsonl. LLM-free; every operation is safe under concurrent 
     python tickets.py stats
 """
 import json
+import os
 import re
 import sys
 from datetime import datetime
@@ -59,6 +60,49 @@ def file_ticket(title: str, body: str = "", severity: str = "medium", area: str 
             "history": [{"ts": _now(), "by": reporter, "action": "filed"}]})
         _save(rows)
     return tid
+
+
+def _short(args) -> str:
+    try:
+        s = json.dumps(args, default=str)
+    except Exception:
+        s = str(args)
+    return s[:200]
+
+
+def auto_file(exc: BaseException, tool: str = "", args=None, area: str = "mcp",
+              reporter: str = "", context: str = "") -> str:
+    """Auto-file a ticket for an UNHANDLED tool error. Deduplicated by (tool, error-signature) while
+    a matching ticket is still open — a recurrence bumps `occurrences` instead of spamming new
+    tickets. NEVER raises (telemetry must not compound the failure it's reporting)."""
+    try:
+        reporter = reporter or os.environ.get("SUBSTRATE_CONTRIBUTOR") or os.environ.get("USER") or "auto"
+        etype = type(exc).__name__
+        first = (str(exc) or "").splitlines()[0] if str(exc) else ""
+        sig = f"{tool}|{etype}|{first[:120]}"
+        with store_lock.critical(TICKETS):
+            rows = _load()
+            dup = next((r for r in rows if r.get("status") != "closed" and r.get("signature") == sig), None)
+            if dup is not None:
+                dup["occurrences"] = int(dup.get("occurrences", 1)) + 1
+                dup["updated"] = _now()
+                dup.setdefault("history", []).append(
+                    {"ts": _now(), "by": reporter, "action": "recurred"})
+                _save(rows)
+                return f"(known issue {dup['id']} — recurred x{dup['occurrences']}; not re-filed)"
+            n = max((int(re.sub(r"\D", "", r.get("id", "")) or 0) for r in rows), default=0) + 1
+            tid = f"T-{n:04d}"
+            rows.append({
+                "id": tid, "ts": _now(), "reporter": reporter, "severity": "high", "area": area,
+                "title": f"[auto] {tool or 'tool'} raised {etype}: {first[:80]}".strip(),
+                "body": f"tool={tool} args={_short(args)}\n{context}".strip(),
+                "context": f"{etype}: {str(exc)[:300]}", "status": "open", "resolution": "",
+                "signature": sig, "occurrences": 1, "auto": True, "updated": _now(),
+                "history": [{"ts": _now(), "by": reporter, "action": "auto-filed"}]})
+            _save(rows)
+        return f"filed {tid}"
+    except Exception:
+        return "(auto-ticket failed)"
 
 
 def update_ticket(ticket_id: str, status: str = None, note: str = "", by: str = "") -> dict | None:
@@ -112,7 +156,8 @@ def render(status: str = "") -> str:
     lines = [head]
     for r in rows:
         area = f" · {r['area']}" if r.get("area") else ""
-        lines.append(f"  {r['id']}  [{r.get('status')}/{r.get('severity')}] {r.get('title')}"
+        occ = f" (x{r['occurrences']})" if int(r.get("occurrences", 1)) > 1 else ""
+        lines.append(f"  {r['id']}  [{r.get('status')}/{r.get('severity')}] {r.get('title')}{occ}"
                      f"  — {r.get('reporter')}{area}")
     return "\n".join(lines)
 

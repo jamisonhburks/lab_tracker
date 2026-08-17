@@ -67,6 +67,11 @@ python tickets.py stats
 From a Claude session the same is `list_tickets` / `update_ticket`. Tickets are attributed to the
 reporter automatically (the proxy's `X-Substrate-Contributor`), so you can see who hit what.
 
+**Auto-filed tickets:** any *unhandled* tool error also files a ticket on its own (marked `[auto]`,
+severity `high`), so silent crashes surface even when the session doesn't mention them. These are
+**deduplicated** while open — a recurring error bumps an `(xN)` occurrence count instead of spamming
+new tickets. So a burst of `[auto] … (x40)` means one bug hit forty times, not forty bugs.
+
 ---
 
 **Lighter beta option:** if standing up TLS + SLURM is too much for a first test, you can skip the
