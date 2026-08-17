@@ -15,6 +15,7 @@ import store_lock
 
 ROOT = Path(__file__).parent
 REGISTRY = ROOT / "memory" / "projects.jsonl"
+PENDING = ROOT / "memory" / "conformed_pending.jsonl"   # conformed but not yet register_project'd
 
 
 def _load() -> list:
@@ -72,6 +73,38 @@ def _hypothesis_ids(root) -> set:
         except Exception:
             ids.add(Path(f).stem)
     return ids
+
+
+def record_conformed(path: str, by: str = "") -> None:
+    """Breadcrumb: a project was conformed. `pending_registrations` surfaces it until the project is
+    registered, so a skipped register_project doesn't leave the work silently invisible."""
+    try:
+        p = Path(path).expanduser().resolve()
+    except Exception:
+        p = Path(path)
+    store_lock.append_jsonl(PENDING, {"path": str(p), "by": by or "unknown",
+                                      "ts": datetime.now().isoformat(timespec="seconds")})
+
+
+def pending_registrations() -> list:
+    """Conformed projects NOT yet registered (breadcrumbs minus anything already in the registry)."""
+    if not PENDING.exists():
+        return []
+    registered = {r["path"] for r in _load()}
+    out, seen = [], set()
+    for line in PENDING.open(encoding="utf-8"):
+        if not line.strip():
+            continue
+        try:
+            e = json.loads(line)
+        except Exception:
+            continue
+        p = e.get("path")
+        if not p or p in seen or p in registered or not Path(p).is_dir():
+            continue
+        seen.add(p)
+        out.append(e)
+    return out
 
 
 def list_projects() -> list:

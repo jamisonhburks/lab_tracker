@@ -385,6 +385,15 @@ if _SHARED:
         return "\n".join(f"  {p['name']} — {p['path']}  (by {p.get('registered_by', '?')})" for p in ps)
 
     @mcp.tool
+    def my_work() -> str:
+        """YOUR unfinished business across the tiers, with the next command for each: conformed
+        projects not yet in shared WIP (→ register_project), your hypotheses not yet evaluated,
+        and evaluated ones not yet contributed to consensus (→ contribute_finding). Closes the
+        conform → WIP → consensus loop so you're told what's pending instead of having to remember."""
+        import pending
+        return pending.render(_caller())
+
+    @mcp.tool
     def contribute_finding(subject: str, predicate: str, object: str, source: str,
                            source_kind: str = "literature", direction: str = "supports",
                            abstract: str = "", critic_verdict: str = "",
