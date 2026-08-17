@@ -31,12 +31,14 @@ A Work records:
   `source` becomes a link to a Work node, so support is precisely traceable.
 
 ### Sources — tiered, not all at once
-- **Primary resolver: Europe PMC.** Biomedical; gives abstracts **+ full text for OA** and native
-  PMID↔PMCID↔DOI crosswalk — the drop-in upgrade from raw EUtils that also fills the access axis.
-- **OA access signal: Unpaywall** (OA full-text location by DOI) — later, to sharpen `full_text`.
-- **Canonical metadata fallback: Crossref** (DOI metadata + references).
-- **Citation edges: OpenCitations / OpenAlex** — deferred until support-*chain* tracing is needed
-  (Work —cites→ Work).
+- **Primary resolver: Europe PMC** *(implemented)*. Biomedical; gives abstracts **+ full text for
+  OA** and native PMID↔PMCID↔DOI crosswalk — the drop-in upgrade from raw EUtils that also fills the
+  access axis. `resolve_europepmc` (crosswalk/enrich) + `_fetch_fulltext_europepmc` (full text).
+- **OA access signal: Unpaywall** *(implemented)* — `resolve_unpaywall`/`oa_status` (needs a contact
+  email) to flag OA + locate full text, sharpening `full_text`.
+- **Citation edges: OpenCitations** *(implemented)* — `resolve_citations`/`fetch_citations` build
+  Work —cites→ Work for support-*chain* tracing; resolver is injectable (OpenAlex can swap in).
+- **Canonical metadata fallback: Crossref** — deferred (Europe PMC covers the biomedical corpus).
 - **DataCite** — deferred; only when findings tie to datasets (GWAS/PRS provenance).
 - **OpenAIRE** — deferred (heavy aggregator, low early value).
 - **ORKG, ResearchGraph** — **not adopted.** ORKG overlaps our own abstract-extraction KG;

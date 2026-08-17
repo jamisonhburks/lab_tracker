@@ -235,7 +235,8 @@ def stats() -> dict:
     for w in works:
         by_access[w.get("access", "none")] = by_access.get(w.get("access", "none"), 0) + 1
     return {"works": len(works), "by_access": by_access,
-            "links": sum(len(w.get("supports", [])) for w in works)}
+            "links": sum(len(w.get("supports", [])) for w in works),
+            "citations": sum(len(w.get("cites", [])) for w in works)}
 
 
 # --------------------------------------------------------------------------- #
@@ -379,3 +380,72 @@ def mark_fulltext(id_str: str, text_source: str = "external") -> dict | None:
     if w is None:
         return None
     return register(_xrefs_to_ids(w["xrefs"]), access="full_text", text_source=text_source)["work"]
+
+
+# --------------------------------------------------------------------------- #
+# Citation edges (ADR-0061 #4): Work —cites→ Work, for support-chain tracing.   #
+# OpenCitations by default; resolver is injectable (e.g. OpenAlex) + testable.  #
+# --------------------------------------------------------------------------- #
+_OPENCITATIONS = "https://opencitations.net/index/coci/api/v1"
+
+
+def resolve_citations(doi: str) -> list:
+    """DOIs this DOI cites (outgoing references) via OpenCitations COCI. Best-effort → [] on any
+    failure (offline-safe)."""
+    doi = norm_doi(doi)
+    if not doi:
+        return []
+    try:
+        url = f"{_OPENCITATIONS}/references/{urllib.parse.quote(doi)}"
+        data = json.loads(net.fetch_text(url, timeout=30))
+        return [d for row in data if (d := norm_doi(row.get("cited", "")))]
+    except Exception:
+        return []
+
+
+def add_citation(from_id: str, to_doi: str) -> bool:
+    """Record from_id —cites→ to_doi (a DOI). Idempotent; True if the citing Work exists."""
+    to = norm_doi(to_doi)
+    if not to:
+        return False
+    with store_lock.critical(STORE):
+        works = _load()
+        idx = _index(works)
+        key = next((idx[t] for t in _one_token(from_id) if t in idx), None)
+        if key is None:
+            return False
+        w = next(x for x in works if x["key"] == key)
+        cites = w.setdefault("cites", [])
+        if to not in cites:
+            cites.append(to)
+            _save(works)
+        return True
+
+
+def fetch_citations(id_str: str, resolver=None) -> list:
+    """Populate a Work's outgoing citations (by its DOI) via the resolver. Returns the cited DOIs."""
+    resolver = resolver or resolve_citations
+    w = get(id_str)
+    if w is None:
+        return []
+    doi = next((t.split(":", 1)[1] for t in w["xrefs"] if t.startswith("doi:")), "")
+    if not doi:
+        return []
+    cited = resolver(doi)
+    for cd in cited:
+        add_citation(id_str, cd)
+    return cited
+
+
+def cites_of(id_str: str) -> list:
+    w = get(id_str)
+    return list(w.get("cites", [])) if w else []
+
+
+def cited_by(id_str: str) -> list:
+    """Works in the store that cite this one (by any of its DOIs) — the incoming edges."""
+    w = get(id_str)
+    if w is None:
+        return []
+    dois = {t.split(":", 1)[1] for t in w["xrefs"] if t.startswith("doi:")}
+    return [x for x in _load() if dois & set(x.get("cites", []))] if dois else []

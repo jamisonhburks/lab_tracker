@@ -195,3 +195,44 @@ def test_mark_fulltext_upgrades_access():
 
 def test_strip_xml():
     assert biblio._strip_xml("<a>hello   <b>world</b></a>") == "hello world"
+
+
+# --------------------------------------------------------------------------- #
+# citation edges (OpenCitations stubbed)                                        #
+# --------------------------------------------------------------------------- #
+def test_resolve_citations_parses_opencitations(monkeypatch):
+    payload = '[{"cited":"10.1/a"},{"cited":"https://doi.org/10.2/B"},{"cited":""}]'
+    monkeypatch.setattr(biblio.net, "fetch_text", lambda *a, **k: payload)
+    assert biblio.resolve_citations("10.9/citing") == ["10.1/a", "10.2/b"]
+
+
+def test_resolve_citations_offline_safe(monkeypatch):
+    monkeypatch.setattr(biblio.net, "fetch_text", lambda *a, **k: (_ for _ in ()).throw(OSError()))
+    assert biblio.resolve_citations("10.9/x") == []
+    assert biblio.resolve_citations("") == []
+
+
+def test_fetch_and_query_citation_edges():
+    biblio.register({"pmid": "1", "doi": "10.1/citing"}, lab_query="q")
+    biblio.register({"pmid": "2", "doi": "10.2/cited"}, lab_query="q")   # the cited paper is also a Work
+    cited = biblio.fetch_citations("10.1/citing", resolver=lambda doi: ["10.2/cited", "10.3/external"])
+    assert set(cited) == {"10.2/cited", "10.3/external"}
+    assert set(biblio.cites_of("1")) == {"10.2/cited", "10.3/external"}
+    # incoming edge: the cited Work sees paper 1 as a citer (keyed by DOI — canonical preference)
+    cb = biblio.cited_by("10.2/cited")
+    assert len(cb) == 1 and cb[0]["key"] == "doi:10.1/citing"
+
+
+def test_add_citation_idempotent_and_guards():
+    biblio.register({"pmid": "10", "doi": "10.1/c"}, lab_query="q")
+    assert biblio.add_citation("10", "10.5/x")
+    assert biblio.add_citation("10", "10.5/x")           # idempotent
+    assert biblio.cites_of("10") == ["10.5/x"]
+    assert biblio.add_citation("999", "10.5/x") is False  # unknown citing Work
+    assert biblio.add_citation("10", "") is False         # no target doi
+
+
+def test_stats_counts_citations():
+    biblio.register({"pmid": "1", "doi": "10.1/a"}, lab_query="q")
+    biblio.add_citation("1", "10.2/b")
+    assert biblio.stats()["citations"] == 1
