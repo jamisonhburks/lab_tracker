@@ -479,13 +479,14 @@ if _SHARED:
         return tickets.render(status=status.strip())
 
     @mcp.tool
-    def update_ticket(ticket_id: str, status: str = "", note: str = "") -> str:
-        """Admin triage: set a ticket's `status` (ack | closed) and/or append a `note`
-        (a closing note becomes its resolution)."""
+    def update_ticket(ticket_id: str, status: str = "", note: str = "", title: str = "",
+                      severity: str = "", area: str = "") -> str:
+        """Triage/edit a ticket: set `status` (ack | closed), append a `note` (a closing note becomes
+        its resolution), and/or CORRECT a mis-filed `title` / `severity` / `area` in place."""
         import tickets
         t = tickets.update_ticket(ticket_id, status=status.strip() or None, note=note,
-                                  by=_caller() or "admin")
-        return f"{ticket_id} → {t['status']}" if t else f"no ticket {ticket_id}"
+                                  by=_caller() or "admin", title=title, severity=severity, area=area)
+        return f"{ticket_id} → {t['status']} [{t['severity']}] {t['title']}" if t else f"no ticket {ticket_id}"
 
     @mcp.tool
     def match_misc_finding(subject: str, object: str) -> str:
