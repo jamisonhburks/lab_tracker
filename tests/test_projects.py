@@ -41,6 +41,18 @@ def test_register_and_idempotent(tmp_path, monkeypatch):
     assert len(projects.list_projects()) == 1
 
 
+def test_register_flags_hypothesis_id_collisions(tmp_path, monkeypatch):
+    _iso(tmp_path, monkeypatch)
+    sub = tmp_path / "substrate"
+    (sub / "hypotheses").mkdir(parents=True)
+    (sub / "hypotheses" / "H001_x.yaml").write_text("id: H001\n", encoding="utf-8")
+    monkeypatch.setattr(projects, "ROOT", sub)                # substrate already has H001
+    proj = _conformed(tmp_path, "PathTIGR")
+    (proj / "hypotheses" / "H001_y.yaml").write_text("id: H001\n", encoding="utf-8")
+    r = projects.register_project(str(proj))                   # project also has H001
+    assert r["ok"] and "H001" in r["collisions"] and "collide" in r["msg"]
+
+
 def test_roots_aggregates_lab_plus_registered(tmp_path, monkeypatch):
     _iso(tmp_path, monkeypatch)
     proj = _conformed(tmp_path, "PathTIGR")

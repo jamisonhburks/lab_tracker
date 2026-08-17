@@ -45,11 +45,33 @@ def register_project(path: str, name: str = "", by: str = "") -> dict:
                                     f"(python conform.py plan {path}), then register."}
     if any(r["path"] == str(p) for r in _load()):
         return {"ok": True, "msg": f"{p.name} is already registered.", "path": str(p)}
+    # heads-up on H{NNN} id collisions with already-tracked work (they're disambiguated by project
+    # tag in list_active_work, but the bare ids overlap — the alpha's T-0002).
+    existing = _hypothesis_ids(ROOT)
+    for _n, r in project_roots():
+        existing |= _hypothesis_ids(r)
+    collisions = sorted(_hypothesis_ids(p) & existing)
     entry = {"name": (name or "").strip() or p.name, "path": str(p),
              "registered_by": by or "unknown", "ts": datetime.now().isoformat(timespec="seconds")}
     store_lock.append_jsonl(REGISTRY, entry)
-    return {"ok": True, "path": str(p),
-            "msg": f"registered '{entry['name']}' — its hypotheses now show up in list_active_work."}
+    msg = f"registered '{entry['name']}' — its hypotheses now show up in list_active_work."
+    if collisions:
+        msg += (f" ⚠ shares id(s) {', '.join(collisions)} with existing work; they're distinguished "
+                f"by project tag in list_active_work, but the bare ids collide.")
+    return {"ok": True, "path": str(p), "collisions": collisions, "msg": msg}
+
+
+def _hypothesis_ids(root) -> set:
+    """The H{NNN} ids declared under a root's hypotheses/ (best-effort)."""
+    ids = set()
+    for f in glob.glob(str(Path(root) / "hypotheses" / "*.y*ml")):
+        try:
+            import yaml
+            d = yaml.safe_load(open(f, encoding="utf-8")) or {}
+            ids.add(str(d.get("id") or Path(f).stem))
+        except Exception:
+            ids.add(Path(f).stem)
+    return ids
 
 
 def list_projects() -> list:

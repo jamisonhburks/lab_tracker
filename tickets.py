@@ -105,21 +105,32 @@ def auto_file(exc: BaseException, tool: str = "", args=None, area: str = "mcp",
         return "(auto-ticket failed)"
 
 
-def update_ticket(ticket_id: str, status: str = None, note: str = "", by: str = "") -> dict | None:
-    """Admin triage: set status (ack|closed) and/or append a note. Returns the ticket, or None."""
+def update_ticket(ticket_id: str, status: str = None, note: str = "", by: str = "",
+                  title: str = "", severity: str = "", area: str = "") -> dict | None:
+    """Triage/edit a ticket: set status (ack|closed), append a note, and/or CORRECT its title,
+    severity, or area (so a mis-filed ticket can be fixed in place — not just annotated). Returns
+    the ticket, or None if unknown."""
     status = status if status in STATUSES else None
     with store_lock.critical(TICKETS):
         rows = _load()
         t = next((r for r in rows if r.get("id") == ticket_id), None)
         if t is None:
             return None
+        edited = []
         if status:
             t["status"] = status
             if status == "closed" and note:
                 t["resolution"] = note
+        if title.strip():
+            t["title"] = title.strip(); edited.append("title")
+        if severity.strip() in SEVERITIES:
+            t["severity"] = severity.strip(); edited.append("severity")
+        if area.strip():
+            t["area"] = area.strip(); edited.append("area")
         t["updated"] = _now()
-        t.setdefault("history", []).append(
-            {"ts": _now(), "by": by or "admin", "action": status or "note", "note": note})
+        action = status or ("edited:" + ",".join(edited) if edited else "note")
+        t.setdefault("history", []).append({"ts": _now(), "by": by or "admin",
+                                            "action": action, "note": note})
         _save(rows)
         return t
 

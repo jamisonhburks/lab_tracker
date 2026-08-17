@@ -34,6 +34,18 @@ def test_ordering_open_then_severity():
     assert order == ["T-0002", "T-0001", "T-0003"]
 
 
+def test_update_ticket_corrects_title_severity_area():
+    # the alpha's T-0002: a mis-filed ticket must be fixable in place, not just annotated
+    tid = tickets.file_ticket("wrong title (pasted)", severity="low", area="mcp", reporter="a")
+    t = tickets.update_ticket(tid, title="id-namespace collision", severity="medium",
+                              area="experiment", by="admin")
+    assert t["title"] == "id-namespace collision"
+    assert t["severity"] == "medium" and t["area"] == "experiment"
+    assert any(h["action"].startswith("edited") for h in t["history"])   # edit recorded in the trail
+    t2 = tickets.update_ticket(tid, severity="bogus")                    # invalid severity ignored
+    assert t2["severity"] == "medium"
+
+
 def test_update_status_note_and_resolution():
     tid = tickets.file_ticket("mcp not connecting", reporter="carol")
     assert tickets.update_ticket(tid, status="ack", by="admin")["status"] == "ack"
