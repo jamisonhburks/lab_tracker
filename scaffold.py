@@ -13,10 +13,12 @@ checks, actual hypotheses) to the agent, which is the whole point of the split.
 
 `new`     builds the standard tree, drops CLAUDE.md + README.md (placeholders filled) + a
           .gitignore + a charter stub that tells the next session which substrate checks to run.
-`conform` is NON-DESTRUCTIVE: creates only missing standard dirs, drops CLAUDE.md/README/
-          audit-stub only if absent, and never touches existing files.
+`conform` is NON-DESTRUCTIVE: creates only missing standard dirs and adds CLAUDE.md/README —
+          and if either name is already taken it drops a `.lab-standard` sidecar rather than
+          overwrite the original (even under --force). It NEVER moves or edits existing files;
+          the actual reorganization is done by the guarded `conform.py` (audit → safe move → undo).
 
-Stdlib only; no dependencies. Idempotent: existing files are never overwritten (use --force).
+Stdlib only; no dependencies. Idempotent. On conform, originals are never overwritten.
 """
 import argparse
 import os
@@ -49,6 +51,22 @@ def _fill(template_name: str, repl: dict) -> str:
 
 def _write(path: Path, content: str, force: bool, made: list, skipped: list) -> None:
     if path.exists() and not force:
+        skipped.append(path)
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    made.append(path)
+
+
+def _write_noclobber(path: Path, content: str, made: list, skipped: list) -> None:
+    """Conform-safe write: NEVER overwrite an existing original, even with --force. If the target
+    name is already taken, drop a `<stem>.lab-standard<suffix>` sidecar for the human to merge."""
+    if path.exists():
+        side = path.with_name(f"{path.stem}.lab-standard{path.suffix}")
+        if not side.exists():
+            side.parent.mkdir(parents=True, exist_ok=True)
+            side.write_text(content, encoding="utf-8")
+            made.append(side)
         skipped.append(path)
         return
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -134,24 +152,19 @@ def cmd_conform(args) -> int:
             p.mkdir(parents=True, exist_ok=True)
             made.append(p)
 
+    # Standard-carrying files are written collision-safe: an existing original is NEVER overwritten
+    # (even with --force) — a `.lab-standard` sidecar is dropped instead for the human to merge.
     claude = _fill("project-CLAUDE.md",
                    {"{{PROJECT_TITLE}}": title, "{{SUBSTRATE_PATH}}": substrate_rel})
-    _write(dest / "CLAUDE.md", claude, args.force, made, skipped)
-    if not (dest / "README.md").exists() or args.force:
-        readme = _fill("project-README.md", {"{{PROJECT_TITLE}}": title})
-        _write(dest / "README.md", readme, args.force, made, skipped)
-    audit = (f"# Conformance audit — {title}  (local semantic)\n\n"
-             "Map every EXISTING artifact → its standard destination + new name + tier, and\n"
-             "show this to a human BEFORE moving anything. Follow "
-             f"{substrate_rel}/lab-standard/conform-project.md.\n\n"
-             "| original path | → destination (H{NNN}) | tier | status | notes |\n"
-             "|---|---|---|---|---|\n|  |  |  |  |  |\n")
-    _write(dest / "notes" / "00_conformance_audit.md", audit, args.force, made, skipped)
+    _write_noclobber(dest / "CLAUDE.md", claude, made, skipped)
+    readme = _fill("project-README.md", {"{{PROJECT_TITLE}}": title})
+    _write_noclobber(dest / "README.md", readme, made, skipped)
 
     _report(dest, made, skipped)
-    print(f"\nNon-destructive. Nothing existing was moved. Next: fill "
-          f"{os.path.relpath(dest)}/notes/00_conformance_audit.md, then execute "
-          f"{substrate_rel}/lab-standard/conform-project.md.")
+    print(f"\nNon-destructive: only missing dirs/files were added; no original was overwritten. "
+          f"Next, AUDIT then move safely with the guarded tool (never edits/deletes originals):\n"
+          f"  python {substrate_rel}/conform.py plan  {os.path.relpath(dest)}   # review the audit\n"
+          f"  python {substrate_rel}/conform.py apply {os.path.relpath(dest)}   # relocate `move` rows")
     return 0
 
 

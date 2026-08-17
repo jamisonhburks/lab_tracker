@@ -7,13 +7,30 @@ The goal is to reshape an existing, probably-messy project into the standard lay
 Rule: **move and annotate, do not re-run or re-interpret.** You are a librarian here, not
 an experimenter. If something is ambiguous, ask rather than guess what a past result meant.
 
-## 0. Survey first, touch nothing
+> **Non-destructive guarantee (enforced in code, not just here).** Conforming a project must
+> NEVER edit a file's contents and NEVER delete the owner's work — it may only RELOCATE artifacts
+> and ADD standard files. **Do every move through `conform.py`, never with raw `mv`/`rm`/edits.**
+> `conform.py` refuses to overwrite, prefers `git mv` (or else COPIES, leaving the original in
+> place), and records a reversible manifest (`conform.py undo`). If you catch yourself about to
+> rewrite or delete an original, STOP and ask the human.
 
-- Read [`project-structure.md`](project-structure.md) and [`promotion.md`](promotion.md).
-- Inventory what exists: scripts, notebooks, data files, results, any written findings.
-  Produce `notes/00_conformance_audit.md` listing every artifact and your proposed
-  destination + new name. **Show this to the human before moving anything.**
-- Identify `data/raw/` candidates and mark them read-only in your plan.
+## 0. Survey first, touch nothing — then produce the audit with the tool
+
+```sh
+python <substrate>/conform.py plan <path-to-existing-project>
+```
+
+This writes `notes/00_conformance_audit.md` + `conform_plan.json`: every artifact with a proposed
+`move | leave | skip | review` action and destination. **It touches nothing.** Read
+[`project-structure.md`](project-structure.md) and [`promotion.md`](promotion.md), then correct the
+plan by hand — fix destinations, downgrade anything uncertain to `leave`/`review`, and confirm
+`data/raw/` candidates are marked read-only. **Show the audit to the human before applying.**
+
+Only after review:
+
+```sh
+python <substrate>/conform.py apply <path>    # relocates ONLY reviewed `move` rows; reversible
+```
 
 ## 1. Classify each artifact into a tier
 
@@ -33,10 +50,12 @@ When in doubt, classify **down** (WIP, not consensus). Promotion is a deliberate
   original had no written hypothesis, reconstruct one from the code/results with the human
   and mark `status:` honestly (`complete` if it was actually run and evaluated; `draft`
   if only sketched). Use [`templates/hypothesis.yaml`](templates/hypothesis.yaml).
-- Move each experiment's code/results into `experiments/H{NNN}/` with the standard
-  subpaths. Wrap loose scripts so there is a `run.py` with a `__main__` block; keep the
-  original logic intact.
-- Rename result write-ups to `reports/H{NNN}_evaluation.md`.
+- `conform.py apply` stages research artifacts into `experiments/_unsorted/`, `data/`, `reports/`,
+  etc. — it deliberately does NOT invent `H{NNN}` structure. From those staging buckets, relocate
+  each experiment's code/results into `experiments/H{NNN}/` **with `conform.py` moves** (or `git mv`);
+  never hand-delete an original. Wrapping a loose script so it has a `run.py` `__main__` is a NEW
+  file that imports the original logic — do not rewrite the original in place.
+- Rename result write-ups to `reports/H{NNN}_evaluation.md` (a move, not an edit).
 
 ## 3. Backfill the metadata that makes it promotable
 
@@ -59,11 +78,11 @@ a seed or a version you can't verify.
 python scaffold.py conform <path-to-existing-project> --title "<Project Title>"
 ```
 
-This creates only **missing** standard dirs and drops `CLAUDE.md` (so future sessions
-conform), `README.md`, and `notes/00_conformance_audit.md` **only if absent** — it never
-moves or overwrites your existing files. Then fill the README status + `H{NNN}` table by hand.
-(By hand: copy from [`templates/`](templates/) and fill placeholders — the helper just does
-that deterministically.)
+This creates only **missing** standard dirs and adds `CLAUDE.md` (so future sessions conform) and
+`README.md`. If either name is already taken it writes a `.lab-standard` sidecar for you to merge
+rather than overwrite the original — **even with `--force`**. It never moves or edits existing
+files. (The audit itself comes from `conform.py plan` in Step 0.) Then fill the README status +
+`H{NNN}` table by hand.
 
 ## 5. Reconcile with the shared substrate, then stop
 
