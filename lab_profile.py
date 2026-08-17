@@ -104,7 +104,7 @@ def _default_id() -> str:
     if env:
         return env
     ids = list_profiles()
-    return ids[0] if len(ids) == 1 else (ids[0] if ids else "helmholtz-ai-health")
+    return ids[0] if len(ids) == 1 else (ids[0] if ids else "casale-lab")
 
 
 def load(profile_id: str = None) -> dict:

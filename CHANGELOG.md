@@ -90,7 +90,8 @@ decision behind it (see `docs/decisions/`). Dates are approximate build dates.
   serves the profile + tagged pubs as IN-CONTEXT grounding for the thinker to phrase gaps and
   propose the next method (substrate serves, thinker reasons — ADR-0030/0040). Modular: each lab
   ships `profiles/<id>.yaml` (`SUBSTRATE_LAB` selects), per-researcher views filter by author; a
-  seed `profiles/helmholtz-ai-health.yaml` ships as the example. A work/publication corpus is WORK-
+  `profiles/casale-lab.yaml` ships as the example (+ a `lab-standard/templates/lab-profile.yaml`
+  template). A work/publication corpus is WORK-
   not-person personalization (ADR-0052). Shared MCP tools `lab_profile` / `record_publication` /
   `covered_capabilities`. Verified hermetically (scope/covered/context; `OCT-longitudinal` kept
   distinct via a normalization fix). Sets up PR B (`coverage.py`: adoptable vs open-frontier gaps)
