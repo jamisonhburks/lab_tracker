@@ -40,7 +40,9 @@ def register_project(path: str, name: str = "", by: str = "") -> dict:
     except Exception:
         pass
     if not p.is_dir():
-        return {"ok": False, "msg": f"not a directory: {path}"}
+        return {"ok": False, "msg": f"can't see '{path}' from the substrate. A shared node only "
+                "reaches projects on shared filesystem mounted at the same path — put the project on "
+                "shared FS (e.g. the cluster's Lustre), or register from a substrate that can read it."}
     if not (p / "hypotheses").is_dir():
         return {"ok": False, "msg": f"{p.name} has no hypotheses/ — conform it first "
                                     f"(python conform.py plan {path}), then register."}
