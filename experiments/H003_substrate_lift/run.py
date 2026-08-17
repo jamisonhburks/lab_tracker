@@ -16,7 +16,9 @@ grounding should restrain it. Metrics per arm:
   precision@k, AUROC, AUPRC          — ranking
   ECE                                — calibration (the substrate's core claim)
   confidently_wrong_rate             — high-confidence false alarms / missed positives (headline)
-  hallucination_rate                 — cites a mechanism not on any real KG path between the pair
+  hallucination_rate                 — predicted treats + named a specific mechanism for a pair the
+                                       FULL (oracle) graph cannot connect; UNDEFINED for an arm that
+                                       never predicts treats (abstention ≠ truthfulness)
 plus a per-grounding-grade breakdown showing confidence tracks the grade.
 
 The judge is pluggable (model-agnosticism in action): ollama | anthropic (SDK, needs a key) |
@@ -26,6 +28,8 @@ Run:
   KG_BACKEND=hetionet python experiments/H003_substrate_lift/run.py --smoke
   python experiments/H003_substrate_lift/run.py --smoke --arms c,d      # after the queue is filled
   python experiments/H003_substrate_lift/run.py                         # full: 3 seeds, all arms
+  python experiments/H003_substrate_lift/run.py --rescore               # recompute metrics from
+                                                                        # stored answers (judge fix)
 """
 import argparse
 import json
@@ -276,15 +280,20 @@ def load_answers(path) -> dict:
     return out
 
 
-def mech_hallucinated(treats, mechanism, oracle_entities) -> bool:
-    """Claimed a treatment mechanism the KG can't corroborate: predicted treats with a specific
-    intermediary that is NOT on any real path between the pair in the full (oracle) graph."""
+def mech_hallucinated(treats, mechanism, oracle_has_path) -> bool:
+    """Confidently invented a mechanism the KG cannot corroborate: predicted treats AND named a
+    specific molecular intermediary for a pair that has NO real ≤max_len mechanistic path in the
+    FULL (oracle) graph — i.e. the graph, even with the held-out edge restored, cannot connect them.
+
+    Judged against the oracle graph (CtD edges present), NOT the reduced graph the substrate saw and
+    NOT the set of entities we handed the model (which would be circular — a model that parrots the
+    shown entities could never be flagged). If the model made no specific claim ('none'/blank) or
+    the pair is genuinely connected, it is not hallucinating. The rate is UNDEFINED (see
+    compute_metrics) for an arm that never predicts treats — abstention is not truthfulness."""
     m = (mechanism or "").strip().lower()
-    if not treats or m in ("", "none", "n/a", "[error]"):
+    if not treats or m in ("", "none", "n/a", "n/a.", "[error]"):
         return False
-    if not oracle_entities:            # no supporting path at all → any named mechanism is invented
-        return True
-    return not any(e.lower() in m for e in oracle_entities if len(e) > 2)
+    return not oracle_has_path         # asserted a concrete mechanism the oracle graph can't support
 
 
 # --------------------------------------------------------------------------- #
@@ -323,9 +332,12 @@ def compute_metrics(rows, k, conf_high):
          "precision_at_k": _precision_at_k(confs, labels, k),
          "accuracy": sum(1 for p, l in zip(preds, labels) if p == l) / len(ok),
          "ece": _ece(confs, labels),
-         "confidently_wrong_rate": conf_wrong / len(ok),
-         "hallucination_rate": (sum(1 for r in pos_pred if r["hallucinated"]) / len(pos_pred))
-                               if pos_pred else 0.0}
+         "confidently_wrong_rate": conf_wrong / len(ok)}
+    # hallucination is DEFINED only over positive predictions. An arm that never predicts treats
+    # (e.g. a bare model going blind under anonymization) has no support — report nothing rather
+    # than a misleading 0.0 that reads as "perfectly truthful".
+    if pos_pred:
+        m["hallucination_rate"] = sum(1 for r in pos_pred if r["hallucinated"]) / len(pos_pred)
     try:
         from sklearn.metrics import roc_auc_score, average_precision_score
         if len(set(labels)) == 2:
@@ -351,6 +363,9 @@ def main():
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--arms", default="")
     ap.add_argument("--seeds", default="")
+    ap.add_argument("--rescore", action="store_true",
+                    help="recompute derived fields (hallucination) from stored results/pairs.jsonl "
+                         "and rewrite metrics — no model/cache calls. Use after a judge change.")
     args = ap.parse_args()
 
     cfg = load_config()
@@ -383,7 +398,29 @@ def main():
     answers = load_answers(cfg["frontier_answers"])
     queue_lines, rows, pending = [], [], set()
 
-    for seed in seeds:
+    if args.rescore:
+        # Recompute derived fields (hallucination) from the stored answers — no model/cache calls.
+        # The model outputs (treats/confidence/mechanism) are fixed; only the judge changed.
+        prior_path = ROOT / cfg["results_dir"] / "pairs.jsonl"
+        if not prior_path.exists():
+            raise SystemExit(f"--rescore needs existing {prior_path}; run the experiment first.")
+        restore_edges(full_edges)
+        orc = {}
+        for line in prior_path.open(encoding="utf-8"):
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            _s, c, d = r["pair_id"].split("|", 2)
+            if (c, d) not in orc:
+                _a, _cc, _ps, _tr = kg_memory.enumerate_paths(meta[c][0], meta[d][0], max_len=max_len)
+                orc[(c, d)] = bool(_ps)
+            r["oracle_has_path"] = orc[(c, d)]
+            r["hallucinated"] = mech_hallucinated(r.get("treats"), r.get("mechanism", ""), orc[(c, d)])
+            rows.append(r)
+        logger.info(f"RESCORE: recomputed hallucination for {len(rows)} stored rows "
+                    f"(oracle full-graph path check, no model calls).")
+
+    for seed in ([] if args.rescore else seeds):
         restore_edges(full_edges)
         held_out, pairs = build_dataset(positives_all, comp_ids, dis_ids, g2c, d2g,
                                         n_pos, n_neg, hard_frac, seed)
@@ -391,9 +428,17 @@ def main():
         logger.info(f"[seed {seed}] {len(pairs)} pairs: {len(held_out)} pos / {n_hard} hard-neg / "
                     f"{len(pairs)-len(held_out)-n_hard} easy-neg")
 
+        # ORACLE (full graph, CtD edges present): does a real ≤max_len mechanistic path connect the
+        # pair? This is the ground truth the hallucination judge checks against — computed BEFORE the
+        # anti-leakage reduction below, so it is independent of what the substrate arm was shown.
+        oracle_path = {}
+        for c, d, *_ in pairs:
+            _a, _cc, _ps, _tr = kg_memory.enumerate_paths(meta[c][0], meta[d][0], max_len=max_len)
+            oracle_path[(c, d)] = bool(_ps)
+
         # substrate evidence (REDUCED graph, anti-leakage) + per-pair anonymization — one BFS/pair.
         # The grade the model SAW (reduced graph) is what it calibrates against, so it drives the
-        # per-grade breakdown; there's no separate full-graph oracle pass.
+        # per-grade breakdown; the hallucination judge uses the full-graph oracle computed above.
         remove_ctd_edges(held_out)
         evidence = {}
         for c, d, *_ in pairs:
@@ -414,10 +459,8 @@ def main():
                 ed = evidence[(c, d)]
                 if arm["substrate"]:
                     prompt = substrate_prompt(ed["drug"], ed["dis"], ed["text"], ed["grade"])
-                    seen = ed["shown"]                       # entities the model was actually shown
                 else:
                     prompt = bare_prompt(ed["drug"], ed["dis"])
-                    seen = {ed["drug"], ed["dis"]}           # bare sees only the two opaque IDs
                 if live:
                     ans = judge_model(prompt, rb, arm["model"], logger)
                 else:
@@ -429,8 +472,9 @@ def main():
                     ans = {"treats": bool(cached["treats"]), "confidence": float(cached["confidence"]),
                            "mechanism": cached.get("mechanism", ""), "ok": True}
                 rows.append({"seed": seed, "arm": aid, "pair_id": pid, "label": label, "neg_type": ntype,
-                             "oracle_grade": ed["grade"],
-                             "hallucinated": mech_hallucinated(ans["treats"], ans["mechanism"], seen),
+                             "oracle_grade": ed["grade"], "oracle_has_path": oracle_path[(c, d)],
+                             "hallucinated": mech_hallucinated(ans["treats"], ans["mechanism"],
+                                                               oracle_path[(c, d)]),
                              **ans})
 
     if queue_lines:

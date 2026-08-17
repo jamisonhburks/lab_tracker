@@ -17,9 +17,6 @@ a,qwen3:14b bare,42,ece,0.09444444444444444
 a,qwen3:14b bare,11,confidently_wrong_rate,0.3333333333333333
 a,qwen3:14b bare,23,confidently_wrong_rate,0.3333333333333333
 a,qwen3:14b bare,42,confidently_wrong_rate,0.3333333333333333
-a,qwen3:14b bare,11,hallucination_rate,0.0
-a,qwen3:14b bare,23,hallucination_rate,0.0
-a,qwen3:14b bare,42,hallucination_rate,0.0
 a,qwen3:14b bare,11,n,180
 a,qwen3:14b bare,23,n,180
 a,qwen3:14b bare,42,n,180
@@ -65,9 +62,6 @@ c,frontier bare,42,ece,0.30333333333333334
 c,frontier bare,11,confidently_wrong_rate,0.3333333333333333
 c,frontier bare,23,confidently_wrong_rate,0.3333333333333333
 c,frontier bare,42,confidently_wrong_rate,0.3333333333333333
-c,frontier bare,11,hallucination_rate,0.0
-c,frontier bare,23,hallucination_rate,0.0
-c,frontier bare,42,hallucination_rate,0.0
 c,frontier bare,11,n,180
 c,frontier bare,23,n,180
 c,frontier bare,42,n,180

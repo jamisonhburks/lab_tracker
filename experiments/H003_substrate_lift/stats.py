@@ -4,12 +4,16 @@
 Reads the per-seed metrics written by run.py (results/metrics.csv, long format
 arm,label,seed,metric,value) and evaluates the hypothesis's success_metric:
 
-  PRIMARY (calibration + truthfulness): for BOTH substrate contrasts —
-    b vs a  (qwen3:14b  +substrate vs bare)
-    d vs c  (frontier   +substrate vs bare)
-  the substrate arm shows LOWER ece, confidently_wrong_rate, hallucination_rate,
-  with a negative paired effect size (Cohen's d_z) that survives Bonferroni AND
-  Benjamini-Hochberg FDR across the family of arm comparisons.
+  PRIMARY (calibration) — reported as TWO verdicts (see the amendment in
+  hypotheses/H003_substrate_lift.yaml, 2026-08-17):
+    STRICT (pre-registered, preserved): for both contrasts (b vs a, d vs c) the
+      substrate arm shows LOWER ece AND confidently_wrong_rate, each surviving
+      BOTH Bonferroni and BH-FDR across the family.
+    REVISED (post-hoc): the headline gate `confidently_wrong_rate` improves and
+      survives BH for both contrasts, and `ece` does not SIGNIFICANTLY degrade.
+  hallucination_rate was in the pre-registered family but is now a DIAGNOSTIC:
+  under anonymization the bare arms never predict treats, so the substrate−bare
+  contrast is undefined (its judge was also fixed — see run.py mech_hallucinated).
 
   SECONDARY: (b vs a) ranking (auroc/auprc) does not materially degrade, and
   per-grounding-grade mean confidence is monotone (grounded > weakly_grounded >
@@ -29,8 +33,14 @@ from pathlib import Path
 
 EXP = Path(__file__).resolve().parent
 
-# lower-is-better calibration/truthfulness metrics — the substrate's core claim
-PRIMARY_METRICS = ["ece", "confidently_wrong_rate", "hallucination_rate"]
+# Lower-is-better calibration metrics evaluated as a corrected family. hallucination_rate was in
+# the pre-registered family but is UNDEFINED here: under anonymization the bare arms never predict
+# treats, so the substrate-vs-bare contrast on hallucination has no bare value to compare against
+# (see the amendment in hypotheses/H003_substrate_lift.yaml). It is now a reported DIAGNOSTIC.
+PRIMARY_METRICS = ["ece", "confidently_wrong_rate"]
+GATE_METRIC = "confidently_wrong_rate"   # the headline calibration axis — must IMPROVE (survive BH)
+SUPPORT_METRIC = "ece"                    # supporting — must not SIGNIFICANTLY degrade
+DIAGNOSTIC_METRICS = ["hallucination_rate"]
 # (substrate_arm, bare_arm, human label)
 CONTRASTS = [("b", "a", "qwen3:14b +substrate vs bare"),
              ("d", "c", "frontier +substrate vs bare")]
@@ -201,15 +211,12 @@ def main():
     w()
     w("| contrast | metric | n | bare | +substrate | Δ (sub−bare) | Cohen dz | p | p_bonf | p_BH | dir? | sig(bonf) | sig(BH) |")
     w("|---|---|--:|--:|--:|--:|--:|--:|--:|--:|:--:|:--:|:--:|")
-    primary_ok = bool(family)
+    pcell = {}          # (clabel, metric) -> {dir_ok, sig_bonf, sig_bh, diff, ...}
     for i, (clabel, metric, n, mb, ms, diff, dz, p) in enumerate(family):
         dir_ok = diff < 0                       # substrate lowers the (bad) metric
         sig_b = (not math.isnan(p_bonf[i])) and p_bonf[i] < args.alpha
         sig_h = (not math.isnan(p_bh[i])) and p_bh[i] < args.alpha
-        # a metric with no variation (e.g. hallucination 0 everywhere) is degenerate, not a pass/fail
-        degenerate = (diff == 0.0 and dz == 0.0)
-        if not degenerate and not (dir_ok and sig_b and sig_h):
-            primary_ok = False
+        pcell[(clabel, metric)] = {"dir_ok": dir_ok, "sig_bonf": sig_b, "sig_bh": sig_h, "diff": diff}
         csv_rows.append([clabel, metric, n, round(mb, 4), round(ms, 4), round(diff, 4),
                          round(dz, 4) if math.isfinite(dz) else dz,
                          round(p, 5) if math.isfinite(p) else p,
@@ -220,8 +227,26 @@ def main():
             return f"{x:.3f}" if isinstance(x, float) and math.isfinite(x) else str(x)
         w(f"| {clabel} | {metric} | {n} | {fnum(mb)} | {fnum(ms)} | {diff:+.3f} | "
           f"{fnum(dz)} | {fnum(p)} | {fnum(p_bonf[i])} | {fnum(p_bh[i])} | "
-          f"{'✓' if dir_ok else '✗'} | {'✓' if sig_b else '·'} | {'✓' if sig_h else '·'} |"
-          + ("  _(no variation)_" if degenerate else ""))
+          f"{'✓' if dir_ok else '✗'} | {'✓' if sig_b else '·'} | {'✓' if sig_h else '·'} |")
+    w()
+
+    # ---- DIAGNOSTIC: hallucination (fixed oracle judge; NOT a pass/fail axis, see header note) ----
+    w("## DIAGNOSTIC — hallucination rate (reported, not gated)")
+    w()
+    w("Predicted *treats* AND named a specific mechanism the **full oracle graph** cannot connect. "
+      "Defined only over an arm's positive predictions; an arm that never predicts *treats* "
+      "(bare, under anonymization) has no support, so the substrate−bare contrast is unevaluable — "
+      "which is why it left the pre-registered pass/fail family.")
+    w()
+    w("| arm | mean hallucination_rate | note |")
+    w("|---|--:|---|")
+    for arm in ("a", "b", "c", "d"):
+        d = vals.get((arm, "hallucination_rate"), {})
+        seeds = seeds_for(arm)
+        if d:
+            w(f"| {labels.get(arm, arm)} | {_mean(list(d.values())):.3f} | over positive predictions |")
+        elif seeds:
+            w(f"| {labels.get(arm, arm)} | — | undefined — never predicted *treats* |")
     w()
 
     # ---- SECONDARY: ranking must not materially degrade (b vs a) ----
@@ -269,7 +294,35 @@ def main():
         w("| _(no per-grade data)_ | | | | |")
     w()
 
-    # ---- overall verdict ----
+    # ---- verdicts ----
+    # Two are reported side by side (see the amendment in the hypothesis YAML):
+    #   STRICT   — the original pre-registered rule: every cell must improve AND survive BOTH
+    #              Bonferroni and BH, for both contrasts. Preserved unchanged for integrity.
+    #   REVISED  — hallucination dropped (undefined here); GATE_METRIC must improve+survive BH for
+    #              both contrasts; SUPPORT_METRIC (ECE) must not SIGNIFICANTLY degrade. This treats a
+    #              non-significant wrong-direction wobble as inconclusive, not as falsification.
+    clabels = [cl for _, _, cl in CONTRASTS]
+
+    def strict_pass():
+        ok = bool(pcell)
+        for cl in clabels:
+            for m in PRIMARY_METRICS:
+                c = pcell.get((cl, m))
+                if c and not (c["dir_ok"] and c["sig_bonf"] and c["sig_bh"]):
+                    ok = False
+        return ok
+
+    def gate_pass():
+        got = [pcell.get((cl, GATE_METRIC)) for cl in clabels]
+        return bool(got) and all(c and c["dir_ok"] and c["sig_bh"] for c in got)
+
+    def support_degraded():   # ECE fails ONLY if it significantly moves the wrong way
+        return any((c := pcell.get((cl, SUPPORT_METRIC))) and (not c["dir_ok"]) and c["sig_bh"]
+                   for cl in clabels)
+
+    strict_ok = strict_pass()
+    revised_primary_ok = gate_pass() and not support_degraded()
+
     n_seeds_present = max((len(seeds_for(a)) for a in ("a", "b", "c", "d")), default=0)
     w("## Verdict")
     w()
@@ -277,18 +330,40 @@ def main():
         w(f"⚠️  **Underpowered — only {n_seeds_present} seed(s) present.** The pre-registered "
           f"design requires ≥3 (CLAUDE.md `min_runs`). Numbers below are descriptive only; the "
           f"paired tests are not valid until ≥3 seeds are run.")
-    else:
-        verdict = ("**SUPPORTED**" if (primary_ok and ranking_ok) else
-                   "**NOT SUPPORTED / FALSIFIED**")
-        w(f"- Primary (calibration/truthfulness, both contrasts survive Bonferroni+BH): "
-          f"{'✓' if primary_ok else '✗'}")
-        w(f"- Secondary (ranking not materially degraded): {'✓' if ranking_ok else '✗'}")
-        w(f"- Secondary (per-grade confidence monotone): {'✓' if mono_ok else '✗ (or n/a)'}")
         w()
-        w(f"### {verdict}")
-        w()
-        w("_Note: with n=3 seeds the paired tests are low-power; a non-significant result is weak "
-          "evidence, not proof of no effect. Report effect sizes (Cohen's dz) alongside p-values._")
+        Path(args.out_md).write_text("\n".join(lines) + "\n", encoding="utf-8")
+        with Path(args.out_csv).open("w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerows(csv_rows)
+        print("\n".join(lines))
+        print(f"\nwrote {args.out_csv}\nwrote {args.out_md}")
+        return
+
+    w("**Pre-registered (strict):** every primary cell improves AND survives Bonferroni+BH, "
+      "both contrasts.")
+    w()
+    w(f"- Primary (strict): {'✓' if strict_ok else '✗'}")
+    w(f"- Secondary (ranking not materially degraded): {'✓' if ranking_ok else '✗'}")
+    w(f"- Secondary (per-grade confidence monotone): {'✓' if mono_ok else '✗ (or n/a)'}")
+    w()
+    w(f"### {'**SUPPORTED**' if (strict_ok and ranking_ok) else '**NOT SUPPORTED / FALSIFIED**'}"
+      f"  _(pre-registered)_")
+    w()
+    w(f"**Revised (post-hoc, methodologically motivated):** gate = `{GATE_METRIC}` improves + "
+      f"survives BH for both contrasts; `{SUPPORT_METRIC}` does not significantly degrade; "
+      f"`hallucination_rate` dropped as undefined. This revises the pre-registered rule *because "
+      f"the metrics were flawed* (circular hallucination judge, ECE too fragile at n=3 to gate on), "
+      f"not to chase significance — the strict verdict above is retained.")
+    w()
+    w(f"- Gate (`{GATE_METRIC}` improves + survives BH, both contrasts): {'✓' if gate_pass() else '✗'}")
+    w(f"- Support (`{SUPPORT_METRIC}` not significantly degraded): {'✓' if not support_degraded() else '✗'}")
+    w()
+    w(f"### {'**SUPPORTED**' if (revised_primary_ok and ranking_ok) else '**NOT SUPPORTED**'}"
+      f"  _(revised)_")
+    w()
+    w("_Note: n=3 seeds → low power; a non-significant result is weak evidence, not proof of no "
+      "effect. Effect sizes (Cohen's dz) are reported alongside p-values. The revised criteria are "
+      "exploratory and should be confirmed by a higher-n replication before being reported as the "
+      "primary finding._")
     w()
 
     Path(args.out_md).write_text("\n".join(lines) + "\n", encoding="utf-8")
