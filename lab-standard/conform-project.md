@@ -84,8 +84,12 @@ rather than overwrite the original — **even with `--force`**. It never moves o
 files. (The audit itself comes from `conform.py plan` in Step 0.) Then fill the README status +
 `H{NNN}` table by hand.
 
-## 5. Reconcile with the shared substrate, then stop
+## 5. Register the project, then reconcile, then stop
 
+- **`register_project(<project path>)`** — THIS is what makes the conformed work visible. A project's
+  hypotheses/experiments live in its own directory, so until you register it, `list_active_work` (and
+  every colleague) can't see it. Do this right after the moves are applied. Verify with
+  `list_active_work` — your `H{NNN}`s should now appear tagged with the project name.
 - Run `list_active_work` and `query_curated_findings` — is any of this already tracked or
   already consensus in the lab? Note overlaps in the audit file; don't re-contribute what
   the lab already has.
@@ -100,4 +104,5 @@ files. (The audit itself comes from `conform.py plan` in Step 0.) Then fill the 
 - [ ] Layout and names match `project-structure.md`; `data/raw/` untouched.
 - [ ] Every hypothesis/experiment has id + status + provenance (gaps marked, not faked).
 - [ ] `CLAUDE.md` + `README.md` in place; no science re-run or re-interpreted.
+- [ ] **`register_project` called** — the project's `H{NNN}`s appear in `list_active_work`.
 - [ ] Consensus candidates flagged for a later `contribute()` pass — not promoted here.

@@ -251,9 +251,11 @@ if _SHARED:
     @mcp.tool
     def add_member(name: str) -> str:
         """Add a member to the lab roster (profiles/<lab>.yaml). Onboarding's first step — makes a
-        colleague discoverable/followable before they've contributed anything. Idempotent."""
+        colleague discoverable/followable before they've contributed anything. Idempotent. The
+        roster is keyed on the member's identity (so onboarding_status flips to ✓); `name` is a
+        display alias."""
         import lab_profile as lp
-        return lp.add_member(name)
+        return lp.add_member(name, member_id=_caller())
 
     @mcp.tool
     def covered_capabilities(member: str = "") -> str:
@@ -331,28 +333,56 @@ if _SHARED:
     def list_active_work() -> str:
         """SHARED WIP ('group semantics'): every tracked hypothesis/experiment/campaign with
         its STATUS — so you can see what's in-flight (mid-test, evaluated, proposed) and NOT
-        duplicate it. This is process, not conclusion — provisional, un-gated."""
+        duplicate it. Aggregates the substrate root PLUS every registered external project
+        (register_project), so conformed projects aren't invisible. Process, not conclusion."""
         import yaml
+        import projects
         lines = ["Shared WIP — tracked work in progress (group semantics):"]
-        for f in sorted(glob.glob(str(ROOT / "hypotheses" / "*.y*ml"))):
-            d = yaml.safe_load(open(f, encoding="utf-8")) or {}
-            hid = d.get("id", Path(f).stem)
-            has_exp = (ROOT / "experiments" / hid).exists()
-            has_report = (ROOT / "reports" / f"{hid}_evaluation.md").exists()
-            gate = ""
-            vj = ROOT / "experiments" / hid / "validity.json"
-            if vj.exists():
-                gates = json.loads(vj.read_text())
-                gate = f" · gates {sum(g['passed'] for g in gates)}/{len(gates)}"
-            stage = ("evaluated" if has_report else
-                     "implemented/running" if has_exp else "spec only")
-            lines.append(f"  {hid} [{d.get('status', '?')}] — {stage}{gate}: "
-                         f"{str(d.get('title', ''))[:56]}")
-        for f in sorted(glob.glob(str(ROOT / "campaigns" / "*.json"))):
-            c = json.loads(open(f, encoding="utf-8").read())
-            lineage = " → ".join(n["experiment_id"] for n in c.get("nodes", []))
-            lines.append(f"  campaign {c['name']}: {lineage}")
+        for label, root in projects.roots(ROOT):
+            tag = "" if label == "lab" else f"  [{label}]"
+            for f in sorted(glob.glob(str(root / "hypotheses" / "*.y*ml"))):
+                d = yaml.safe_load(open(f, encoding="utf-8")) or {}
+                hid = d.get("id", Path(f).stem)
+                has_exp = (root / "experiments" / hid).exists()
+                has_report = (root / "reports" / f"{hid}_evaluation.md").exists()
+                gate = ""
+                vj = root / "experiments" / hid / "validity.json"
+                if vj.exists():
+                    try:
+                        gates = json.loads(vj.read_text())
+                        gate = f" · gates {sum(g['passed'] for g in gates)}/{len(gates)}"
+                    except Exception:
+                        pass
+                stage = ("evaluated" if has_report else
+                         "implemented/running" if has_exp else "spec only")
+                lines.append(f"  {hid} [{d.get('status', '?')}] — {stage}{gate}: "
+                             f"{str(d.get('title', ''))[:56]}{tag}")
+            for f in sorted(glob.glob(str(root / "campaigns" / "*.json"))):
+                try:
+                    c = json.loads(open(f, encoding="utf-8").read())
+                except Exception:
+                    continue
+                lineage = " → ".join(n["experiment_id"] for n in c.get("nodes", []))
+                lines.append(f"  campaign {c['name']}: {lineage}{tag}")
         return "\n".join(lines) if len(lines) > 1 else "No tracked work yet."
+
+    @mcp.tool
+    def register_project(path: str, name: str = "") -> str:
+        """Register an EXTERNAL project (already conformed — has a hypotheses/ dir) so its
+        hypotheses/experiments/campaigns show up in `list_active_work` for the whole lab. Without
+        this, a conformed project stays invisible to the substrate. Attributed to you. Run it right
+        after `conform.py apply`."""
+        import projects
+        return projects.register_project(path, name=name, by=_caller() or "")["msg"]
+
+    @mcp.tool
+    def list_projects() -> str:
+        """Registered external projects (name → path) whose work is aggregated into the substrate."""
+        import projects
+        ps = projects.list_projects()
+        if not ps:
+            return "No external projects registered. After conforming one, call register_project(path)."
+        return "\n".join(f"  {p['name']} — {p['path']}  (by {p.get('registered_by', '?')})" for p in ps)
 
     @mcp.tool
     def contribute_finding(subject: str, predicate: str, object: str, source: str,
