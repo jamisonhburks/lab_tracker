@@ -1,0 +1,21 @@
+# Lab prior-work profile — TEMPLATE. Copy to profiles/<your-lab>.yaml and fill in.
+#
+# Onboarding needs one profile present (add_member writes the roster here). If you have exactly one
+# profiles/*.yaml it's used automatically; otherwise set SUBSTRATE_LAB=<id>.
+#
+# `modalities` / `tasks` / `paradigms` declare the lab's SCOPE — the region the coverage map is
+# computed over. Publications are recorded separately (record_publication) as what the lab has
+# actually COVERED; a gap is a scope cell with no covering publication. See
+# docs/decisions/0057-lab-profile.md.
+id: your-lab                          # short slug; the profile filename should match (your-lab.yaml)
+kind: lab
+name: "Your Lab — Institution"
+members: []                           # onboarding fills this in (keyed on each member's identity)
+focus: >
+  One or two sentences on what the lab works on. Method/representation-level phrasing is the most
+  useful (e.g. "multimodal foundation models for downstream disease prediction").
+
+# SCOPE — the axes the lab works along (drives the coverage map). Fill with your own.
+modalities: []                        # e.g. [EHR, imaging, genomic, ECG, multimodal]
+tasks: []                             # e.g. [disease-classification, representation-learning, trajectory-simulation]
+paradigms: []                         # e.g. [self-supervised, foundation-model, multimodal-fusion]

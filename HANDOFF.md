@@ -47,7 +47,8 @@ docstring):
   `related-work.md`, `deployment.md`, `diagrams/`.
 - `lab-standard/` — an onboarding playbook (`START-HERE.md`, `new-project.md`,
   `conform-project.md`, workflow docs) plus `templates/`.
-- `hypotheses/`, `experiments/` (`H001`, `H002`), `campaigns/` — research artifacts.
+- `hypotheses/`, `experiments/`, `campaigns/`, `reports/` — research artifacts (empty until a
+  member adds their own; the synthetic t2d-ad/H003 demos were removed).
 - `data/` (`external`, `processed`, `specialist_workspace`), `memory/`
   (`sessions`, `tool_ledgers`), `seeds/`, `profiles/`, `reports/`, `src/utils/`,
   `external/scientific-agent-skills/`, `.claude/hooks/`.
@@ -56,7 +57,8 @@ docstring):
 
 - Git: `main`, 90 commits, private GitHub remote. Work has been tracked as PRs
   (most recent `#70`). ADRs run to `0058`.
-- Two hypotheses/experiments scaffolded (`H001`, `H002`).
+- No seeded experiments — the synthetic demos (t2d-ad campaign, `H001`/`H002`, and the H003
+  substrate-lift benchmark) were removed so the brain starts clean.
 - The last ~10 PRs added: belief lifecycle, calibration self-audit, member/project
   subscriptions, a negative-knowledge/dead-end store, a per-lab prior-work profile,
   a coverage/knowledge-gap map, and presentation docs + diagrams.
