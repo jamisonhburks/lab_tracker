@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -33,6 +34,10 @@ from pathlib import Path
 PLAN_NAME = "conform_plan.json"
 MANIFEST_NAME = "conform_manifest.json"
 AUDIT_NAME = "notes/00_conformance_audit.md"
+
+# code that may hardcode relative data paths — relocating it silently breaks those paths
+_CODE_SUFFIX = {".py", ".r", ".sh", ".sbatch", ".pl", ".rb", ".jl", ".ipynb", ".sql", ".m", ".do"}
+_BIG_COPY = 1 * 1024**3        # warn once the untracked-copy total crosses ~1 GB
 
 # Never MOVE these — they are not research artifacts. We do not delete them either; we simply
 # leave them where they are (SKIP) or keep them in place as project infrastructure (LEAVE).
@@ -112,15 +117,64 @@ def inventory(root: Path) -> list:
 # --------------------------------------------------------------------------- #
 # Plan (DRY RUN — touches nothing in the source)                               #
 # --------------------------------------------------------------------------- #
+def _human_bytes(n: int) -> str:
+    x = float(n)
+    for u in ("B", "K", "M", "G", "T"):
+        if x < 1024 or u == "T":
+            return f"{x:.0f}{u}" if u == "B" else f"{x:.1f}{u}"
+        x /= 1024
+    return f"{x:.1f}T"
+
+
+def _hardcodes_parent_path(p: Path) -> bool:
+    """True if a code file references a parent-relative path (`../…`) — relocating breaks it."""
+    try:
+        return bool(re.search(r"\.\./", p.read_text(encoding="utf-8", errors="ignore")))
+    except Exception:
+        return False
+
+
+def _enrich_and_flag(root: Path, rows: list) -> dict:
+    """Annotate each `move` row with method (git-mv vs COPY) + byte size, and DOWNGRADE code that
+    hardcodes `../` paths to `review` (relocating would silently break it and conform can't edit
+    files to fix it). Returns a summary so the audit can warn about the real copy hazard up front."""
+    git = _is_git_repo(root)
+    copy_bytes = will_copy = will_gitmv = relpath_flagged = 0
+    for r in rows:
+        if r.get("action") != "move":
+            continue
+        src = root / r["path"]
+        if src.suffix.lower() in _CODE_SUFFIX and _hardcodes_parent_path(src):
+            r["action"], r["dest"] = "review", None
+            r["reason"] = ("hardcodes `../` path(s) — relocating would break it and conform can't "
+                           "edit files to fix it; review (leave in place, or fix paths first)")
+            relpath_flagged += 1
+            continue
+        try:
+            size = src.stat().st_size
+        except OSError:
+            size = 0
+        tracked = git and _is_tracked(root, r["path"])
+        r["method"], r["bytes"] = ("git-mv" if tracked else "copy"), size
+        if tracked:
+            will_gitmv += 1
+        else:
+            will_copy += 1
+            copy_bytes += size
+    return {"will_gitmv": will_gitmv, "will_copy": will_copy, "copy_bytes": copy_bytes,
+            "relpath_flagged": relpath_flagged, "big_copy": copy_bytes >= _BIG_COPY}
+
+
 def plan(root: Path) -> dict:
     rows = inventory(root)
+    summary = _enrich_and_flag(root, rows)      # may downgrade move→review; annotates method/bytes
     counts: dict = {}
     for r in rows:
         counts[r["action"]] = counts.get(r["action"], 0) + 1
     plan_obj = {"project": str(root), "generated_by": "conform.py plan",
                 "guarantee": "no source file is edited or deleted; only `move` rows relocate, "
                              "refusing overwrite, recorded reversibly",
-                "counts": counts, "artifacts": rows}
+                "counts": counts, "summary": summary, "artifacts": rows}
     (root / PLAN_NAME).write_text(json.dumps(plan_obj, indent=2), encoding="utf-8")
     _write_audit(root, plan_obj)
     return plan_obj
@@ -137,13 +191,28 @@ def _write_audit(root: Path, plan_obj: dict) -> None:
         "`conform.py undo` to reverse.", "",
         f"- move: {c.get('move', 0)}  ·  leave: {c.get('leave', 0)}  ·  "
         f"skip: {c.get('skip', 0)}  ·  review: {c.get('review', 0)}", "",
+    ]
+    s = plan_obj.get("summary", {})
+    copy_h = _human_bytes(s.get("copy_bytes", 0))
+    warn = "  ⚠️ **large — this duplicates data on disk**" if s.get("big_copy") else ""
+    lines += [
+        f"**Move method:** {s.get('will_gitmv', 0)} tracked file(s) `git mv` (reversible); "
+        f"**{s.get('will_copy', 0)} untracked file(s) will COPY (~{copy_h} duplicated){warn}**. "
+        "Untracked files can't be `git mv`'d, so `apply` copies them — your original stays, but the "
+        "bytes are written twice. If that's a lot, downgrade those rows to `leave` and index them by "
+        "path instead.", "",
+        f"**Relative-path safety:** {s.get('relpath_flagged', 0)} code file(s) hardcoding `../` "
+        "paths were auto-downgraded to `review` — relocating them would break those paths (conform "
+        "can't edit files to fix them).", "",
         "Edit `conform_plan.json` to correct any destination or change an action to `leave`/`skip` "
         "before applying. `review` rows are NOT moved until you set them to `move` with a dest.", "",
-        "| artifact | action | → destination | why |",
-        "|---|---|---|---|",
+        "| artifact | action | method | size | → destination | why |",
+        "|---|---|---|--:|---|---|",
     ]
     for r in plan_obj["artifacts"]:
-        lines.append(f"| `{r['path']}` | {r['action']} | "
+        method = r.get("method") or ("—" if r["action"] != "move" else "?")
+        size = _human_bytes(r["bytes"]) if r.get("bytes") is not None and r["action"] == "move" else "—"
+        lines.append(f"| `{r['path']}` | {r['action']} | {method} | {size} | "
                      f"{('`'+r['dest']+'`') if r['dest'] else '—'} | {r['reason']} |")
     p = root / AUDIT_NAME
     p.parent.mkdir(parents=True, exist_ok=True)
