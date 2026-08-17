@@ -7,7 +7,7 @@ entry's title (+ year) is tagged onto the modality×task×paradigm axes by lab_p
 auto-tagger; refine tags later if needed. Dependency-free (a minimal BibTeX parse — no bibtexparser).
 
 Usage:
-  python import_publications.py papers.bib --by jamison [--profile helmholtz-ai-health]
+  python import_publications.py papers.bib --by jamison [--profile casale-lab]
   python import_publications.py papers.bib --dry-run        # preview parse + auto-tags, write nothing
 """
 import argparse
