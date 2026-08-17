@@ -320,6 +320,11 @@ def apply(root: Path, *, force_method: str | None = None) -> dict:
     (root / MANIFEST_NAME).write_text(
         json.dumps({"project": str(root), "moved": manifest, "skipped": skipped}, indent=2),
         encoding="utf-8")
+    try:                                    # breadcrumb so a skipped register_project is surfaced
+        import projects
+        projects.record_conformed(root)
+    except Exception:
+        pass
     return {"moved": moved, "skipped": skipped}
 
 
@@ -391,6 +396,8 @@ def main(argv=None) -> int:
             return 1
         print(f"Moved {len(res['moved'])} artifact(s); skipped {len(res['skipped'])}. "
               f"Reversible via: conform.py undo {root}")
+        print(f"NEXT (or the work stays invisible to the lab): register it into shared WIP →\n"
+              f"  register_project(\"{root}\")   # MCP tool, in a Claude session")
         for s in res["skipped"]:
             print(f"  skipped {s['path']}: {s['reason']}")
         return 0

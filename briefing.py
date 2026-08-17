@@ -173,6 +173,13 @@ def briefing(contributor=None, mark: bool = True) -> str:
         waiting.append("components in your notes ready to promote to shared WIP")
     if stale_n:
         waiting.append(f"{stale_n} stale search topic(s) to refresh")
+    try:                                    # owner-scoped unfinished work across the tiers (my_work)
+        import pending as _pending
+        unfin = _pending.summary_line(contributor)
+        if unfin:
+            waiting.append(unfin + "  (see my_work)")
+    except Exception:
+        pass
     out.append("\n• Waiting on you:")
     out += [f"    • {w}" for w in waiting] or ["    • nothing pending — clear runway."]
 
