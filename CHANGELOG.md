@@ -3,6 +3,58 @@
 Reverse-chronological summary of substantive changes. Each entry links a PR to the
 decision behind it (see `docs/decisions/`). Dates are approximate build dates.
 
+## 2026-08-16
+- **Lab-workflow retrospective — a coach, not a scoreboard** (`lab_retro.py`, `calibration.py`,
+  `mcp_server.py`, `briefing.py`) — a read-only step-back across everyone that composes the
+  substrate's OWN process signals (cleared-bar findings, seeds burned on a losing design, runs
+  killed by HALT gates, stalled hypotheses, re-hit dead ends, calibration bias, ADOPTABLE unused
+  method gaps, promotion backlog, duplicated effort) into **WORKING / NEEDS ATTENTION / OPTIMIZE**.
+  **Coaching, not surveillance, enforced in code:** the lab view aggregates and de-identifies
+  attention items (names hypotheses + counts, never a person; a test asserts the run author never
+  appears); pointed feedback needs `member=<name>` and is framed as that person's own private view;
+  no member ranking. Adds **per-member calibration attribution** — `calibration` tags each realized
+  `Outcome` with the member whose confident call it scores (stability lens via first-revision
+  contributor, adjudicated lens via `_edge_owner()`), with `audit_member()` / `audit_by_member()`
+  staying humble below `MIN_OUTCOMES`. Surfaced via the `lab_retro` MCP tool + a warm-start preview.
+  10 hermetic tests (`tests/test_lab_retro.py`, `tests/test_calibration_attribution.py`). (ADR-0059).
+- **Verified audit + ignition spec** (`docs/audit-kg-and-bloat.md`, `docs/ignition-spec.md`, docs-only)
+  — a from-the-code assessment (every finding cited file:line and checked against disk state, not the
+  docs): edge-confidence gaps, literature-ingestion robustness, and a proportionality read (~1,550 LOC
+  of wired-but-never-run tier, no test suite, two non-overlapping front doors). The ignition spec is
+  the cold-start plan for a ~12-person lab starting from zero (day-0 seeding, cold-start fallbacks, one
+  unified surface + a weekly ritual, an effort-tagged build list). (PR #71).
+- **KG information-processing correctness** (`confidence.py`, `kg_writer.py`, `deep_search.py`,
+  `contribute.py`, `beliefs.py`, `agent.py`) — six fixes to how a claim earns its number.
+  **B1**: the distillation path normalizes entities to canonical nodes (lazy, degrades to raw string),
+  so surface variants merge into one edge instead of fragmenting evidence. **B4**: the structural junk
+  filter always runs — `rigor_verdict` can only tighten (`reject` drops the batch), `accept` no longer
+  bypasses it. **A7**: `research_group` (last-author independence signal) is now first-class, persisted,
+  round-tripping, populated on both ingestion paths. **A1**: `score_association` discounts correlated
+  same-group evidence (strongest full, each extra `+1/√rank`); unknown-group evidence stays independent,
+  so it is inert on current data and engages automatically as the signal populates (zero regression).
+  **A2**: confidence is the mean of a **Beta posterior** (Jeffreys prior) with a **credible interval**,
+  replacing the ad-hoc sigmoid — the interval separates "0.49 from two weak studies" from a settled
+  number; status vocabulary preserved so downstream consumers are unaffected. **A5**: the curated KG
+  feeds its **own** grounding prior via length-2 path corroboration (capped below the trusted-KG floor,
+  no double-counting), closing the flywheel loop. (PR #71).
+- **Ignition — a fresh lab is non-empty on day 1** (`lab_profile.py`, `subscriptions.py`,
+  `briefing.py`, `serendipity.py`, `agent.py`, `import_publications.py`) — roster + `list_members`
+  (colleagues followable before they've contributed); a dependency-free BibTeX importer that turns the
+  coverage map into a real agenda; cold-start fallbacks so warm start / serendipity orient from the lab
+  profile + active hypotheses instead of going blank; and a `:jot` REPL quick-capture into the
+  exploratory pool. (PR #71).
+- **The active-work loop** (`worklog.py`, `experiments/H001/run.py`, `misc_research.py`,
+  `contribute.py`, `mcp_server.py`, `agent.py`) — the previously-missing support for the messy middle,
+  where researchers actually work. A per-hypothesis **run ledger** (`log_run`, auto-filled from
+  `run.py`), **stability** across seeds, a persistent **worklog** (`note`), and a "where am I"
+  **status dashboard** (`:status <H>` / `hypothesis_status`). The warm start surfaces "your experiments
+  in flight." An **evidence bridge** (`contribute_result`) routes a finished, passing experiment
+  through the critic gate without re-typing the numbers; a **sanity-check** (`sanity_check`) gut-checks
+  an observation (lab-KG match + dead-end + novelty) without the full ceremony; a **pre-registration
+  guardrail** (`preregistration`) flags the success_metric drifting after runs began (anti-p-hacking);
+  and a **decision log** (`log_decision`) captures analysis choices for reproducibility. First
+  automated `tests/` suite (55 hermetic tests). (PR #71).
+
 ## 2026-08-15
 - **Simplify the slide diagrams** (docs-only) — reworked all 11 Mermaid diagrams to short, glanceable
   labels (the prose carries the detail) so a viewer gets each in seconds; consistent colour coding

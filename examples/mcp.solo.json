@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "lab": {
+      "command": "bash",
+      "args": ["mcp_personal.sh"],
+      "env": {
+        "SUBSTRATE_SCOPE": "all"
+      }
+    }
+  }
+}

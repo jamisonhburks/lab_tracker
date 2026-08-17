@@ -43,6 +43,20 @@ class Outcome:
     hit: int              # 1 if the belief proved correct, 0 if not
     lens: str             # "adjudicated" | "stability"
     edge: str
+    who: str | None = None  # the member whose confident call this outcome scores (None = unattributed)
+
+
+def _edge_owner(key: str) -> str | None:
+    """Who is accountable for an edge's ESTABLISHED confidence — the contributor of the most recent
+    DECISIVE belief revision on it. The contradiction ledger stores no owner on the established
+    belief, so we recover it from the belief-event history (attributes the adjudicated lens)."""
+    owner = None
+    for e in beliefs._events(key):
+        if e.get("status") in _DECISIVE:
+            c = (e.get("trigger") or {}).get("contributor")
+            if c:
+                owner = c
+    return owner
 
 
 # --------------------------------------------------------------------------- #
@@ -63,7 +77,8 @@ def _adjudicated_outcomes() -> list:
         conf = (opened.get("established") or {}).get("confidence")
         if conf is None:
             continue
-        out.append(Outcome(float(conf), 1 if res == "upheld" else 0, "adjudicated", opened["key"]))
+        out.append(Outcome(float(conf), 1 if res == "upheld" else 0, "adjudicated",
+                           opened["key"], who=_edge_owner(opened["key"])))
     return out
 
 
@@ -80,7 +95,8 @@ def _stability_outcomes() -> list:
             continue
         final_class = _DECISIVE.get(seq[-1]["status"])   # None if it drifted to contested
         hit = 1 if final_class == _DECISIVE[first["status"]] else 0
-        out.append(Outcome(float(first["confidence"]), hit, "stability", key))
+        who = (first.get("trigger") or {}).get("contributor")   # who made the confident call
+        out.append(Outcome(float(first["confidence"]), hit, "stability", key, who=who))
     return out
 
 
@@ -124,6 +140,25 @@ def audit(lens: str = "all") -> dict:
     return {"lens": lens, "n": len(outcomes), "bins": rows, "ece": _ece(outcomes, rows),
             "brier": _brier(outcomes), "net_bias": _net_bias(outcomes),
             "n_adjudicated": len(_adjudicated_outcomes()), "n_stability": len(_stability_outcomes())}
+
+
+def audit_member(member: str, lens: str = "all") -> dict:
+    """Calibration for ONE member — only the outcomes attributable to their confident calls.
+    `meaningful` stays False until a member has >= MIN_OUTCOMES of their own, so we never grade a
+    person on two data points. Same shape as audit(), plus `who`."""
+    outcomes = [o for o in _select(lens) if o.who == member]
+    rows = _bins(outcomes)
+    return {"who": member, "lens": lens, "n": len(outcomes), "bins": rows,
+            "ece": _ece(outcomes, rows), "brier": _brier(outcomes),
+            "net_bias": _net_bias(outcomes), "meaningful": len(outcomes) >= MIN_OUTCOMES}
+
+
+def audit_by_member(lens: str = "all") -> dict:
+    """{member: audit_member(...)} for every attributed member — the per-member calibration map.
+    Unattributed outcomes (who is None) are dropped. Callers decide what to show: a member's own
+    view can name their lean; a lab-wide view should aggregate (don't rank colleagues)."""
+    members = {o.who for o in _select(lens) if o.who}
+    return {m: audit_member(m, lens) for m in members}
 
 
 # --------------------------------------------------------------------------- #

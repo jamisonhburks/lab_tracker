@@ -50,6 +50,7 @@ def add_association(subject: str, predicate: str, object: str, source: str = "",
                     direction: str = "supports", power: float | None = None,
                     sample_size: int | None = None, effect_size: float | None = None,
                     p_value: float | None = None, risk_of_bias: str | None = None,
+                    research_group: str | None = None,
                     subject_id: str | None = None, object_id: str | None = None) -> dict:
     """Record an association, or MERGE evidence into an existing one. Returns it.
 
@@ -61,7 +62,7 @@ def add_association(subject: str, predicate: str, object: str, source: str = "",
            object_id or object.strip().lower())
     ev = {"source": source or None, "direction": direction, "power": power,
           "sample_size": sample_size, "effect_size": effect_size, "p_value": p_value,
-          "risk_of_bias": risk_of_bias}
+          "risk_of_bias": risk_of_bias, "research_group": research_group}
 
     with store_lock.critical(STORE):              # lock the whole load→modify→save (shared-safe)
         records = _load()
@@ -89,7 +90,7 @@ def to_association(record: dict) -> "kg_schema.Association":
         d = e.get("direction", "supports")
         rob = e.get("risk_of_bias")
         evidence.append(kg_schema.Evidence(
-            source=e.get("source"),
+            source=e.get("source"), research_group=e.get("research_group"),
             direction=kg_schema.Direction(d if d in ("supports", "refutes") else "supports"),
             power=e.get("power"), sample_size=e.get("sample_size"),
             effect_size=e.get("effect_size"), p_value=e.get("p_value"),
@@ -110,3 +111,31 @@ def query(subject: str | None = None, object: str | None = None) -> list:
             continue
         out.append(r)
     return out
+
+
+def _adjacency(records: list | None = None) -> dict:
+    """Undirected adjacency over curated edges, keyed by canonical id (falling back to lowered name)."""
+    adj: dict = {}
+    for r in (records if records is not None else _load()):
+        a = r.get("subject_id") or r["subject"].strip().lower()
+        b = r.get("object_id") or r["object"].strip().lower()
+        if a and b and a != b:
+            adj.setdefault(a, set()).add(b)
+            adj.setdefault(b, set()).add(a)
+    return adj
+
+
+def internally_grounded(subject: str, object: str,
+                        subject_id: str | None = None, object_id: str | None = None) -> bool:
+    """True when the lab's OWN curated KG connects subject↔object through an intermediate node — a
+    length-2 path (subject—X—object). This is corroboration from OTHER curated edges, never the
+    direct edge, so it can feed a grounding prior WITHOUT double-counting the edge's own evidence.
+    Mirrors the trusted-KG path grounding (kg_memory.check_connection) over the lab's compounding
+    graph, so accumulated knowledge starts raising its own priors (closing the flywheel)."""
+    a = subject_id or (subject or "").strip().lower()
+    b = object_id or (object or "").strip().lower()
+    if not (a and b) or a == b:
+        return False
+    adj = _adjacency()
+    na = adj.get(a, set()) - {a, b}         # neighbors of a, excluding a and the direct target b
+    return bool(na & adj.get(b, set()))     # some X adjacent to both => a—X—b path

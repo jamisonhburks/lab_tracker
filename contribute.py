@@ -94,9 +94,13 @@ def _consensus_status(subj: str, obj: str, predicate: str):
             if r["predicate"].lower() == predicate.lower()]
     if not recs:
         return None
-    g = kg.check_connection(recs[0]["subject"], recs[0]["object"])
+    r0 = recs[0]
+    g = kg.check_connection(r0["subject"], r0["object"])
+    internal = kg_writer.internally_grounded(r0["subject"], r0["object"],
+                                             r0.get("subject_id"), r0.get("object_id"))
     return confidence.score_association(
-        kg_writer.to_association(recs[0]), prior=confidence.grounding_prior(g)).status
+        kg_writer.to_association(r0),
+        prior=confidence.combined_grounding_prior(g, internal)).status
 
 
 def contribute(subject: str, predicate: str, object: str, source: str = "",
@@ -237,6 +241,24 @@ def graduation_candidates(min_sources: int = 3) -> str:
     out.append("Graduate one with graduate(subject, predicate, object, critic_verdict='accept') — "
                "it routes through the critic gate (novel → peer review; corroborating → auto-merge).")
     return "\n".join(out)
+
+
+def contribute_result(hyp: str, subject: str, predicate: str, object: str,
+                      direction=None, contributor=None) -> str:
+    """Bridge a COMPLETED, passing experiment into a gated contribution: pull the aggregate
+    effect/p/n + validity from the hypothesis worklog and route through contribute() as
+    experiment-verified evidence. The thinker supplies the finding's subject/predicate/object (the
+    worklog tracks the numbers, not the semantic triple)."""
+    import worklog
+    hid = worklog._hyp_id(hyp)
+    b = worklog.evidence_bundle(hyp)
+    if not b["ready"]:
+        return f"{hid} not ready to contribute — {b['reason']}."
+    return contribute(subject, predicate, object,
+                      source=f"experiment:{hid}", direction=direction or b["direction"],
+                      source_kind="experiment", effect_size=b.get("effect_size"),
+                      p_value=b.get("p_value"), sample_size=b.get("sample_size"),
+                      contributor=contributor)
 
 
 def graduate(subject: str, predicate: str, object: str, critic_verdict=None,

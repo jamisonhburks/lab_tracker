@@ -565,6 +565,28 @@ def main() -> None:
     logger.info(f"Metrics saved to: {metrics_path} "
                 f"(rows: {len(metrics_df)}, columns: {list(metrics_df.columns)})")
 
+    # Auto-log each seed as a run in the hypothesis worklog (the active-work ledger the min_runs
+    # discipline needs). Never fatal — the experiment's primary outputs stand on their own.
+    try:
+        import worklog
+        invalid = gates.invalidated()
+        for seed in seeds:
+            sd = metrics_df[metrics_df["seed"] == seed]
+            n_sig = int(sd["significant_bh"].sum())
+            n_planted_sig = int((sd["significant_bh"] & sd["planted"]).sum())
+            n_planted_pass = int((sd["significant_bh"] & sd["planted"]
+                                  & (sd["cohens_d"].abs() >= effect_thresh)).sum())
+            worklog.log_run(
+                "H001",
+                metrics={"n_sig_bh": n_sig, "n_planted_sig": n_planted_sig,
+                         "n_planted_pass_both": n_planted_pass},
+                seed=int(seed), passed=bool(n_planted_pass >= 3), valid=(not invalid),
+                note="auto-logged from run.py")
+        logger.info("Logged per-seed runs to the hypothesis worklog "
+                    "(see: hypothesis_status H001).")
+    except Exception as e:
+        logger.warning(f"worklog auto-log skipped: {e}")
+
     # -----------------------------------------------------------------------
     # 6. Volcano plot
     # -----------------------------------------------------------------------

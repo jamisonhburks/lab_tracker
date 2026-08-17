@@ -22,6 +22,8 @@ backend — the rest of the system never sees a provider.
 import os
 from dataclasses import dataclass, field
 
+import token_meter                    # token accounting; capture is a no-op unless metered
+
 BACKEND = os.environ.get("LLM_BACKEND", "ollama").lower()
 _DEFAULT_MODEL = {"ollama": "qwen3:14b", "anthropic": "claude-opus-4-8"}
 MODEL = os.environ.get("LLM_MODEL", _DEFAULT_MODEL.get(BACKEND, "qwen3:14b"))
@@ -38,6 +40,21 @@ class ToolCall:
 class Response:
     text: str = ""
     tool_calls: list = field(default_factory=list)
+    in_tok: int = 0
+    out_tok: int = 0
+
+
+def _field(obj, name, default=0):
+    """Read `name` off a provider response that may be a dict or an SDK object."""
+    if isinstance(obj, dict):
+        return obj.get(name, default)
+    getter = getattr(obj, "get", None)
+    if callable(getter):
+        try:
+            return getter(name, default)
+        except Exception:
+            pass
+    return getattr(obj, name, default)
 
 
 def _json_text(text: str) -> str:
@@ -63,8 +80,13 @@ def parse(messages: list, schema: dict, model_cls, *, backend: str | None = None
     """
     convo = list(messages)
     last = None
-    for _ in range(max(1, retries + 1)):
-        resp = chat(convo, schema=schema, backend=backend, model=model)
+    for attempt in range(max(1, retries + 1)):
+        # a re-ask after a bad parse is rework — mark its tokens `retry` so the audit can see it.
+        if attempt == 0:
+            resp = chat(convo, schema=schema, backend=backend, model=model)
+        else:
+            with token_meter.outcome("retry"):
+                resp = chat(convo, schema=schema, backend=backend, model=model)
         try:
             return model_cls.model_validate_json(_json_text(resp.text))
         except Exception as err:            # pydantic ValidationError / JSON error
@@ -121,11 +143,16 @@ def _ollama_chat(messages, tools, schema, model=MODEL) -> Response:
     if schema:
         kwargs["format"] = schema
 
-    msg = ollama.chat(**kwargs)["message"]
+    raw = ollama.chat(**kwargs)
+    msg = raw["message"]
     calls = [ToolCall(id=f"call_{i}", name=tc["function"]["name"],
                       args=tc["function"]["arguments"])
              for i, tc in enumerate(msg.get("tool_calls") or [])]
-    return Response(text=msg.get("content", "") or "", tool_calls=calls)
+    in_tok = _field(raw, "prompt_eval_count")     # Ollama reports token counts (cost-free, ADR-0060)
+    out_tok = _field(raw, "eval_count")
+    token_meter.on_llm_call("ollama", model, in_tok, out_tok)
+    return Response(text=msg.get("content", "") or "", tool_calls=calls,
+                    in_tok=int(in_tok or 0), out_tok=int(out_tok or 0))
 
 
 # --------------------------------------------------------------------------- #
@@ -181,4 +208,8 @@ def _anthropic_chat(messages, tools, schema, model=MODEL) -> Response:
             text += block.text
         elif block.type == "tool_use":
             calls.append(ToolCall(id=block.id, name=block.name, args=block.input))
-    return Response(text=text, tool_calls=calls)
+    usage = getattr(resp, "usage", None)            # PAID tokens — always metered
+    in_tok = getattr(usage, "input_tokens", 0) or 0
+    out_tok = getattr(usage, "output_tokens", 0) or 0
+    token_meter.on_llm_call("anthropic", model, in_tok, out_tok)
+    return Response(text=text, tool_calls=calls, in_tok=int(in_tok), out_tok=int(out_tok))

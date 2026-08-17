@@ -17,7 +17,7 @@ sentence-transformers>=3.0   # BioLORD/SapBERT embeddings for entity linking
 #     external/scientific-agent-skills
 # anthropic>=0.40
 
-# Optional — only to run the MCP server (mcp_server.py) that exposes the substrate to
-# external Claude sessions. Stdio needs just fastmcp; the shared HTTP deployment
-# (MCP_TRANSPORT=http, docs/deployment.md) uses the same fastmcp, which pulls uvicorn.
-# fastmcp>=3.0
+# The MCP server (mcp_server.py) is the primary interface for Claude sessions (Claude Code / any
+# MCP-connected Claude) — see QUICKSTART.md. Stdio (personal tier) needs just fastmcp; the shared
+# HTTP deployment (MCP_TRANSPORT=http, docs/deployment.md) uses the same fastmcp (which pulls uvicorn).
+fastmcp>=3.0

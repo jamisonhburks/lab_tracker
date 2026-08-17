@@ -14,7 +14,7 @@ which resets the topic's staleness.
     python refresh_stale.py --dry-run     # just list what's stale
 
 Cron (weekly, on the cluster) — see docs/deployment.md:
-    0 3 * * 0  cd /srv/lab/toy-research-agent && /srv/lab/venv/bin/python refresh_stale.py --max 20
+    0 3 * * 0  cd /srv/lab/lab_tracker && /srv/lab/venv/bin/python refresh_stale.py --max 20
 """
 import argparse
 

@@ -79,6 +79,24 @@ class Campaign:
         done = [n for n in self.nodes if n["status"] == "complete"]
         return done[-1] if done else None
 
+    def abandon(self, exp_id: str, why: str = "") -> bool:
+        """Mark a branch abandoned — tried and given up (abandoned-branch detection). Any tokens a
+        later replan spends BECAUSE this line died are attributed to it as dead_end (see next_step)."""
+        hit = False
+        for n in self.nodes:
+            if n["experiment_id"] == exp_id:
+                n["status"], n["abandoned_because"], n["verdict"] = "abandoned", why, None
+                hit = True
+        if hit:
+            self.save()
+        return hit
+
+    def _frontier_abandoned(self) -> bool:
+        """True if the most recently added line was abandoned — so replanning is salvaging a dead
+        branch, and that synthesis spend is a dead end (conservative: a genuine pivot is tagged too,
+        but the cost only exists because the branch failed)."""
+        return bool(self.nodes) and self.nodes[-1].get("status") == "abandoned"
+
     def render(self) -> str:
         L = [f"Campaign: {self.name}", f"Question: {self.question}", ""]
         for n in self.nodes:
@@ -100,19 +118,25 @@ class Campaign:
         header = (f"Next-step proposal for campaign '{self.name}'\n"
                   f"  lineage so far: {lineage}\n"
                   f"  last experiment: {exp} — {node['verdict'][:160]}\n")
-        proposal = _synthesize(self.question, exp, node["verdict"], recs)
+        proposal = _synthesize(self.question, exp, node["verdict"], recs,
+                               dead_branch=self._frontier_abandoned())
         return header + "\n" + proposal
 
 
-def _synthesize(question: str, last_exp: str, verdict: str, recs: str) -> str:
+def _synthesize(question: str, last_exp: str, verdict: str, recs: str, dead_branch: bool = False) -> str:
     """Propose the next atomic experiment from the evaluator's recommendations + context.
     LLM-assisted (local); falls back to the raw recommendations if the model is
-    unavailable. This is a PROPOSAL — a human approves it into the next experiment."""
+    unavailable. This is a PROPOSAL — a human approves it into the next experiment.
+
+    `dead_branch`: the line being replanned was abandoned, so the synthesis spend is tagged
+    dead_end for the token audit (ADR-0060)."""
     if not recs:
         return "  (no 'Recommended next steps' section found in the evaluation report)"
     try:
+        import contextlib
         import llm
         import schemas
+        import token_meter
         schema = {"type": "object", "properties": {
             "title": {"type": "string"}, "question": {"type": "string"},
             "key_change": {"type": "string"}, "rationale": {"type": "string"}},
@@ -125,7 +149,8 @@ def _synthesize(question: str, last_exp: str, verdict: str, recs: str) -> str:
             "short title, its question, the single most important design CHANGE from the "
             "last experiment (e.g. a better-powered cohort), and a one-line rationale. "
             "Keep it a small, testable, pre-registerable experiment.")
-        r = llm.parse([{"role": "user", "content": prompt}], schema, schemas.NextStep).model_dump()
+        with (token_meter.outcome("dead_end") if dead_branch else contextlib.nullcontext()):
+            r = llm.parse([{"role": "user", "content": prompt}], schema, schemas.NextStep).model_dump()
         return (f"  PROPOSED NEXT EXPERIMENT (draft — needs human approval):\n"
                 f"    title:      {r['title']}\n"
                 f"    question:   {r['question']}\n"

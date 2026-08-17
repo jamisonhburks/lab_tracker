@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "lab-shared": {
+      "type": "http",
+      "url": "https://LAB-NODE.cluster.lab:8443/mcp",
+      "headers": {
+        "Authorization": "Bearer ${LAB_SUBSTRATE_TOKEN}"
+      }
+    },
+    "my-personal": {
+      "command": "bash",
+      "args": ["mcp_personal.sh"],
+      "env": {
+        "SUBSTRATE_SCOPE": "personal"
+      }
+    }
+  }
+}

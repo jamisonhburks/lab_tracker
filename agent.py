@@ -1,4 +1,4 @@
-"""A toy research agent running fully locally on a Qwen3-14B model via Ollama.
+"""lab_tracker — a research agent running fully locally on a Qwen3-14B model via Ollama.
 
 The agent loop is model-agnostic: call the model -> if it asked for a tool, run
 the tool and feed the result back -> repeat until it stops asking for tools.
@@ -17,6 +17,7 @@ Prereqs:  ollama pull qwen3:14b  &&  pip install -r requirements.txt
 Run:      python agent.py "your question"
 """
 
+import contextlib
 import json
 import os
 import re
@@ -35,15 +36,18 @@ import kg_writer
 import confidence
 import critic
 import novelty
+import biblio
 import idea as idea_mod
 import deep_search
 import specialist
+import token_meter
 import tool_ledger
 import schemas
 import method_select
 
 MAX_STEPS = 10      # safety cap so a misbehaving loop can't run forever
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
+_REDUNDANT_MARKER = "[lab-known:all]"   # a retrieval tool appends this when every hit is already known
 
 
 # --------------------------------------------------------------------------- #
@@ -62,7 +66,16 @@ def search_pubmed(query: str, max_results: int = 5) -> str:
     fetch_url = f"{EUTILS}/efetch.fcgi?" + urllib.parse.urlencode(
         {"db": "pubmed", "id": ",".join(ids), "rettype": "abstract", "retmode": "text"}
     )
-    return net.fetch_text(fetch_url, timeout=30)[:12000]
+    text = net.fetch_text(fetch_url, timeout=30)[:12000]
+    # redundancy signal: if EVERY hit is already ingested by the lab, this retrieval added nothing —
+    # flag it (informs the model + lets the loop tag the next turn's tokens `redundant`, ADR-0060).
+    try:
+        if all(biblio.seen(i, min_access="abstract") for i in ids):
+            text += (f"\n\n{_REDUNDANT_MARKER} all {len(ids)} result(s) are already ingested by the "
+                     "lab — no new papers; corroborate from the KG rather than re-reading.")
+    except Exception:
+        pass
+    return text
 
 
 def read_file(path: str) -> str:
@@ -117,8 +130,11 @@ def _fetch_articles(query: str, n: int) -> list:
         pmid = art.findtext(".//PMID")
         title = art.findtext(".//ArticleTitle") or ""
         abstract = " ".join(t.text or "" for t in art.findall(".//AbstractText")).strip()
+        authors = art.findall(".//AuthorList/Author")               # last-author = independence signal
+        last_author = (authors[-1].findtext("LastName") if authors else None) or None
         if pmid and abstract:
-            articles.append({"pmid": pmid, "title": title, "abstract": abstract})
+            articles.append({"pmid": pmid, "title": title, "abstract": abstract,
+                             "last_author": last_author})
     return articles
 
 
@@ -131,13 +147,30 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
     negative-evidence-aware confidence scorer with real signal.
     """
     prior = deep_search.search_status(query)          # avoid a redundant sweep the lab already did
+    covered = "ALREADY DEEP-SEARCHED" in prior or "→ COVERED" in prior
     articles = _fetch_articles(query, max_papers)
     if not articles:
         return "No papers found to curate."
     pmids = [p["pmid"] for p in articles if p.get("pmid")]
 
-    n_assoc, n_stats, n_norm = 0, 0, 0
-    for paper in articles:
+    # If the lab already covered this topic, the per-paper extraction below is REWORK — tag its
+    # tokens `redundant` so the audit sees it (unless we're already inside a worse tag, e.g. dead_end).
+    redundant = covered and token_meter.current_outcome() == "productive"
+    extract_ctx = token_meter.outcome("redundant") if redundant else contextlib.nullcontext()
+
+    n_assoc, n_stats, n_norm, n_skipped = 0, 0, 0, 0
+    with extract_ctx:
+      for paper in articles:
+        pmid = paper.get("pmid")
+        # PAPER-LEVEL DEDUP (ADR-0061): if we already ingested this exact paper's abstract, its
+        # associations are already in the KG — don't re-run the LLM. Just note this query surfaced it.
+        if pmid and biblio.seen(pmid, min_access="abstract"):
+            try:
+                biblio.register({"pmid": pmid}, lab_query=query)
+            except Exception:
+                pass
+            n_skipped += 1
+            continue
         prompt = (
             "From this single paper's abstract, extract the biomedical associations "
             "it reports as JSON. For each: subject, predicate (e.g. associates / "
@@ -154,6 +187,15 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
             assocs = [a.model_dump() for a in result.associations]
         except Exception:
             continue
+        # extraction succeeded → mark this paper ingested (abstract) under this query, so a future
+        # run skips it. Registered on SUCCESS so a failed parse is retried, not wrongly deduped.
+        if pmid:
+            try:
+                biblio.register({"pmid": pmid}, title=paper.get("title", ""),
+                                access="abstract", lab_query=query)
+                biblio.enrich(pmid)          # best-effort: backfill DOI/PMCID + full-text availability
+            except Exception:
+                pass
         for a in assocs:
             subj, pred, obj = (a.get("subject", "").strip(),
                                a.get("predicate", "").strip(), a.get("object", "").strip())
@@ -165,23 +207,32 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
             # raw string if unresolvable — novel entities aren't dropped.
             s_norm, o_norm = kg.normalize_entity(subj), kg.normalize_entity(obj)
             n_norm += bool(s_norm) + bool(o_norm)
+            sname = s_norm["name"] if s_norm else subj
+            oname = o_norm["name"] if o_norm else obj
             kg_writer.add_association(
-                s_norm["name"] if s_norm else subj, pred,
-                o_norm["name"] if o_norm else obj,
+                sname, pred, oname,
                 source=f"PMID:{paper['pmid']}",
                 direction=a.get("direction", "supports"),
                 sample_size=a.get("sample_size"), effect_size=a.get("effect_size"),
                 p_value=a.get("p_value"), risk_of_bias=a.get("risk_of_bias"),
+                research_group=paper.get("last_author"),
                 subject_id=s_norm["id"] if s_norm else None,
                 object_id=o_norm["id"] if o_norm else None)
+            # link the source paper → this association in the provenance graph (where support comes from)
+            if pmid:
+                try:
+                    biblio.link_association(f"PMID:{pmid}", f"{sname}|{pred}|{oname}".lower())
+                except Exception:
+                    pass
             n_assoc += 1
     deep_search.mark_searched(query, pmids=pmids, n_associations=n_assoc)   # so the lab won't repeat it
-    covered = "ALREADY DEEP-SEARCHED" in prior or "→ COVERED" in prior
-    return (f"Curated {n_assoc} association(s) from {len(articles)} paper(s) on "
-            f"{query!r} ({n_stats} with study stats, {n_norm} entities normalized "
-            f"to KG nodes). Recorded to the deep-search cache."
-            + ("\n[note: this topic was already covered — see search_status; curated anyway "
-               "(evidence dedups + refreshes).]" if covered else ""))
+    skip_note = (f" ({n_skipped} already-ingested paper(s) skipped — no re-extraction)"
+                 if n_skipped else "")
+    return (f"Curated {n_assoc} association(s) from {len(articles) - n_skipped} newly-read "
+            f"paper(s){skip_note} on {query!r} ({n_stats} with study stats, {n_norm} entities "
+            f"normalized to KG nodes). Recorded to the deep-search cache."
+            + ("\n[note: this topic was already covered — see search_status; new papers curated "
+               "anyway (evidence dedups + refreshes).]" if covered else ""))
 
 
 def criticize_curated_kg(subject: str = "", object: str = "", max_items: int = 10) -> str:
@@ -361,6 +412,11 @@ def refine_hypothesis(entity_a: str, entity_c: str, max_bridges: int = 4,
     a_name = kg._meta().get(a, (entity_a, ""))[0]
     c_name = kg._meta().get(c, (entity_c, ""))[0]
 
+    # If this pair is an EVIDENCED dead end (tried and ruled out), verifying it again is wasted
+    # effort — tag the verification spend `dead_end` so the audit distinguishes it from real work.
+    import deadends
+    hard_deadend = any(de.strength == "evidenced" for de, _ in deadends.check(a_name, c_name))
+
     # Bridges: distinct internal nodes, shortest paths first.
     bridges = {}
     for p in paths:
@@ -376,7 +432,8 @@ def refine_hypothesis(entity_a: str, entity_c: str, max_bridges: int = 4,
             continue
         # Un-known bridge: run the expensive verification (targeted lit search + critic).
         before = {kg_writer._rec_key(r) for r in kg_writer._load()}
-        curate_literature(f"{a_name} {bname} {c_name}", max_papers=max_papers)
+        with (token_meter.outcome("dead_end") if hard_deadend else contextlib.nullcontext()):
+            curate_literature(f"{a_name} {bname} {c_name}", max_papers=max_papers)
         new = [r for r in kg_writer._load() if kg_writer._rec_key(r) not in before]
         rel = [r for r in new if bname.lower() in r["subject"].lower()
                or bname.lower() in r["object"].lower()]
@@ -875,8 +932,17 @@ def run_agent(question: str) -> list:
     if ledger.intended:
         print("[planned tools: " + ", ".join(i["tool"] for i in ledger.intended) + "]")
 
+    token_meter.enable_autoflush()                      # persist spend even if we exit early
+    spend_start = len(token_meter.meter().events)
+
+    redundant_next = False    # a retrieval last turn returned ONLY lab-known results
     for _ in range(MAX_STEPS):
-        resp = llm.chat(messages, tools=TOOLS)
+        # if the previous turn's retrieval added nothing new, the tokens this turn spends chewing
+        # over it are rework — tag the orchestrator turn `redundant` so the audit sees it.
+        plan_outcome = "redundant" if redundant_next else "productive"
+        redundant_next = False
+        with token_meter.activity("planning", outcome=plan_outcome):   # orchestrator turn
+            resp = llm.chat(messages, tools=TOOLS)
 
         if resp.text:
             print(resp.text)
@@ -890,13 +956,24 @@ def run_agent(question: str) -> list:
         for tc in resp.tool_calls:
             name, args = tc.name, tc.args
             print(f"  -> calling {name}({args})")
-            output = DISPATCH[name](**args)
+            # attribute any LLM tokens the tool spends internally (e.g. specialist-backed curation)
+            # to the tool's research activity; unknown tools go PROVISIONAL with a hint for discovery.
+            act, prov, hint = token_meter.resolve_activity(name)
+            with token_meter.activity(act, provisional=prov, hint=hint):
+                try:
+                    output = DISPATCH[name](**args)
+                except Exception as err:               # a crashing tool auto-files a ticket, loop survives
+                    import tickets
+                    filed = tickets.auto_file(err, tool=name, args=args, area="agent-tool")
+                    output = f"[tool {name} errored: {type(err).__name__}: {err}] ({filed})"
 
             tool_log.append({"name": name, "args": args})
             ledger.record(name, args, layer="orchestrator")   # actual, in order
             # Any tool output can carry provenance — a fresh PubMed hit, or a PMID
             # recalled from memory — so scan them all and let grounding carry forward.
             seen.update(f"PMID:{m}" for m in re.findall(r"PMID:\s*(\d+)", output))
+            if _REDUNDANT_MARKER in output:      # a retrieval returned only already-known results
+                redundant_next = True
             if name == "read_file":
                 seen.add(f"file:{args.get('path', '')}")
             if name in ("query_graph", "find_paths"):   # KG edges cite databases
@@ -910,16 +987,25 @@ def run_agent(question: str) -> list:
     else:
         print("\n[stopped: hit MAX_STEPS]")
 
-    findings = _consolidate(messages, seen)
-    _ground_findings(findings)   # KG-as-verifier: corroborate each claim's link
+    with token_meter.activity("interpretation"):
+        findings = _consolidate(messages, seen)
+        _ground_findings(findings)   # KG-as-verifier: corroborate each claim's link
     entry = memory.record_run(question, tool_log, findings)
     n_src = sum(len(f["sources"]) for f in findings)
     print(f"\n[episodic memory: saved {entry['id']} — "
           f"{len(findings)} claim(s), {n_src} source link(s)]")
 
     ledger.run_id = entry["id"]           # tie the tool trace to this run
+    run_spend = token_meter.meter().events[spend_start:]
+    for ev in run_spend:                  # backfill the run id onto this run's spend events
+        ev.run_id = ev.run_id or entry["id"]
+    ledger.attach_spend(run_spend)
     ledger.save()
+    token_meter.flush()                   # durable token ledger for the audit
     print(ledger.summary())
+    line = token_meter.summary_line(run_spend)
+    if line:
+        print(line)
 
     # Hybrid grounding summary. Uncorroborated != false — the KG is incomplete, so
     # a claim with no trustworthy path may be genuinely novel and worth verifying.
@@ -994,7 +1080,8 @@ if __name__ == "__main__":
         import session_journal
         journal = session_journal.SessionJournal()
         journal.start(interval=int(os.environ.get("JOURNAL_INTERVAL", "3600")))   # hourly
-        print(f"Ready. Ask a research question — empty line or 'quit' to exit.\n"
+        print(f"Ready. Ask a research question — ':jot <hunch>' to capture a finding, "
+              f"':status <H001>' for a hypothesis dashboard; empty line or 'quit' to exit.\n"
               f"(session journal: {journal.notes} — checkpoints hourly)")
         try:
             while True:
@@ -1004,6 +1091,39 @@ if __name__ == "__main__":
                     break
                 if not question or question.lower() in ("quit", "exit"):
                     break
+                if question.split(" ", 1)[0].lower() in (":jot", "/jot"):   # 10-second quick capture
+                    parts = question.split(None, 1)
+                    note = parts[1].strip() if len(parts) > 1 else ""
+                    if not note:
+                        print("usage: :jot <a quick finding or hunch to capture>")
+                        continue
+                    try:
+                        import misc_research
+                        print(misc_research.log_misc(note))
+                    except Exception as err:
+                        print(f"[jot failed: {err}]")
+                    journal.note(note, kind="misc")
+                    continue
+                if question.split(" ", 1)[0].lower() in (":status", "/status"):   # active-work dashboard
+                    parts = question.split(None, 1)
+                    if len(parts) < 2:
+                        print("usage: :status <hypothesis id, e.g. H001>")
+                        continue
+                    try:
+                        import worklog
+                        print(worklog.status(parts[1].strip()))
+                    except Exception as err:
+                        print(f"[status failed: {err}]")
+                    continue
+                if question.split(" ", 1)[0].lower() in (":onboard", "/onboard"):   # onboarding checklist
+                    try:
+                        import onboarding
+                        print(onboarding.render())
+                    except Exception as err:
+                        print(f"[onboard failed: {err}]")
+                    print("(a guided intake runs when you ask your assistant to 'onboard me' — "
+                          "see lab-standard/onboarding.md)")
+                    continue
                 journal.note(f"query: {question}", kind="query")
                 findings = run_agent(question)
                 for f in (findings or []):

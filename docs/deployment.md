@@ -36,7 +36,7 @@ per-request, below).
 **systemd unit** (`/etc/systemd/system/lab-substrate.service`):
 ```ini
 [Service]
-WorkingDirectory=/srv/lab/toy-research-agent
+WorkingDirectory=/srv/lab/lab_tracker
 Environment=MCP_TRANSPORT=http MCP_HOST=0.0.0.0 MCP_PORT=8443
 Environment=SUBSTRATE_SCOPE=shared KG_BACKEND=combined
 ExecStart=/srv/lab/venv/bin/python mcp_server.py
@@ -92,7 +92,7 @@ stays current without waiting for someone to re-ask. It runs the **local model**
 distils), so run it on a host with the model (or `LLM_BACKEND=anthropic`), not necessarily the
 shared HTTP node:
 ```cron
-0 3 * * 0  cd /srv/lab/toy-research-agent && /srv/lab/venv/bin/python refresh_stale.py --max 20
+0 3 * * 0  cd /srv/lab/lab_tracker && /srv/lab/venv/bin/python refresh_stale.py --max 20
 ```
 `refresh_stale.py --dry-run` lists what's stale; the MCP `stale_topics` tool surfaces the same to
 any session.

@@ -39,6 +39,7 @@ from pathlib import Path
 
 from fastmcp import FastMCP
 
+import tickets
 import kg_memory as kg
 import hypothesis_tools as hyp
 import novelty
@@ -79,6 +80,32 @@ def _caller() -> str | None:
         return h.get("x-substrate-contributor") or h.get("x-forwarded-user") or None
     except Exception:
         return None
+
+
+# --------------------------------------------------------------------------- #
+# Auto-ticket: any UNHANDLED tool error files a ticket (dedup'd) and re-raises, #
+# so silent failures surface to the admin without the session having to notice. #
+# --------------------------------------------------------------------------- #
+try:
+    from fastmcp.server.middleware import Middleware
+
+    class _TicketOnError(Middleware):
+        async def on_call_tool(self, context, call_next):
+            try:
+                return await call_next(context)
+            except Exception as err:
+                try:
+                    msg = getattr(context, "message", None)
+                    tool = getattr(msg, "name", "") or ""
+                    args = getattr(msg, "arguments", {}) or {}
+                except Exception:
+                    tool, args = "", {}
+                tickets.auto_file(err, tool=tool, args=args, area="mcp", reporter=_caller() or "")
+                raise                                   # preserve normal MCP error behavior
+
+    mcp.add_middleware(_TicketOnError())
+except Exception:                                       # older fastmcp / API change → skip, never break
+    pass
 
 
 # =========================================================================== #
@@ -133,14 +160,18 @@ if _SHARED:
         out = []
         for r in recs[:15]:
             g = kg.check_connection(r["subject"], r["object"])
-            res = confidence.score_association(kg_writer.to_association(r),
-                                               prior=confidence.grounding_prior(g))
+            internal = kg_writer.internally_grounded(r["subject"], r["object"],
+                                                     r.get("subject_id"), r.get("object_id"))
+            res = confidence.score_association(
+                kg_writer.to_association(r), prior=confidence.combined_grounding_prior(g, internal))
             b = beliefs.current(r["subject"], r["predicate"], r["object"])
             trend = f" {beliefs._arrow(b['delta'])}{b['delta']:+.2f}" if b and b.get("delta") \
                 is not None else ""      # how belief last moved (the "living" signal)
+            # mark when the lab's OWN curated KG (not the trusted reference) supplied the grounding
+            kg_tag = f"{g}+lab" if internal and confidence.grounding_prior(g) < confidence.INTERNAL_GROUNDING_PRIOR else g
             out.append(f"{r['subject']} —{r['predicate']}→ {r['object']}  "
                        f"[{res.status}, conf {res.confidence:.2f}{trend}, "
-                       f"{len(r['evidence'])} evidence, KG:{g}]")
+                       f"{len(r['evidence'])} evidence, KG:{kg_tag}]")
         return "\n".join(out)
 
     @mcp.tool
@@ -218,6 +249,13 @@ if _SHARED:
                                      paradigms=paradigms, ref=ref, by=_caller())
 
     @mcp.tool
+    def add_member(name: str) -> str:
+        """Add a member to the lab roster (profiles/<lab>.yaml). Onboarding's first step — makes a
+        colleague discoverable/followable before they've contributed anything. Idempotent."""
+        import lab_profile as lp
+        return lp.add_member(name)
+
+    @mcp.tool
     def covered_capabilities(member: str = "") -> str:
         """A structured summary of what the lab has covered vs the scope it works in — the baseline
         the coverage map subtracts to find gaps (modality×task pairs and full cells)."""
@@ -273,6 +311,21 @@ if _SHARED:
         the finding, ending on the arc's weakest link. Great for morale AND the paper's discussion."""
         import research_story as rs
         return rs.story(campaign)
+
+    @mcp.tool
+    def lab_retro(member: str = "") -> str:
+        """A LAB-WORKFLOW RETROSPECTIVE — "how is the lab actually working?" — coaching, not grading.
+        Steps back across everyone and composes the substrate's OWN process signals (cleared-bar
+        findings ready to promote, seeds being burned on a design that won't pass, runs killed by
+        validity gates, re-hit dead ends, calibration bias, ADOPTABLE unused method gaps, promotion
+        backlog, duplicated effort) into three lists: WORKING (keep + propagate), NEEDS ATTENTION
+        (where time is being lost), OPTIMIZE (cheap wins now). No `member` → the LAB view (attention
+        items AGGREGATED / de-identified — it names hypotheses and counts, never grades a person).
+        Pass `member` for that person's OWN private coaching view. There is deliberately no ranking
+        of members. LLM-free signals — read the report, then narrate the WORKING/NOT-WORKING/OPTIMIZE
+        story for the lab."""
+        import lab_retro
+        return lab_retro.render(member=member or None)
 
     @mcp.tool
     def list_active_work() -> str:
@@ -374,6 +427,35 @@ if _SHARED:
                              effect_size=effect_size, p_value=p_value, sample_size=sample_size,
                              source=source, rigor_verdict=rigor_verdict.strip() or None,
                              contributor=_caller())
+
+    # ---- alpha issue tracker: members file tickets here; the admin triages (tickets.py) ---------- #
+    @mcp.tool
+    def file_ticket(title: str, body: str = "", severity: str = "medium",
+                    area: str = "", context: str = "") -> str:
+        """Report an alpha bug / rough edge to the lab admin's tracker. Use it whenever something
+        breaks, is confusing, or behaves wrong — one ticket per issue. `severity`: low|medium|high|
+        blocker. `area`: a short tag (onboarding|mcp|kg|curate|experiment|…). `body`: what happened,
+        steps to reproduce, expected vs actual. `context`: the tool/error/ids involved. You're
+        attributed automatically — no need to include your name."""
+        import tickets
+        tid = tickets.file_ticket(title, body=body, severity=severity, area=area,
+                                  context=context, reporter=_caller() or "")
+        return f"Filed {tid} — thanks. The admin can see it (list_tickets)."
+
+    @mcp.tool
+    def list_tickets(status: str = "") -> str:
+        """Alpha tickets, worst/oldest first. Optional `status` filter: open | ack | closed."""
+        import tickets
+        return tickets.render(status=status.strip())
+
+    @mcp.tool
+    def update_ticket(ticket_id: str, status: str = "", note: str = "") -> str:
+        """Admin triage: set a ticket's `status` (ack | closed) and/or append a `note`
+        (a closing note becomes its resolution)."""
+        import tickets
+        t = tickets.update_ticket(ticket_id, status=status.strip() or None, note=note,
+                                  by=_caller() or "admin")
+        return f"{ticket_id} → {t['status']}" if t else f"no ticket {ticket_id}"
 
     @mcp.tool
     def match_misc_finding(subject: str, object: str) -> str:
@@ -545,6 +627,87 @@ if _PERSONAL:
         method). A DRAFT to review/complete, then save to hypotheses/H00N_*.yaml (shared WIP)."""
         return _journal().formalize_retroactively()
 
+    # --- active work: the per-hypothesis run ledger + worklog + status (the "messy middle") --- #
+    @mcp.tool
+    def log_run(hypothesis: str, metrics: dict | None = None, seed: int | None = None,
+                passed: bool | None = None, valid: bool | None = None, note: str = "") -> str:
+        """Record ONE experiment run against a hypothesis while you work: its `metrics` (dict),
+        `seed`, whether it met the pre-registered success_metric (`passed`), and validity
+        (`valid=False` = a halt gate failed). Builds the run ledger the min_runs discipline needs —
+        personal tier, not consensus; runs that clear the bar feed contribute later."""
+        import worklog
+        return worklog.log_run(hypothesis, metrics=metrics, seed=seed, passed=passed,
+                               valid=valid, note=note, contributor=_caller())
+
+    @mcp.tool
+    def hypothesis_status(hypothesis: str) -> str:
+        """WHERE AM I on this hypothesis — the active-work dashboard: spec + success_metric, runs
+        logged vs min_runs, per-run results, stability across seeds, latest validity gates, and a
+        suggested next step. Call it to solidify a hypothesis against the system while you iterate."""
+        import worklog
+        return worklog.status(hypothesis)
+
+    @mcp.tool
+    def worklog_note(hypothesis: str, text: str) -> str:
+        """Jot a working note to a hypothesis's PERSISTENT worklog (what you tried / open questions),
+        surviving across sessions — distinct from the per-session journal."""
+        import worklog
+        return worklog.note(hypothesis, text, contributor=_caller())
+
+    @mcp.tool
+    def log_decision(hypothesis: str, decision: str, rationale: str = "") -> str:
+        """Record an analysis DECISION/assumption while you work (dropped a cohort, chose a
+        normalization, fixed a seed policy) — the reproducibility + methods-section trail, captured
+        as you make the call."""
+        import worklog
+        return worklog.log_decision(hypothesis, decision, rationale, contributor=_caller())
+
+    @mcp.tool
+    def preregistration(hypothesis: str) -> str:
+        """The PRE-REGISTERED success_metric/min_runs (snapshotted when runs began) vs the current
+        spec — flags DRIFT (moving the goalposts post-hoc). The anti-p-hacking guardrail."""
+        import worklog
+        p = worklog.preregistration(hypothesis)
+        rec = p["recorded"]
+        if not rec:
+            return (f"No pre-registration snapshot for {worklog._hyp_id(hypothesis)} yet "
+                    "(recorded automatically on the first log_run).")
+        drift = (("\n  ⚠ DRIFT — success_metric changed since runs began:"
+                  f"\n      was: {str(rec.get('success_metric'))[:120]}"
+                  f"\n      now: {str(p['current_success_metric'])[:120]}") if p["drift"]
+                 else "\n  ✓ success_metric unchanged since runs began.")
+        return (f"Pre-registration for {worklog._hyp_id(hypothesis)} "
+                f"(recorded {str(rec.get('recorded', '?'))[:10]}):"
+                f"\n  success_metric: {str(rec.get('success_metric'))[:160]}"
+                f"\n  min_runs: {rec.get('min_runs')}" + drift)
+
+    @mcp.tool
+    def sanity_check(claim: str = "", subject: str = "", object: str = "") -> str:
+        """A fast gut-check on a mid-analysis observation — WITHOUT the full assess_idea ceremony:
+        does the lab's KG/consensus corroborate it, does it hit a known DEAD-END, and is it novel
+        vs the literature. Read-only; for 'is this worth pursuing / did we already try this'."""
+        import misc_research
+        return misc_research.sanity_check(claim, subject, object)
+
+    @mcp.tool
+    def contribute_result(hypothesis: str, subject: str, predicate: str, object: str,
+                          direction: str | None = None) -> str:
+        """Bridge a COMPLETED, passing experiment into a gated contribution: pulls the aggregate
+        effect/p/n + validity from the hypothesis worklog and routes through the critic gate as
+        experiment-verified evidence. You supply the finding's subject/predicate/object."""
+        import contribute as contrib
+        return contrib.contribute_result(hypothesis, subject, predicate, object,
+                                         direction=direction, contributor=_caller())
+
+    @mcp.tool
+    def onboarding_status() -> str:
+        """What's already set up for YOU vs still missing (roster, papers, follows, pre-warmed
+        topics), with the single next step. Call this FIRST when onboarding a member so you ask
+        only for what's missing — never re-interrogate — and so onboarding can finish across
+        sessions. The intake itself is in lab-standard/onboarding.md: run it LIGHTLY."""
+        import onboarding
+        return onboarding.render(_caller())
+
     @mcp.tool
     def warm_start() -> str:
         """Your WARM START — call it when you open a session: where you left off, what changed in
@@ -577,6 +740,14 @@ if _PERSONAL:
         """Stop following a colleague or project (see my_subscriptions for what you follow)."""
         import subscriptions
         return subscriptions.unsubscribe(_caller(), target)
+
+    @mcp.tool
+    def list_members() -> str:
+        """The lab ROSTER — who you can follow. Drawn from the lab profile's `members:` plus anyone
+        with attributed work, so colleagues are discoverable on day 1 (before they've contributed).
+        Then follow('member:<name>') to get their changes in your digest + warm start."""
+        import subscriptions
+        return subscriptions.list_members(_caller())
 
     @mcp.tool
     def my_subscriptions() -> str:
