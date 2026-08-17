@@ -15,3 +15,19 @@ b,qwen3:14b + substrate,ece,0.0966,0.0149,3
 b,qwen3:14b + substrate,confidently_wrong_rate,0.187,0.0224,3
 b,qwen3:14b + substrate,hallucination_rate,0.0,0.0,3
 b,qwen3:14b + substrate,n,180.0,0.0,3
+c,frontier bare,precision_at_k,0.4333,0.17,3
+c,frontier bare,auroc,0.5,0.0,3
+c,frontier bare,auprc,0.3333,0.0,3
+c,frontier bare,accuracy,0.6667,0.0,3
+c,frontier bare,ece,0.3033,0.0,3
+c,frontier bare,confidently_wrong_rate,0.3333,0.0,3
+c,frontier bare,hallucination_rate,0.0,0.0,3
+c,frontier bare,n,180.0,0.0,3
+d,frontier + substrate,precision_at_k,0.9667,0.0471,3
+d,frontier + substrate,auroc,0.8677,0.0443,3
+d,frontier + substrate,auprc,0.8093,0.0264,3
+d,frontier + substrate,accuracy,0.8315,0.0346,3
+d,frontier + substrate,ece,0.1997,0.0223,3
+d,frontier + substrate,confidently_wrong_rate,0.0333,0.012,3
+d,frontier + substrate,hallucination_rate,0.0,0.0,3
+d,frontier + substrate,n,180.0,0.0,3

@@ -47,3 +47,51 @@ b,qwen3:14b + substrate,42,hallucination_rate,0.0
 b,qwen3:14b + substrate,11,n,180
 b,qwen3:14b + substrate,23,n,180
 b,qwen3:14b + substrate,42,n,180
+c,frontier bare,11,precision_at_k,0.5
+c,frontier bare,23,precision_at_k,0.6
+c,frontier bare,42,precision_at_k,0.2
+c,frontier bare,11,auroc,0.5
+c,frontier bare,23,auroc,0.5
+c,frontier bare,42,auroc,0.5
+c,frontier bare,11,auprc,0.3333333333333333
+c,frontier bare,23,auprc,0.3333333333333333
+c,frontier bare,42,auprc,0.3333333333333333
+c,frontier bare,11,accuracy,0.6666666666666666
+c,frontier bare,23,accuracy,0.6666666666666666
+c,frontier bare,42,accuracy,0.6666666666666666
+c,frontier bare,11,ece,0.30333333333333334
+c,frontier bare,23,ece,0.30333333333333334
+c,frontier bare,42,ece,0.30333333333333334
+c,frontier bare,11,confidently_wrong_rate,0.3333333333333333
+c,frontier bare,23,confidently_wrong_rate,0.3333333333333333
+c,frontier bare,42,confidently_wrong_rate,0.3333333333333333
+c,frontier bare,11,hallucination_rate,0.0
+c,frontier bare,23,hallucination_rate,0.0
+c,frontier bare,42,hallucination_rate,0.0
+c,frontier bare,11,n,180
+c,frontier bare,23,n,180
+c,frontier bare,42,n,180
+d,frontier + substrate,11,precision_at_k,1.0
+d,frontier + substrate,23,precision_at_k,1.0
+d,frontier + substrate,42,precision_at_k,0.9
+d,frontier + substrate,11,auroc,0.8452777777777777
+d,frontier + substrate,23,auroc,0.8282638888888888
+d,frontier + substrate,42,auroc,0.9295138888888889
+d,frontier + substrate,11,auprc,0.8145137897920638
+d,frontier + substrate,23,auprc,0.7746539470595811
+d,frontier + substrate,42,auprc,0.8386749687779799
+d,frontier + substrate,11,accuracy,0.7944444444444444
+d,frontier + substrate,23,accuracy,0.8222222222222222
+d,frontier + substrate,42,accuracy,0.8777777777777778
+d,frontier + substrate,11,ece,0.19227777777777783
+d,frontier + substrate,23,ece,0.17688888888888887
+d,frontier + substrate,42,ece,0.2300555555555555
+d,frontier + substrate,11,confidently_wrong_rate,0.044444444444444446
+d,frontier + substrate,23,confidently_wrong_rate,0.03888888888888889
+d,frontier + substrate,42,confidently_wrong_rate,0.016666666666666666
+d,frontier + substrate,11,hallucination_rate,0.0
+d,frontier + substrate,23,hallucination_rate,0.0
+d,frontier + substrate,42,hallucination_rate,0.0
+d,frontier + substrate,11,n,180
+d,frontier + substrate,23,n,180
+d,frontier + substrate,42,n,180
