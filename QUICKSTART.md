@@ -3,6 +3,20 @@
 You use **Claude in VS Code** (already signed in). There's **no Ollama and no API key** — Claude is
 the model; this repo gives your Claude session the lab's tools and memory over MCP.
 
+## Fastest path — try onboarding solo (no shared node, no token)
+
+```sh
+git clone <repo-url> lab_tracker && cd lab_tracker
+./setup.sh
+cp examples/mcp.solo.json .mcp.json      # one local server, all tiers — see examples/README.md
+code .                                   # approve the "lab" server when Claude Code prompts
+```
+Then in the Claude Code chat say **“onboard me.”** That's the whole solo test — one local substrate,
+everything (KG, onboarding, tickets) works offline. To join a real shared lab later, use
+`examples/mcp.shared.json` (below).
+
+---
+
 ## One-time setup (each member)
 
 Run this from wherever you keep your work — your own directory / home on the cluster (the path is up
