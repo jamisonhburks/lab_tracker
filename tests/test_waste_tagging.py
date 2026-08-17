@@ -50,8 +50,9 @@ class _Result:
     associations = [_Assoc()]
 
 
-def _stub_curate(monkeypatch, covered: bool):
+def _stub_curate(monkeypatch, covered: bool, tmp_path):
     import agent
+    monkeypatch.setattr(agent.biblio, "STORE", tmp_path / "works.jsonl")   # keep biblio hermetic
     status = "ALREADY DEEP-SEARCHED: metformin (COVERED)" if covered else "fresh topic"
     monkeypatch.setattr(agent.deep_search, "search_status", lambda q: status)
     monkeypatch.setattr(agent, "_fetch_articles",
@@ -68,8 +69,8 @@ def _stub_curate(monkeypatch, covered: bool):
     return agent
 
 
-def test_curate_tags_redundant_when_already_covered(monkeypatch):
-    agent = _stub_curate(monkeypatch, covered=True)
+def test_curate_tags_redundant_when_already_covered(monkeypatch, tmp_path):
+    agent = _stub_curate(monkeypatch, covered=True, tmp_path=tmp_path)
     with token_meter.activity("lit_search"):            # as the agent dispatch would set it
         agent.curate_literature("metformin type 2 diabetes")
     evs = token_meter.meter().events
@@ -77,8 +78,8 @@ def test_curate_tags_redundant_when_already_covered(monkeypatch):
     assert all(e.activity == "lit_search" for e in evs)
 
 
-def test_curate_is_productive_when_topic_is_fresh(monkeypatch):
-    agent = _stub_curate(monkeypatch, covered=False)
+def test_curate_is_productive_when_topic_is_fresh(monkeypatch, tmp_path):
+    agent = _stub_curate(monkeypatch, covered=False, tmp_path=tmp_path)
     with token_meter.activity("lit_search"):
         agent.curate_literature("brand new topic")
     evs = token_meter.meter().events

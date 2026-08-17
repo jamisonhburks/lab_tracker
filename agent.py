@@ -36,6 +36,7 @@ import kg_writer
 import confidence
 import critic
 import novelty
+import biblio
 import idea as idea_mod
 import deep_search
 import specialist
@@ -150,6 +151,14 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
     n_assoc, n_stats, n_norm = 0, 0, 0
     with extract_ctx:
       for paper in articles:
+        # register the paper in the bibliographic/provenance graph (paper-level dedup + access
+        # tracking); we read the abstract here — a full-text pass would upgrade access later.
+        if paper.get("pmid"):
+            try:
+                biblio.register({"pmid": paper["pmid"]}, title=paper.get("title", ""),
+                                access="abstract", lab_query=query)
+            except Exception:
+                pass
         prompt = (
             "From this single paper's abstract, extract the biomedical associations "
             "it reports as JSON. For each: subject, predicate (e.g. associates / "
@@ -177,9 +186,10 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
             # raw string if unresolvable — novel entities aren't dropped.
             s_norm, o_norm = kg.normalize_entity(subj), kg.normalize_entity(obj)
             n_norm += bool(s_norm) + bool(o_norm)
+            sname = s_norm["name"] if s_norm else subj
+            oname = o_norm["name"] if o_norm else obj
             kg_writer.add_association(
-                s_norm["name"] if s_norm else subj, pred,
-                o_norm["name"] if o_norm else obj,
+                sname, pred, oname,
                 source=f"PMID:{paper['pmid']}",
                 direction=a.get("direction", "supports"),
                 sample_size=a.get("sample_size"), effect_size=a.get("effect_size"),
@@ -187,6 +197,13 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
                 research_group=paper.get("last_author"),
                 subject_id=s_norm["id"] if s_norm else None,
                 object_id=o_norm["id"] if o_norm else None)
+            # link the source paper → this association in the provenance graph (where support comes from)
+            if paper.get("pmid"):
+                try:
+                    biblio.link_association(f"PMID:{paper['pmid']}",
+                                            f"{sname}|{pred}|{oname}".lower())
+                except Exception:
+                    pass
             n_assoc += 1
     deep_search.mark_searched(query, pmids=pmids, n_associations=n_assoc)   # so the lab won't repeat it
     covered = "ALREADY DEEP-SEARCHED" in prior or "→ COVERED" in prior
