@@ -30,7 +30,14 @@ class ToolLedger:
         self.experiment_id = experiment_id
         self.intended: list = []     # [{"tool": str, "why": str}]
         self.actual: list = []       # [{"seq","tool","layer","args","ts"}]
+        self.spend: list = []        # [SpendEvent-as-dict] — this run's token spend (co-located)
         self._seq = 0
+
+    def attach_spend(self, events) -> None:
+        """Co-locate this run's token spend (token_meter.SpendEvent list) with its tool trace.
+        The durable audit source is memory/token_ledgers/; this is a per-run convenience copy."""
+        from dataclasses import asdict, is_dataclass
+        self.spend = [asdict(e) if is_dataclass(e) else dict(e) for e in (events or [])]
 
     def plan(self, intended: list) -> None:
         """Declare the tools the agent expects to need (names or {tool, why} dicts)."""
@@ -58,7 +65,7 @@ class ToolLedger:
     def to_dict(self) -> dict:
         return {"run_id": self.run_id, "experiment_id": self.experiment_id,
                 "task": self.task, "intended": self.intended, "actual": self.actual,
-                "diff": self.diff()}
+                "spend": self.spend, "diff": self.diff()}
 
     def save(self, path: str | Path | None = None) -> Path:
         if path is None:

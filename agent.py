@@ -38,6 +38,7 @@ import novelty
 import idea as idea_mod
 import deep_search
 import specialist
+import token_meter
 import tool_ledger
 import schemas
 import method_select
@@ -879,8 +880,12 @@ def run_agent(question: str) -> list:
     if ledger.intended:
         print("[planned tools: " + ", ".join(i["tool"] for i in ledger.intended) + "]")
 
+    token_meter.enable_autoflush()                      # persist spend even if we exit early
+    spend_start = len(token_meter.meter().events)
+
     for _ in range(MAX_STEPS):
-        resp = llm.chat(messages, tools=TOOLS)
+        with token_meter.activity("planning"):          # the orchestrator turn: deciding next action
+            resp = llm.chat(messages, tools=TOOLS)
 
         if resp.text:
             print(resp.text)
@@ -894,7 +899,11 @@ def run_agent(question: str) -> list:
         for tc in resp.tool_calls:
             name, args = tc.name, tc.args
             print(f"  -> calling {name}({args})")
-            output = DISPATCH[name](**args)
+            # attribute any LLM tokens the tool spends internally (e.g. specialist-backed curation)
+            # to the tool's research activity; unknown tools go PROVISIONAL with a hint for discovery.
+            act, prov, hint = token_meter.resolve_activity(name)
+            with token_meter.activity(act, provisional=prov, hint=hint):
+                output = DISPATCH[name](**args)
 
             tool_log.append({"name": name, "args": args})
             ledger.record(name, args, layer="orchestrator")   # actual, in order
@@ -914,16 +923,25 @@ def run_agent(question: str) -> list:
     else:
         print("\n[stopped: hit MAX_STEPS]")
 
-    findings = _consolidate(messages, seen)
-    _ground_findings(findings)   # KG-as-verifier: corroborate each claim's link
+    with token_meter.activity("interpretation"):
+        findings = _consolidate(messages, seen)
+        _ground_findings(findings)   # KG-as-verifier: corroborate each claim's link
     entry = memory.record_run(question, tool_log, findings)
     n_src = sum(len(f["sources"]) for f in findings)
     print(f"\n[episodic memory: saved {entry['id']} — "
           f"{len(findings)} claim(s), {n_src} source link(s)]")
 
     ledger.run_id = entry["id"]           # tie the tool trace to this run
+    run_spend = token_meter.meter().events[spend_start:]
+    for ev in run_spend:                  # backfill the run id onto this run's spend events
+        ev.run_id = ev.run_id or entry["id"]
+    ledger.attach_spend(run_spend)
     ledger.save()
+    token_meter.flush()                   # durable token ledger for the audit
     print(ledger.summary())
+    line = token_meter.summary_line(run_spend)
+    if line:
+        print(line)
 
     # Hybrid grounding summary. Uncorroborated != false — the KG is incomplete, so
     # a claim with no trustworthy path may be genuinely novel and worth verifying.

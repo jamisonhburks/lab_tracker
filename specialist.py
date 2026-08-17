@@ -29,6 +29,7 @@ from datetime import datetime
 from pathlib import Path
 
 import llm
+import token_meter
 import tool_ledger
 
 _ROOT = Path(__file__).parent
@@ -160,24 +161,29 @@ def run_specialist(task: str, backend: str = "anthropic") -> str:
     transcript = []
     sled = tool_ledger.ToolLedger(     # the specialist's own skill-call trace
         task=task, run_id="specialist-" + datetime.now().strftime("%Y%m%dT%H%M%S"))
-    for _ in range(MAX_STEPS):
-        try:
-            resp = llm.chat(messages, tools=SPECIALIST_TOOLS, backend=backend)
-        except Exception as err:       # no key / no SDK / API error — fail gracefully
-            return (f"[specialist unavailable: {err}] Set ANTHROPIC_API_KEY and "
-                    "`pip install anthropic` to run the Claude specialist.")
-        if resp.text:
-            transcript.append(resp.text)
-        if not resp.tool_calls:
-            break
-        messages.append({"role": "assistant", "content": resp.text,
-                         "tool_calls": [{"id": tc.id, "name": tc.name, "args": tc.args}
-                                        for tc in resp.tool_calls]})
-        for tc in resp.tool_calls:
-            sled.record(tc.name, tc.args, layer="specialist")   # actual skill calls, in order
-            out = _DISPATCH[tc.name](**tc.args) if tc.name in _DISPATCH else f"unknown tool {tc.name}"
-            messages.append({"role": "tool", "tool_call_id": tc.id, "name": tc.name,
-                             "content": str(out)})
+    # everything here runs on Claude (paid) — tag the layer so the audit separates specialist $
+    with token_meter.run(run_id=sled.run_id, layer="specialist"):
+        for _ in range(MAX_STEPS):
+            try:
+                with token_meter.activity("planning"):     # deciding which skill to invoke
+                    resp = llm.chat(messages, tools=SPECIALIST_TOOLS, backend=backend)
+            except Exception as err:       # no key / no SDK / API error — fail gracefully
+                return (f"[specialist unavailable: {err}] Set ANTHROPIC_API_KEY and "
+                        "`pip install anthropic` to run the Claude specialist.")
+            if resp.text:
+                transcript.append(resp.text)
+            if not resp.tool_calls:
+                break
+            messages.append({"role": "assistant", "content": resp.text,
+                             "tool_calls": [{"id": tc.id, "name": tc.name, "args": tc.args}
+                                            for tc in resp.tool_calls]})
+            for tc in resp.tool_calls:
+                sled.record(tc.name, tc.args, layer="specialist")   # actual skill calls, in order
+                act, prov, hint = token_meter.resolve_activity(tc.name)
+                with token_meter.activity(act, provisional=prov, hint=hint):
+                    out = _DISPATCH[tc.name](**tc.args) if tc.name in _DISPATCH else f"unknown tool {tc.name}"
+                messages.append({"role": "tool", "tool_call_id": tc.id, "name": tc.name,
+                                 "content": str(out)})
     ledger_path = sled.save()          # persisted; orchestrator ledger shows run_specialist
     summary = transcript[-1] if transcript else "(specialist returned no summary)"
     trace = " → ".join(a["tool"] for a in sled.actual) or "(no tool calls)"
