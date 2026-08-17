@@ -77,7 +77,36 @@ new tickets. So a burst of `[auto] … (x40)` means one bug hit forty times, not
 
 ---
 
-**Lighter beta option:** if standing up TLS + SLURM is too much for a first test, you can skip the
-shared service and have everyone run a **local `SUBSTRATE_SCOPE=all`** server against a shared-FS
-clone — but then there's no single writer and attribution falls back to `$USER`. Fine for a 2–3
-person smoke test; move to the hosted shared service (above) before it's a real multi-writer lab.
+## Minimal shared node for a trusted alpha (no TLS, one command)
+
+If standing up TLS + SLURM (§A) is too much for a first test but you still want collaborators to
+**share one brain** — and their tickets/work to land **centrally with you** instead of siloed on
+each laptop — run the minimal node. (The default per-clone config is *solo*, so without this every
+collaborator is an isolated brain and you never see their feedback.)
+
+**You (once), on a node your collaborators can reach, from a clone on SHARED filesystem:**
+```sh
+./run_shared.sh                       # → http://<this-node>:8765/mcp   (scope=shared)
+# or: MCP_PORT=9000 KG_BACKEND=hetionet ./run_shared.sh
+```
+Shared FS matters: `register_project` records a path, and the node globs it — so the node must be
+able to read collaborators' project dirs (same cluster / Lustre).
+
+**Each collaborator (once):** switch from the solo default to the shared-dev config and put in the
+node URL + their own name:
+```sh
+cp examples/mcp.shared-dev.json .mcp.json
+# then edit .mcp.json:  url → http://<your-node>:8765/mcp   and   X-Substrate-Contributor → their name
+```
+Their Claude Code now talks to your one shared substrate: `register_project`, `contribute_finding`,
+`file_ticket`, `list_active_work`, `list_members` all read/write the **same** brain, attributed to
+whoever the header names.
+
+**Collect the alpha feedback:** tickets now land on your node — `python tickets.py list` (or
+`list_tickets` in a session) shows everyone's, attributed. `my_work` / `warm_start` work across the
+shared substrate.
+
+⚠ **Trust model:** no TLS and no auth — attribution trusts each client's `X-Substrate-Contributor`
+header (a client can claim any name). Fine for a trusted internal alpha on a private network. Before
+it's a real multi-writer lab, move to §A (a reverse proxy that **owns** the header after auth) and
+`examples/mcp.shared.json`.
