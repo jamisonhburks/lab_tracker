@@ -284,6 +284,12 @@ def outcome(label: str):
         _outcome.reset(o)
 
 
+def current_outcome() -> str:
+    """The outcome that would be recorded right now — lets a caller avoid downgrading an outer
+    waste tag (e.g. don't relabel `dead_end` spend as merely `redundant`)."""
+    return _outcome.get()
+
+
 @contextmanager
 def run(run_id: str = "", layer: str = "orchestrator"):
     """Tag LLM calls in this block with a run id and a cost LAYER (orchestrator/specialist/...)."""

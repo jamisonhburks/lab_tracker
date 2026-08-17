@@ -17,6 +17,7 @@ Prereqs:  ollama pull qwen3:14b  &&  pip install -r requirements.txt
 Run:      python agent.py "your question"
 """
 
+import contextlib
 import json
 import os
 import re
@@ -135,13 +136,20 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
     negative-evidence-aware confidence scorer with real signal.
     """
     prior = deep_search.search_status(query)          # avoid a redundant sweep the lab already did
+    covered = "ALREADY DEEP-SEARCHED" in prior or "→ COVERED" in prior
     articles = _fetch_articles(query, max_papers)
     if not articles:
         return "No papers found to curate."
     pmids = [p["pmid"] for p in articles if p.get("pmid")]
 
+    # If the lab already covered this topic, the per-paper extraction below is REWORK — tag its
+    # tokens `redundant` so the audit sees it (unless we're already inside a worse tag, e.g. dead_end).
+    redundant = covered and token_meter.current_outcome() == "productive"
+    extract_ctx = token_meter.outcome("redundant") if redundant else contextlib.nullcontext()
+
     n_assoc, n_stats, n_norm = 0, 0, 0
-    for paper in articles:
+    with extract_ctx:
+      for paper in articles:
         prompt = (
             "From this single paper's abstract, extract the biomedical associations "
             "it reports as JSON. For each: subject, predicate (e.g. associates / "
@@ -366,6 +374,11 @@ def refine_hypothesis(entity_a: str, entity_c: str, max_bridges: int = 4,
     a_name = kg._meta().get(a, (entity_a, ""))[0]
     c_name = kg._meta().get(c, (entity_c, ""))[0]
 
+    # If this pair is an EVIDENCED dead end (tried and ruled out), verifying it again is wasted
+    # effort — tag the verification spend `dead_end` so the audit distinguishes it from real work.
+    import deadends
+    hard_deadend = any(de.strength == "evidenced" for de, _ in deadends.check(a_name, c_name))
+
     # Bridges: distinct internal nodes, shortest paths first.
     bridges = {}
     for p in paths:
@@ -381,7 +394,8 @@ def refine_hypothesis(entity_a: str, entity_c: str, max_bridges: int = 4,
             continue
         # Un-known bridge: run the expensive verification (targeted lit search + critic).
         before = {kg_writer._rec_key(r) for r in kg_writer._load()}
-        curate_literature(f"{a_name} {bname} {c_name}", max_papers=max_papers)
+        with (token_meter.outcome("dead_end") if hard_deadend else contextlib.nullcontext()):
+            curate_literature(f"{a_name} {bname} {c_name}", max_papers=max_papers)
         new = [r for r in kg_writer._load() if kg_writer._rec_key(r) not in before]
         rel = [r for r in new if bname.lower() in r["subject"].lower()
                or bname.lower() in r["object"].lower()]
