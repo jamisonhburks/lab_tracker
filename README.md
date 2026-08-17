@@ -1,4 +1,4 @@
-# toy-research-agent
+# lab-tracker
 
 A fully-local biomedical research agent: a Qwen3-14B model (via Ollama) in a manual
 tool-calling loop, grounded in layered memory and a knowledge graph. Built to keep
