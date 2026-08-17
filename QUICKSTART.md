@@ -3,29 +3,29 @@
 You use **Claude in VS Code** (already signed in). There's **no Ollama and no API key** — Claude is
 the model; this repo gives your Claude session the lab's tools and memory over MCP.
 
-## Fastest path — try onboarding solo (no shared node, no token)
+## Fastest path — try onboarding solo (default; no shared node, no token)
 
 ```sh
 git clone <repo-url> lab_tracker && cd lab_tracker
 ./setup.sh
-cp examples/mcp.solo.json .mcp.json      # one local server, all tiers — see examples/README.md
 code .                                   # approve the "lab" server when Claude Code prompts
 ```
-Then in the Claude Code chat say **“onboard me.”** That's the whole solo test — one local substrate,
-everything (KG, onboarding, tickets) works offline. To join a real shared lab later, use
-`examples/mcp.shared.json` (below).
+The default `.mcp.json` is already the **solo** config — one local server, all tiers. In the Claude
+Code chat say **“onboard me.”** That's the whole solo test — KG, onboarding, and tickets all work
+offline. (Already had VS Code open on this folder? Just **Reload Window** so it picks up `.mcp.json`,
+then approve the `lab` server.)
 
 ---
 
-## One-time setup (each member)
+## Joining a real shared lab
 
-Run this from wherever you keep your work — your own directory / home on the cluster (the path is up
-to you; the steps are the same anywhere):
+When your lab has a hosted substrate, switch from the solo config to the shared one:
 
 ```sh
 cd <your-working-dir>               # your personal dir on the cluster (wherever that is)
 git clone <repo-url> lab_tracker && cd lab_tracker
 ./setup.sh                          # creates .venv and installs deps (incl. fastmcp)
+cp examples/mcp.shared.json .mcp.json                        # two servers: lab-shared + my-personal
 echo 'export LAB_SUBSTRATE_TOKEN=<your-token>' >> ~/.bashrc && source ~/.bashrc
 code .                              # open THIS folder in VS Code
 ```
@@ -36,8 +36,8 @@ When Claude Code prompts, **approve the two MCP servers**:
 - **lab-shared** — the lab's shared knowledge (read + contribute deliberately).
 - **my-personal** — your private memory + journal (runs locally from your clone; never shared).
 
-That's the whole setup. You do **not** run the shared server — you just point at it (the URL is in
-`.mcp.json`; your token authorizes you).
+You do **not** run the shared server — you just point at it (the URL your admin set in
+`examples/mcp.shared.json`; your token authorizes you).
 
 ## Every session
 
