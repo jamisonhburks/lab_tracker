@@ -8,8 +8,8 @@
       }
     },
     "my-personal": {
-      "command": ".venv/bin/python",
-      "args": ["mcp_server.py"],
+      "command": "bash",
+      "args": ["mcp_personal.sh"],
       "env": {
         "SUBSTRATE_SCOPE": "personal"
       }

@@ -35,14 +35,14 @@ lab left off. Onboarding is resumable — say "onboard me" again anytime to fini
 
 - **No substrate tools / "warm_start not found":** the MCP servers didn't connect. Check
   `LAB_SUBSTRATE_TOKEN` is set, that `./setup.sh` finished, and re-approve the servers in Claude
-  Code. `my-personal` needs `.venv/bin/python` to exist (that's what `setup.sh` creates).
-- **Different Python setup (conda/modules):** edit `.mcp.json` → `my-personal.command` to your
-  interpreter, and install `requirements.txt` + `fastmcp` into it.
+  Code.
+- **Different Python setup (conda/modules):** you don't edit `.mcp.json`. The launcher
+  (`mcp_personal.sh`) auto-detects the interpreter — repo `.venv`, then `$VIRTUAL_ENV`, then
+  `python3`. To force a specific one, `export SUBSTRATE_PYTHON=/path/to/python`. Just make sure
+  `requirements.txt` (incl. `fastmcp`) is installed into whatever it uses.
 
-## For the lab admin (once, not per member)
+## For the lab admin (once, before anyone joins)
 
-Stand up the **one** shared service on a cluster node and put its URL in `.mcp.json`
-(`lab-shared.url`), then issue each member a `LAB_SUBSTRATE_TOKEN`. See
-[`docs/deployment.md`](docs/deployment.md): `MCP_TRANSPORT=http SUBSTRATE_SCOPE=shared
-KG_BACKEND=combined`, behind a TLS reverse proxy that injects `X-Substrate-Contributor` from each
-authenticated user (that's what makes shared contributions attribute to the real person).
+Host the one shared substrate, then register yourself as the first user. Ordered runbook:
+[`ADMIN.md`](ADMIN.md) (which references [`docs/deployment.md`](docs/deployment.md) for the host
+details). After that, hand each member the repo URL + a `LAB_SUBSTRATE_TOKEN`.

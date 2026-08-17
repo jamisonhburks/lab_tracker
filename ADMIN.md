@@ -1,0 +1,59 @@
+# ADMIN.md — set up the lab substrate (before anyone joins)
+
+Yes — before members join you do two things, in order: **(A) host the one shared substrate**, then
+**(B) register yourself as the first user** (exactly like a member). You wear two hats; they're
+separate. Full reference: [`docs/deployment.md`](docs/deployment.md).
+
+## A. Host the shared substrate (once)
+
+The shared tier is **one service — the only writer** — on a cluster node. Members never run it;
+they point at it.
+
+1. **Place the shared repo** on the node, on a persistent/shared path. This is the SHARED copy,
+   distinct from members' personal clones (they each clone their own).
+2. **Install deps** there: `./setup.sh` (creates `.venv` with `requirements.txt` incl. `fastmcp`).
+3. **Run the service** as a long-lived job (systemd unit or SLURM — see deployment.md §1):
+   ```sh
+   MCP_TRANSPORT=http MCP_HOST=0.0.0.0 MCP_PORT=8443 \
+   SUBSTRATE_SCOPE=shared KG_BACKEND=combined \
+   .venv/bin/python mcp_server.py
+   ```
+   `combined` = Hetionet + Monarch harmonized; the reference KG loads once at startup (minutes;
+   size the node's RAM).
+4. **Front it with TLS + auth** (caddy/nginx, deployment.md §2). After the proxy authenticates a
+   user it must inject the identity header the substrate reads:
+   `header_up X-Substrate-Contributor {verified-user}`. Never let a client set that header on an
+   unauthenticated path — the proxy owns it. This is what attributes shared contributions to the
+   real person.
+5. **Mint a `LAB_SUBSTRATE_TOKEN`** per person (including yourself).
+6. **Set the real URL** in [`.mcp.json`](.mcp.json) → `lab-shared.url`
+   (e.g. `https://your-node:8443/mcp`), then commit & push. Every member's clone inherits it.
+7. **Smoke-check the host** (deployment.md "Quick check"): Uvicorn is up; `GET /mcp` in a plain
+   browser returns 406 (expected — MCP needs proper headers).
+
+## B. Register yourself as the first user (once)
+
+Now you do exactly what a member does ([`QUICKSTART.md`](QUICKSTART.md)) — plus you seed the roster:
+
+1. Clone the repo into your **own** working dir (not the shared copy); `./setup.sh`;
+   `export LAB_SUBSTRATE_TOKEN=<yours>`.
+2. `code .` → approve both MCP servers (`lab-shared`, `my-personal`).
+3. Say **"onboard me."** The intake calls `add_member(<you>)` — which adds you to the roster in
+   `profiles/<lab>.yaml` `members:` — and seeds your profile. Your personal tier lives in your own
+   clone.
+4. **Verify attribution end-to-end:** run `warm_start`, then contribute one finding and confirm the
+   contribution log shows it under **your** name (proves the proxy header path works).
+
+## C. Hand off to members
+
+Give each person the **repo URL + their `LAB_SUBSTRATE_TOKEN`**, and point them at `QUICKSTART.md`.
+They self-register on "onboard me" (`add_member` is idempotent), so you don't pre-create accounts.
+If you'd rather seed the roster up front, edit `profiles/<lab>.yaml` `members:` or call `add_member`
+for each — either way it converges.
+
+---
+
+**Lighter beta option:** if standing up TLS + SLURM is too much for a first test, you can skip the
+shared service and have everyone run a **local `SUBSTRATE_SCOPE=all`** server against a shared-FS
+clone — but then there's no single writer and attribution falls back to `$USER`. Fine for a 2–3
+person smoke test; move to the hosted shared service (above) before it's a real multi-writer lab.
