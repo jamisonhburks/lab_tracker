@@ -129,29 +129,67 @@ def roster(profile_id: str = None) -> list:
     return [str(m).strip() for m in (d.get("members") or []) if str(m).strip()]
 
 
-def add_member(name: str, profile_id: str = None) -> str:
-    """Add a member to the lab roster (profiles/<id>.yaml `members:`). Idempotent. Edits the
-    flow-style `members: [...]` line in place (preserving the file's comments); if there's no such
-    line, appends one. The onboarding intake's first, one-tool step."""
+def _identity() -> str:
+    """The caller's canonical member id — their attribution identity, NOT a typed display name."""
+    return (os.environ.get("SUBSTRATE_CONTRIBUTOR") or os.environ.get("USER") or "").strip()
+
+
+def _names_path(pid: str) -> Path:
+    return PROFILES / f"{pid}.member_names.json"
+
+
+def member_names(profile_id: str = None) -> dict:
+    """Map of member id -> display name (best-effort)."""
+    p = _names_path(profile_id or _default_id())
+    try:
+        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    except Exception:
+        return {}
+
+
+def display_name(member_id: str, profile_id: str = None) -> str:
+    return member_names(profile_id).get(member_id, member_id)
+
+
+def _set_alias(pid: str, member_id: str, name: str) -> None:
+    if not name or name == member_id:
+        return
+    names = member_names(pid)
+    names[member_id] = name
+    with store_lock.critical(_names_path(pid)):
+        _names_path(pid).write_text(json.dumps(names, indent=2), encoding="utf-8")
+
+
+def add_member(name: str, member_id: str = None, profile_id: str = None) -> str:
+    """Add a member to the lab roster (profiles/<id>.yaml `members:`), keyed on IDENTITY.
+
+    `member_id` is the canonical roster key; the typed `name` is kept as a display alias
+    (member_names.json). When onboarding via MCP, the tool passes the CALLER's identity as
+    `member_id` (so `onboarding_status`, which checks that same identity, flips to ✓). A direct call
+    with no `member_id` (an admin adding a colleague by name) keys on the name. Idempotent."""
     import re
     name = (name or "").strip()
     pid = profile_id or _default_id()
     f = PROFILES / f"{pid}.yaml"
-    if not name:
-        return "no member name given."
+    mid = (member_id or name).strip()                     # explicit identity, else the typed name
+    if not mid:
+        return "no member id or name given."
     if not f.exists():
         return f"no profile '{pid}' (profiles/{pid}.yaml) to add a member to."
-    if name in roster(pid):
-        return f"{name} is already on the {pid} roster."
+    label = name or mid
+    if mid in roster(pid):
+        _set_alias(pid, mid, name)                        # let onboarding update the display name
+        return f"{label} is already on the {pid} roster."
     text = f.read_text(encoding="utf-8")
     m = re.search(r"(?m)^members:[ \t]*\[(.*?)\][ \t]*$", text)
     if m:
         inner = m.group(1).strip()
-        text = text[:m.start(1)] + (f"{inner}, {name}" if inner else name) + text[m.end(1):]
+        text = text[:m.start(1)] + (f"{inner}, {mid}" if inner else mid) + text[m.end(1):]
     else:
-        text = text.rstrip("\n") + f"\nmembers: [{name}]\n"
+        text = text.rstrip("\n") + f"\nmembers: [{mid}]\n"
     f.write_text(text, encoding="utf-8")
-    return f"added {name} to the {pid} roster."
+    _set_alias(pid, mid, name)
+    return f"added {label} to the {pid} roster."
 
 
 def _pub_path(pid: str) -> Path:
