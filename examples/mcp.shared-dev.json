@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "lab-shared": {
+      "type": "http",
+      "url": "http://LAB-NODE:8765/mcp",
+      "headers": {
+        "X-Substrate-Contributor": "YOUR-NAME"
+      }
+    },
+    "my-personal": {
+      "command": "bash",
+      "args": ["mcp_personal.sh"],
+      "env": {
+        "SUBSTRATE_SCOPE": "personal"
+      }
+    }
+  }
+}
