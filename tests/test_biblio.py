@@ -143,3 +143,55 @@ def test_enrich_is_offline_safe():
     w = biblio.enrich("890", resolver=lambda **k: None)   # resolver failed / offline
     assert w["access"] == "abstract" and not any(t.startswith("doi:") for t in w["xrefs"])
     assert biblio.enrich("does-not-exist", resolver=_fake_resolver()) is None
+
+
+# --------------------------------------------------------------------------- #
+# full-text access + OA (Unpaywall stubbed, full-text fetcher stubbed)         #
+# --------------------------------------------------------------------------- #
+def test_oa_status_stores_availability():
+    biblio.register({"pmid": "900", "doi": "10.1/oa"}, lab_query="q")
+    info = biblio.oa_status("900", email="x@y.z",
+                            resolver=lambda doi, email: {"is_oa": True, "oa_status": "gold",
+                                                          "oa_url": "http://pdf"})
+    assert info["is_oa"]
+    w = biblio.get("900")
+    assert w["oa_status"] == "gold" and w["oa_url"] == "http://pdf" and w["fulltext_available"]
+
+
+def test_oa_status_needs_a_doi():
+    biblio.register({"pmid": "901"}, lab_query="q")     # no DOI on this Work
+    assert biblio.oa_status("901", email="x@y.z", resolver=lambda **k: {"is_oa": True}) is None
+
+
+def test_resolve_unpaywall_requires_email(monkeypatch):
+    monkeypatch.delenv("UNPAYWALL_EMAIL", raising=False)
+    assert biblio.resolve_unpaywall(doi="10.1/x") is None   # no email → no polite call
+
+
+def test_fetch_fulltext_upgrades_access():
+    biblio.register({"pmid": "902", "pmcid": "PMC902"}, access="abstract", lab_query="q")
+    assert biblio.access_of("902") == "abstract"
+    text = biblio.fetch_fulltext("902", fetcher=lambda pmcid: "FULL BODY TEXT")
+    assert text == "FULL BODY TEXT"
+    assert biblio.access_of("902") == "full_text"
+    w = biblio.get("902")
+    assert w["text_source"] == "europepmc:fullTextXML"
+
+
+def test_fetch_fulltext_needs_pmcid_and_is_offline_safe():
+    biblio.register({"pmid": "903"}, access="abstract", lab_query="q")   # no PMCID
+    assert biblio.fetch_fulltext("903", fetcher=lambda pmcid: "x") is None
+    biblio.register({"pmid": "904", "pmcid": "PMC904"}, lab_query="q")
+    assert biblio.fetch_fulltext("904", fetcher=lambda pmcid: None) is None   # fetch failed
+    assert biblio.access_of("904") == "abstract"                              # not upgraded
+
+
+def test_mark_fulltext_upgrades_access():
+    biblio.register({"pmid": "905"}, access="abstract", lab_query="q")
+    biblio.mark_fulltext("905", text_source="publisher-pdf")
+    assert biblio.access_of("905") == "full_text"
+    assert biblio.get("905")["text_source"] == "publisher-pdf"
+
+
+def test_strip_xml():
+    assert biblio._strip_xml("<a>hello   <b>world</b></a>") == "hello world"

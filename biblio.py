@@ -18,7 +18,9 @@ Store: memory/biblio/works.jsonl (gitignored). See ADR-0061 for the source tieri
 from __future__ import annotations
 
 import json
+import os
 import re
+import urllib.parse
 from datetime import datetime
 from pathlib import Path
 
@@ -168,6 +170,15 @@ def register(ids: dict, *, title: str = "", access: str = "abstract", text_sourc
 # --------------------------------------------------------------------------- #
 # Queries                                                                       #
 # --------------------------------------------------------------------------- #
+def _xrefs_to_ids(xrefs: list) -> dict:
+    ids = {}
+    for t in xrefs or []:
+        kind, _, val = t.partition(":")
+        if kind in ("doi", "pmid", "pmcid", "openalex"):
+            ids[kind] = val
+    return ids
+
+
 def get(id_str: str) -> dict | None:
     """The Work matching any known id form, or None."""
     toks = _one_token(id_str)
@@ -286,3 +297,85 @@ def resolve_europepmc(pmid: str = "", doi: str = "") -> dict | None:
                 "has_fulltext": has_ft}
     except Exception:
         return None
+
+
+# --------------------------------------------------------------------------- #
+# Full-text access (ADR-0061 #2): OA lookup (Unpaywall) + full-text fetch       #
+# (Europe PMC), upgrading `access` to full_text only when we actually READ it.  #
+# --------------------------------------------------------------------------- #
+_UNPAYWALL = "https://api.unpaywall.org/v2"
+
+
+def resolve_unpaywall(doi: str = "", email: str = "") -> dict | None:
+    """OA status for a DOI via Unpaywall → {is_oa, oa_status, oa_url}. Needs a contact email
+    (arg or UNPAYWALL_EMAIL); returns None without one, or on any failure (offline-safe)."""
+    email = email or os.environ.get("UNPAYWALL_EMAIL", "")
+    doi = norm_doi(doi)
+    if not doi or not email:
+        return None
+    try:
+        url = f"{_UNPAYWALL}/{urllib.parse.quote(doi)}?email={urllib.parse.quote(email)}"
+        d = json.loads(net.fetch_text(url, timeout=25))
+        best = d.get("best_oa_location") or {}
+        return {"is_oa": bool(d.get("is_oa")), "oa_status": d.get("oa_status") or "",
+                "oa_url": best.get("url_for_pdf") or best.get("url") or ""}
+    except Exception:
+        return None
+
+
+def oa_status(id_str: str, email: str = "", resolver=None) -> dict | None:
+    """Look up + store OA availability for a Work's DOI (Unpaywall). Sets oa_status/oa_url and, when
+    open, fulltext_available. Returns the OA info or None. `resolver` injectable for tests."""
+    resolver = resolver or resolve_unpaywall
+    w = get(id_str)
+    if w is None:
+        return None
+    doi = next((t.split(":", 1)[1] for t in w["xrefs"] if t.startswith("doi:")), "")
+    if not doi:
+        return None
+    info = resolver(doi=doi, email=email)
+    if not info:
+        return None
+    updates = {"oa_status": info.get("oa_status", ""), "oa_url": info.get("oa_url", "")}
+    if info.get("is_oa"):
+        updates["fulltext_available"] = True
+    _update_work(w["key"], **updates)
+    return info
+
+
+def _strip_xml(s: str) -> str:
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", s or "")).strip()
+
+
+def _fetch_fulltext_europepmc(pmcid: str) -> str | None:
+    try:
+        url = f"{_EPMC}/PMC/{norm_pmcid(pmcid)}/fullTextXML"
+        return _strip_xml(net.fetch_text(url, timeout=40)) or None
+    except Exception:
+        return None
+
+
+def fetch_fulltext(id_str: str, fetcher=None) -> str | None:
+    """Fetch a Work's full text (Europe PMC OA XML by PMCID) and upgrade its access → full_text.
+    Returns the text on success, else None. Best-effort/offline-safe; `fetcher` injectable."""
+    fetcher = fetcher or _fetch_fulltext_europepmc
+    w = get(id_str)
+    if w is None:
+        return None
+    pmcid = next((t.split(":", 1)[1] for t in w["xrefs"] if t.startswith("pmcid:")), "")
+    if not pmcid:
+        return None
+    text = fetcher(pmcid)
+    if not text:
+        return None
+    register({"pmcid": pmcid}, access="full_text", text_source="europepmc:fullTextXML")
+    return text
+
+
+def mark_fulltext(id_str: str, text_source: str = "external") -> dict | None:
+    """Record that the full text was READ (upgrade access → full_text) — for full text obtained
+    outside the Europe PMC path (a publisher PDF, a manual read, etc.)."""
+    w = get(id_str)
+    if w is None:
+        return None
+    return register(_xrefs_to_ids(w["xrefs"]), access="full_text", text_source=text_source)["work"]
