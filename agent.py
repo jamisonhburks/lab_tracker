@@ -148,17 +148,19 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
     redundant = covered and token_meter.current_outcome() == "productive"
     extract_ctx = token_meter.outcome("redundant") if redundant else contextlib.nullcontext()
 
-    n_assoc, n_stats, n_norm = 0, 0, 0
+    n_assoc, n_stats, n_norm, n_skipped = 0, 0, 0, 0
     with extract_ctx:
       for paper in articles:
-        # register the paper in the bibliographic/provenance graph (paper-level dedup + access
-        # tracking); we read the abstract here — a full-text pass would upgrade access later.
-        if paper.get("pmid"):
+        pmid = paper.get("pmid")
+        # PAPER-LEVEL DEDUP (ADR-0061): if we already ingested this exact paper's abstract, its
+        # associations are already in the KG — don't re-run the LLM. Just note this query surfaced it.
+        if pmid and biblio.seen(pmid, min_access="abstract"):
             try:
-                biblio.register({"pmid": paper["pmid"]}, title=paper.get("title", ""),
-                                access="abstract", lab_query=query)
+                biblio.register({"pmid": pmid}, lab_query=query)
             except Exception:
                 pass
+            n_skipped += 1
+            continue
         prompt = (
             "From this single paper's abstract, extract the biomedical associations "
             "it reports as JSON. For each: subject, predicate (e.g. associates / "
@@ -175,6 +177,14 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
             assocs = [a.model_dump() for a in result.associations]
         except Exception:
             continue
+        # extraction succeeded → mark this paper ingested (abstract) under this query, so a future
+        # run skips it. Registered on SUCCESS so a failed parse is retried, not wrongly deduped.
+        if pmid:
+            try:
+                biblio.register({"pmid": pmid}, title=paper.get("title", ""),
+                                access="abstract", lab_query=query)
+            except Exception:
+                pass
         for a in assocs:
             subj, pred, obj = (a.get("subject", "").strip(),
                                a.get("predicate", "").strip(), a.get("object", "").strip())
@@ -198,20 +208,20 @@ def curate_literature(query: str, max_papers: int = 4) -> str:
                 subject_id=s_norm["id"] if s_norm else None,
                 object_id=o_norm["id"] if o_norm else None)
             # link the source paper → this association in the provenance graph (where support comes from)
-            if paper.get("pmid"):
+            if pmid:
                 try:
-                    biblio.link_association(f"PMID:{paper['pmid']}",
-                                            f"{sname}|{pred}|{oname}".lower())
+                    biblio.link_association(f"PMID:{pmid}", f"{sname}|{pred}|{oname}".lower())
                 except Exception:
                     pass
             n_assoc += 1
     deep_search.mark_searched(query, pmids=pmids, n_associations=n_assoc)   # so the lab won't repeat it
-    covered = "ALREADY DEEP-SEARCHED" in prior or "→ COVERED" in prior
-    return (f"Curated {n_assoc} association(s) from {len(articles)} paper(s) on "
-            f"{query!r} ({n_stats} with study stats, {n_norm} entities normalized "
-            f"to KG nodes). Recorded to the deep-search cache."
-            + ("\n[note: this topic was already covered — see search_status; curated anyway "
-               "(evidence dedups + refreshes).]" if covered else ""))
+    skip_note = (f" ({n_skipped} already-ingested paper(s) skipped — no re-extraction)"
+                 if n_skipped else "")
+    return (f"Curated {n_assoc} association(s) from {len(articles) - n_skipped} newly-read "
+            f"paper(s){skip_note} on {query!r} ({n_stats} with study stats, {n_norm} entities "
+            f"normalized to KG nodes). Recorded to the deep-search cache."
+            + ("\n[note: this topic was already covered — see search_status; new papers curated "
+               "anyway (evidence dedups + refreshes).]" if covered else ""))
 
 
 def criticize_curated_kg(subject: str = "", object: str = "", max_items: int = 10) -> str:

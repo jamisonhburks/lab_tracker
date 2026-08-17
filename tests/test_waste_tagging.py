@@ -50,27 +50,29 @@ class _Result:
     associations = [_Assoc()]
 
 
-def _stub_curate(monkeypatch, covered: bool, tmp_path):
+def _stub_curate(monkeypatch, covered: bool, tmp_path, articles=None):
     import agent
     monkeypatch.setattr(agent.biblio, "STORE", tmp_path / "works.jsonl")   # keep biblio hermetic
     status = "ALREADY DEEP-SEARCHED: metformin (COVERED)" if covered else "fresh topic"
     monkeypatch.setattr(agent.deep_search, "search_status", lambda q: status)
-    monkeypatch.setattr(agent, "_fetch_articles",
-                        lambda q, n: [{"pmid": "1", "abstract": "Metformin treats T2D.",
-                                       "last_author": "Smith"}])
+    arts = articles or [{"pmid": "1", "abstract": "Metformin treats T2D.", "last_author": "Smith"}]
+    monkeypatch.setattr(agent, "_fetch_articles", lambda q, n: arts)
     monkeypatch.setattr(agent.deep_search, "mark_searched", lambda *a, **k: None)
     monkeypatch.setattr(agent.kg, "normalize_entity", lambda name: None)
     monkeypatch.setattr(agent.kg_writer, "add_association", lambda *a, **k: {})
 
+    calls = []
+
     def fake_parse(messages, schema, model_cls, **kw):
+        calls.append(1)
         token_meter.on_llm_call("ollama", "qwen3:14b", 120, 60)   # simulate the real adapter capture
         return _Result()
     monkeypatch.setattr(agent.llm, "parse", fake_parse)
-    return agent
+    return agent, calls
 
 
 def test_curate_tags_redundant_when_already_covered(monkeypatch, tmp_path):
-    agent = _stub_curate(monkeypatch, covered=True, tmp_path=tmp_path)
+    agent, _ = _stub_curate(monkeypatch, covered=True, tmp_path=tmp_path)
     with token_meter.activity("lit_search"):            # as the agent dispatch would set it
         agent.curate_literature("metformin type 2 diabetes")
     evs = token_meter.meter().events
@@ -79,8 +81,27 @@ def test_curate_tags_redundant_when_already_covered(monkeypatch, tmp_path):
 
 
 def test_curate_is_productive_when_topic_is_fresh(monkeypatch, tmp_path):
-    agent = _stub_curate(monkeypatch, covered=False, tmp_path=tmp_path)
+    agent, _ = _stub_curate(monkeypatch, covered=False, tmp_path=tmp_path)
     with token_meter.activity("lit_search"):
         agent.curate_literature("brand new topic")
     evs = token_meter.meter().events
     assert evs and all(e.outcome == "productive" for e in evs)
+
+
+def test_curate_skips_already_ingested_paper(monkeypatch, tmp_path):
+    """Paper-level dedup: an already-ingested paper is not re-extracted (no LLM call), but its
+    coverage still records the new query; a genuinely new paper is processed."""
+    import biblio
+    arts = [{"pmid": "1", "abstract": "old paper", "last_author": "X", "title": "A"},
+            {"pmid": "2", "abstract": "new paper", "last_author": "Y", "title": "B"}]
+    agent, calls = _stub_curate(monkeypatch, covered=False, tmp_path=tmp_path, articles=arts)
+    biblio.register({"pmid": "1"}, access="abstract", lab_query="old query")   # prior run ingested #1
+
+    with token_meter.activity("lit_search"):
+        agent.curate_literature("new query")
+
+    assert len(calls) == 1                              # only the NEW paper (pmid 2) hit the LLM
+    assert {c["lab_query"] for c in biblio.coverage_of("1")} == {"old query", "new query"}
+    assert biblio.seen("2")                             # paper 2 now ingested
+    # only the new paper's tokens were spent (dedup saved the rest)
+    assert len(token_meter.meter().events) == 1
