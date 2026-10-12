@@ -303,22 +303,40 @@ HYPOTHESIS_SCHEMA = {
     "required": ["hypothesis", "mechanisms"],
 }
 
+# The 'testable' variant extends the schema with a refutable prediction and an experiment
+# (ADR-0063). Kept as a separate schema so the baseline decode is byte-for-byte unchanged.
+HYPOTHESIS_TESTABLE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        **HYPOTHESIS_SCHEMA["properties"],
+        "falsifiable_prediction": {"type": "string"},
+        "experiment": {"type": "string"},
+    },
+    "required": HYPOTHESIS_SCHEMA["required"] + ["falsifiable_prediction", "experiment"],
+}
 
-def generate_hypothesis(entity_a: str, entity_c: str, max_len: int = 3) -> str:
-    """HYBRID generation: the KG retrieves the subgraph connecting A and C, then the
-    MODEL synthesizes a mechanistic hypothesis CONSTRAINED to those paths.
 
-    This is the missing third direction of the hybrid: not KG-only enumeration
-    (find_paths) and not LLM-only free generation, but LLM reasoning REGULARIZED by
-    the graph — it may only build on intermediates that actually appear in the KG
-    paths, which is what suppresses hallucinated mechanisms. The synthesis is then
-    annotated with hard numbers (grounding + novelty) so the free-text claim is
-    checked, not trusted.
+def synthesize_hypothesis(entity_a: str, entity_c: str, max_len: int = 3,
+                          variant: str = "baseline") -> dict:
+    """Core of generate_hypothesis: KG-constrained synthesis returning a STRUCTURED result.
+
+    Used two ways: generate_hypothesis() formats it for display, and the evals harness
+    (evals/hypothesis_generation.py) scores it. Factoring it out means the benchmark tests
+    the REAL generation path, not a reimplementation.
+
+    `variant`:
+      - 'baseline' — the original prompt + schema (unchanged).
+      - 'testable' — additionally REQUIRES a falsifiable prediction and an experiment that
+        tests it (the ADR-0063 eval-driven-dev intervention).
+
+    Returns {ok, variant, entity_a/c, a_name/c_name, n_paths, truncated, hypothesis (the
+    parsed dict), top_mechanism, grounding} on success; {ok: False, error, ...} otherwise.
     """
     a, c, paths, truncated = kg.enumerate_paths(entity_a, entity_c, max_len=max_len)
     if a is None or c is None:
         missing = entity_a if a is None else entity_c
-        return f"'{missing}' not found in the knowledge graph."
+        return {"ok": False, "variant": variant,
+                "error": f"'{missing}' not found in the knowledge graph."}
     a_name = kg._meta().get(a, (entity_a, ""))[0]
     c_name = kg._meta().get(c, (entity_c, ""))[0]
 
@@ -345,21 +363,59 @@ def generate_hypothesis(entity_a: str, entity_c: str, max_len: int = 3) -> str:
             "constraint is the point: the KG regularizes the hypothesis against "
             "unsupported invention.")
 
-    prompt = (
-        f"You are proposing a mechanistic hypothesis linking '{a_name}' and "
-        f"'{c_name}', grounded in a biomedical knowledge graph.\n\n"
-        f"KG paths connecting them:\n{subgraph}\n\n{constraint}\n\n"
+    # Baseline return spec is byte-identical to the original; 'testable' appends two fields.
+    return_spec = (
         "Return JSON: 'hypothesis' (2-4 sentences: the proposed mechanism linking the "
         "two, synthesized from the paths above), 'mechanisms' (one entry per key "
         "intermediate you actually used: intermediate, rationale grounded in its path, "
         "centrality 'high'|'moderate'|'low'), and 'caveats' (what the KG does NOT "
-        "establish — directionality, causality, confounders)."
+        "establish — directionality, causality, confounders).")
+    if variant == "testable":
+        return_spec += (
+            " ALSO return 'falsifiable_prediction' (one SPECIFIC, measurable observation "
+            "that would REFUTE this hypothesis — a concrete result, not a restatement of "
+            "the claim) and 'experiment' (a concrete test of that prediction: the design, "
+            "the measured variable, the comparison/controls, and which outcome confirms "
+            "vs refutes). Only assert a mechanism you can tie to such an experiment.")
+    prompt = (
+        f"You are proposing a mechanistic hypothesis linking '{a_name}' and "
+        f"'{c_name}', grounded in a biomedical knowledge graph.\n\n"
+        f"KG paths connecting them:\n{subgraph}\n\n{constraint}\n\n" + return_spec
     )
+    schema, model_cls = ((HYPOTHESIS_TESTABLE_SCHEMA, schemas.HypothesisTestable)
+                         if variant == "testable" else (HYPOTHESIS_SCHEMA, schemas.Hypothesis))
     try:
-        h = llm.parse([{"role": "user", "content": prompt}],
-                      HYPOTHESIS_SCHEMA, schemas.Hypothesis).model_dump()
+        h = llm.parse([{"role": "user", "content": prompt}], schema, model_cls).model_dump()
     except Exception as err:
-        return f"Hypothesis generation failed: {err}"
+        return {"ok": False, "variant": variant, "a_name": a_name, "c_name": c_name,
+                "error": f"Hypothesis generation failed: {err}"}
+
+    mechs = h.get("mechanisms", [])
+    top = next((m.get("intermediate") for m in mechs
+                if str(m.get("centrality", "")).lower() == "high"),
+               mechs[0].get("intermediate") if mechs else None)
+    grounding = kg.check_connection(entity_a, entity_c, max_len=max_len)
+    return {"ok": True, "variant": variant, "entity_a": entity_a, "entity_c": entity_c,
+            "a_name": a_name, "c_name": c_name, "n_paths": len(paths), "truncated": truncated,
+            "hypothesis": h, "top_mechanism": top, "grounding": grounding}
+
+
+def generate_hypothesis(entity_a: str, entity_c: str, max_len: int = 3,
+                        variant: str = "baseline") -> str:
+    """HYBRID generation: the KG retrieves the subgraph connecting A and C, then the
+    MODEL synthesizes a mechanistic hypothesis CONSTRAINED to those paths.
+
+    This is the missing third direction of the hybrid: not KG-only enumeration
+    (find_paths) and not LLM-only free generation, but LLM reasoning REGULARIZED by
+    the graph — it may only build on intermediates that actually appear in the KG
+    paths, which is what suppresses hallucinated mechanisms. The synthesis is then
+    annotated with hard numbers (grounding + novelty) so the free-text claim is
+    checked, not trusted.
+    """
+    r = synthesize_hypothesis(entity_a, entity_c, max_len=max_len, variant=variant)
+    if not r["ok"]:
+        return r["error"]
+    a_name, c_name, h = r["a_name"], r["c_name"], r["hypothesis"]
 
     out = [f"Hypothesis: {a_name} <-> {c_name}", f"  {h.get('hypothesis', '').strip()}"]
     mechs = h.get("mechanisms", [])
@@ -370,16 +426,17 @@ def generate_hypothesis(entity_a: str, entity_c: str, max_len: int = 3) -> str:
                        f"{str(m.get('rationale', '')).strip()[:200]}")
     if h.get("caveats"):
         out.append(f"\nCaveats: {str(h['caveats']).strip()}")
+    if variant == "testable":                       # the ADR-0063 intervention's extra fields
+        if h.get("falsifiable_prediction"):
+            out.append(f"\nFalsifiable prediction: {str(h['falsifiable_prediction']).strip()}")
+        if h.get("experiment"):
+            out.append(f"\nExperiment: {str(h['experiment']).strip()}")
 
     # Hard-number regularization: is the link corroborated, and is it actually novel?
-    top = next((m.get("intermediate") for m in mechs
-                if str(m.get("centrality", "")).lower() == "high"),
-               mechs[0].get("intermediate") if mechs else None)
-    grounding = kg.check_connection(entity_a, entity_c, max_len=max_len)
-    out.append(f"\nKG grounding: {grounding}   |  supporting paths: "
-               f"{len(paths)}{'+' if truncated else ''}")
-    if top:
-        out.append("\n" + novelty.check_novelty(a_name, c_name, via=top))
+    out.append(f"\nKG grounding: {r['grounding']}   |  supporting paths: "
+               f"{r['n_paths']}{'+' if r['truncated'] else ''}")
+    if r["top_mechanism"]:
+        out.append("\n" + novelty.check_novelty(a_name, c_name, via=r["top_mechanism"]))
     out.append("\n(Hybrid: KG retrieved the subgraph; the model synthesized the "
                "mechanism CONSTRAINED to it; grounding + novelty regularize the claim.)")
     return "\n".join(out)
