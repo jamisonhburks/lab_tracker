@@ -7,9 +7,16 @@ __pycache__/
 # Generated memory stores — run data, kept out of PRs
 memory/
 
-# Local data dumps / KG caches (downloaded on demand)
+# Local data dumps / KG caches (downloaded on demand) — but DO track the curated,
+# hand-labeled eval datasets (data/eval_datasets/), which are version-controlled ground truth.
 *.parquet
-data/
+data/*
+!data/eval_datasets/
+
+# Biology eval harness run dumps: keep the directory, ignore bulky per-run JSON
+# (real headline numbers are committed in docs/ and the ADRs, not these raw dumps).
+results/evals/*
+!results/evals/.gitkeep
 
 # External skill library (k-dense-ai/scientific-agent-skills, MIT) — cloned on demand
 external/

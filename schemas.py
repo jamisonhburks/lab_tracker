@@ -67,6 +67,13 @@ class Hypothesis(BaseModel):
     caveats: str = ""
 
 
+# The 'testable' generation variant (ADR-0063 intervention): same hypothesis, but the
+# model must also commit to a refutable prediction and an experiment that tests it.
+class HypothesisTestable(Hypothesis):
+    falsifiable_prediction: str = ""
+    experiment: str = ""
+
+
 # --- critic verdict (critic.criticize) -----------------------------------------
 class Verdict(BaseModel):
     verdict: str
