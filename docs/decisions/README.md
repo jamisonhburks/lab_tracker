@@ -70,3 +70,8 @@ New substantive changes should add an ADR alongside their PR.
 | [0056](0056-negative-knowledge-deadends.md) | Negative-knowledge store — remember dead ends, check them at intake | 2026-08-15 | Accepted | #64 |
 | [0057](0057-lab-profile.md) | Modular lab/researcher prior-work profile — coverage relative to a real frontier | 2026-08-15 | Accepted | #65 |
 | [0058](0058-coverage-map.md) | Coverage map — scope − covered, adoptable vs open frontier | 2026-08-15 | Accepted | #66 |
+| [0059](0059-lab-retro-coach.md) | Lab-workflow retrospective — a coach over the substrate's own process signals | 2026-08-16 | Accepted | #72 |
+| [0060](0060-token-usage-accounting.md) | Token-usage accounting — activity × outcome, with emergent-label discovery | 2026-08-17 | Accepted | #72 |
+| [0061](0061-bibliographic-provenance-graph.md) | Bibliographic / provenance graph — Work nodes keyed by persistent IDs | 2026-08-17 | Accepted | #72 |
+| [0062](0062-biology-evals.md) | Biology eval harness — measure the LLM backend's capability, not just the agent | 2026-10-09 | Accepted | — |
+| [0063](0063-eval-driven-dev-testable-hypotheses.md) | Eval-driven development — the 'testable' hypothesis intervention, measured | 2026-10-12 | Accepted | — |
