@@ -36,6 +36,7 @@ from datetime import datetime
 from pathlib import Path
 
 import llm
+from evals import _dataset
 
 RESULTS_DIR = Path(os.environ.get("EVAL_RESULTS_DIR", "results/evals"))
 
@@ -53,10 +54,30 @@ def _resolve(name: str):
     return getattr(importlib.import_module(mod_name), fn_name)
 
 
+def _dataset_of(name: str):
+    """The dataset filename a benchmark declares (its module's DATASET), or None."""
+    import importlib
+    mod = importlib.import_module(BENCHMARKS[name].split(":")[0])
+    return getattr(mod, "DATASET", None)
+
+
+def _seeded(name: str) -> bool:
+    """A benchmark is runnable iff it declares no dataset or that dataset is seeded.
+    Keeps an un-curated benchmark (e.g. literature_grounding) visibly PENDING rather than
+    advertised as runnable — a grounding benchmark on invented data measures nothing (ADR-0062)."""
+    ds = _dataset_of(name)
+    return ds is None or _dataset.exists(ds)
+
+
 def run_benchmark(name: str, backend: str = None) -> dict:
-    """Run one benchmark, persist its result, print a one-line summary. Returns the result."""
+    """Run one benchmark, persist its result, print a one-line summary. Returns the result,
+    or None (with an explanatory line) if the benchmark's dataset is not seeded yet."""
     if name not in BENCHMARKS:
         raise ValueError(f"unknown benchmark: {name}. options: {list(BENCHMARKS)}")
+    if not _seeded(name):
+        print(f"  PENDING {name}: dataset '{_dataset_of(name)}' not seeded yet — skipping. "
+              f"See evals/README.md for its schema and how to curate it.")
+        return None
     b = (backend or llm.BACKEND).lower()
     print(f"running {name} on backend={b} (KG_BACKEND={os.environ.get('KG_BACKEND', 'demo')}) ...")
     result = _resolve(name)(backend=backend)
@@ -87,18 +108,21 @@ def main() -> None:
     p.add_argument("--backend", default=None,
                    help="llm backend override (ollama | anthropic); default = LLM_BACKEND")
     p.add_argument("--benchmark", default="all", choices=["all"] + list(BENCHMARKS))
+    p.add_argument("--list", action="store_true",
+                   help="list benchmarks and whether each one's dataset is seeded")
     p.add_argument("--compare", nargs=2, metavar=("FILE_A", "FILE_B"),
                    help="compare two result JSONs instead of running")
     args = p.parse_args()
 
-    if args.compare:
+    if args.list:
+        for name in BENCHMARKS:
+            status = "seeded" if _seeded(name) else "PENDING (dataset not seeded)"
+            print(f"  {name:<24} dataset={_dataset_of(name) or '(none)':<32} {status}")
+    elif args.compare:
         compare(*args.compare)
     elif args.benchmark == "all":
         for name in BENCHMARKS:
-            try:
-                run_benchmark(name, args.backend)
-            except FileNotFoundError as err:          # dataset not seeded yet — skip, don't crash
-                print(f"  skipping {name}: {err}")
+            run_benchmark(name, args.backend)        # pending benchmarks are skipped cleanly
     else:
         run_benchmark(args.benchmark, args.backend)
 

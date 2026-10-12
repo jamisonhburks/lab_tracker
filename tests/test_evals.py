@@ -22,6 +22,27 @@ def test_dataset_missing_file_raises():
         _dataset.load("does_not_exist_v9.jsonl")
 
 
+def test_dataset_exists_reports_seeded_and_missing():
+    assert _dataset.exists("research_questions_v1.jsonl") is True
+    assert _dataset.exists("does_not_exist_v9.jsonl") is False
+
+
+# --- benchmark availability gating --------------------------------------------------------
+def test_literature_grounding_is_pending_until_seeded():
+    import biology_evals as be
+    # hypothesis_generation ships with its dataset; literature_grounding does not (ADR-0062).
+    assert be._seeded("hypothesis_generation") is True
+    assert be._dataset_of("literature_grounding") == "literature_grounding_v1.jsonl"
+    assert be._seeded("literature_grounding") is False
+
+
+def test_run_benchmark_skips_pending_without_running(capsys):
+    import biology_evals as be
+    # A pending benchmark returns None and never touches the model — no crash, clear message.
+    assert be.run_benchmark("literature_grounding") is None
+    assert "PENDING" in capsys.readouterr().out
+
+
 # --- statistics ---------------------------------------------------------------------------
 def test_bootstrap_ci_degenerate_and_spread():
     assert _scorer.bootstrap_ci([2, 2, 2, 2]) == [2.0, 2.0]    # no variance -> point CI

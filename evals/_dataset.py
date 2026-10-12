@@ -11,6 +11,12 @@ from pathlib import Path
 DATASET_DIR = Path(__file__).resolve().parent.parent / "data" / "eval_datasets"
 
 
+def exists(name: str) -> bool:
+    """Is a dataset seeded? Lets the harness report a benchmark as PENDING rather than
+    crash mid-run on a dataset that was never curated (e.g. literature_grounding)."""
+    return (DATASET_DIR / name).exists()
+
+
 def load(name: str) -> list:
     """Read a dataset by file name (e.g. 'research_questions_v1.jsonl').
 
@@ -21,7 +27,7 @@ def load(name: str) -> list:
     if not path.exists():
         raise FileNotFoundError(
             f"eval dataset not found: {path}\n"
-            f"(datasets live in {DATASET_DIR}; see evals/README or ADR-0062)")
+            f"(datasets live in {DATASET_DIR}; see evals/README.md or ADR-0062)")
     items = []
     for i, line in enumerate(path.read_text().splitlines(), 1):
         line = line.strip()
