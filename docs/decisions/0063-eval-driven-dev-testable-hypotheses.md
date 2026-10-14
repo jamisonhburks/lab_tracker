@@ -42,6 +42,16 @@ Run the eval-driven-development loop end-to-end and record it as a worked exampl
 13 grounded / 5 weakly-grounded under both variants. `p = 0.0` means no bootstrap replicate
 (of 2000) landed on the zero side of the delta.
 
+**Robustness (3 independent, unseeded runs).** Because Qwen generation is unseeded, the study
+was re-run twice more on 2026-10-14. The intervention composite was *identical* across all three
+runs (1.667); the paired composite delta was +0.667, +0.667, +0.639 (mean ≈ +0.66); the
+testability lift was exactly +1.0 every run; and the grounding guardrail held at 13/5 every run.
+The only movement was a single baseline item occasionally scoring specificity 2 instead of 1
+(baseline composite 1.000 → 1.028 in the third run), nudging the specificity delta between +0.278
+and +0.333. All three runs kept the composite CI clear of zero (p ≤ 0.002). Run-to-run variance
+is small and does not threaten the conclusion. Raw dumps (gitignored):
+`results/evals/{20261009T215350, 20261014T124937, 20261014T141920}_ollama_hypothesis_generation_edd.json`.
+
 **Concrete example — `rq002`, type 2 diabetes mellitus ↔ Alzheimer's disease.** Baseline named
 OGG1/SOD1 as shared intermediaries but offered no way to test the claim (judge: *"implies
 observable predictions … but does not provide a concrete experiment with a design, measured
