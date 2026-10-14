@@ -7,15 +7,16 @@ curated ground truth, not a regenerable cache.
 
 **The one rule:** datasets are curated from independent sources (PubMed, Cochrane, the lab's own
 papers) and **never from model output.** A benchmark seeded from the model it judges measures
-nothing. This is why `literature_grounding` ships code-complete but **data-pending** rather than
-with placeholder abstracts — invented abstracts would make the grounding number meaningless.
+nothing. Accordingly `literature_grounding_v1` holds only REAL, verbatim PubMed abstracts (fetched
+via the no-LLM `deep_search._pubmed` path) with human-reviewed labels — never placeholder or
+model-authored text, which would make the grounding number meaningless.
 
 ## Status
 
 | Benchmark | Dataset | State |
 |---|---|---|
 | `hypothesis_generation` | `research_questions_v1.jsonl` (n=18) | ✅ seeded — hetionet-validated |
-| `literature_grounding` | `literature_grounding_v1.jsonl` | ⏳ **pending** — code complete, dataset not yet curated |
+| `literature_grounding` | `literature_grounding_v1.jsonl` (n=4, pilot) | ✅ seeded — verbatim PubMed abstracts + PMIDs, labels human-reviewed; **expand beyond n=4** |
 
 Check at any time:
 
